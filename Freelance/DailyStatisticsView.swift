@@ -1,0 +1,126 @@
+//
+//  DailyStatisticsView.swift
+//  Freelance
+//
+//  Created by Shahin on 04.09.25.
+//
+
+import SwiftUI
+
+struct DailyStatisticsView: View {
+    @ObservedObject private var timeTracker = TimeTracker.shared
+    @ObservedObject private var settings = AppSettings.shared
+    @Environment(\.dismiss) private var dismiss
+    
+    var todayEntries: [TimeEntry] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
+        
+        var entries = timeTracker.timeEntries.filter { entry in
+            entry.startDate >= today && entry.startDate < tomorrow && entry.endDate != nil
+        }
+        
+        // Include current session if it started today
+        if let currentStart = timeTracker.currentSessionStart,
+           currentStart >= today && currentStart < tomorrow {
+            let currentEntry = TimeEntry(startDate: currentStart, endDate: nil, isActive: true)
+            entries.append(currentEntry)
+        }
+        
+        return entries.sorted { $0.startDate < $1.startDate }
+    }
+    
+    var totalHours: Double {
+        timeTracker.getTotalHours(for: .today)
+    }
+    
+    var totalEarnings: Double {
+        timeTracker.getEarnings(for: .today)
+    }
+    
+    var body: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Spacer()
+                    
+                    Text("TODAY")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Text(String(format: "%.1f/8", totalHours))
+                        .font(.custom("EkMukta-ExtraLight", size: 17))
+                        .foregroundColor(.primary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                
+                Spacer()
+                
+                // Daily Schedule
+                VStack(spacing: 20) {
+                    ForEach(todayEntries) { entry in
+                        TimeSlotRow(entry: entry)
+                    }
+                    
+                    if todayEntries.isEmpty {
+                        Text("No time tracked today")
+                            .font(.custom("EkMukta-ExtraLight", size: 17))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer(minLength: 40)
+                    
+                    // Earnings
+                    Text(String(format: "%.0f. EURO", totalEarnings))
+                        .font(.custom("EkMukta-ExtraLight", size: 22))
+                        .foregroundColor(.primary)
+                    
+                    Spacer(minLength: 40)
+                }
+                .padding(.horizontal, 40)
+                
+                Spacer()
+            }
+            .background(Color(.systemBackground))
+        }
+    }
+}
+
+struct TimeSlotRow: View {
+    let entry: TimeEntry
+    
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }
+    
+    var body: some View {
+        HStack {
+            if let endDate = entry.endDate {
+                Text("\(timeFormatter.string(from: entry.startDate)) – \(timeFormatter.string(from: endDate))")
+                                                .font(.custom("EkMukta-ExtraLight", size: 17))
+                    .foregroundColor(.primary)
+            } else {
+                Text("\(timeFormatter.string(from: entry.startDate)) – ACTIVE")
+                                                .font(.custom("EkMukta-ExtraLight", size: 17))
+                    .foregroundColor(.primary)
+            }
+            
+            Spacer()
+            
+            Rectangle()
+                .fill(entry.isActive ? Color.green : Color.primary)
+                .frame(width: 60, height: 2)
+        }
+    }
+}
+
+#Preview {
+    DailyStatisticsView()
+}
