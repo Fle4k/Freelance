@@ -10,7 +10,7 @@ import SwiftUI
 struct TimerView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @State private var showingStatistics = false
-    @State private var showingRecordConfirmation = false
+    @State private var showingResetConfirmation = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -23,27 +23,19 @@ struct TimerView: View {
                     
                     // Timer Display
                     Text(timeTracker.formattedElapsedTime)
-                        .font(.custom("CMU Typewriter Text Light", size: min(geometry.size.width * 0.12, 64)))
+                        .font(.custom("Major Mono Display Regular", size: min(geometry.size.width * 0.12, 64)))
                         .foregroundColor(.primary)
                         .minimumScaleFactor(0.5)
                     
                     Spacer()
                     
-                    // Hamburger Menu (centered above record button)
+                    // Circle Menu (centered above record button)
                     Button(action: {
                         showingStatistics = true
                     }) {
-                        VStack(spacing: 3) {
-                            Rectangle()
-                                .fill(Color.primary)
-                                .frame(width: 20, height: 2)
-                            Rectangle()
-                                .fill(Color.primary)
-                                .frame(width: 20, height: 2)
-                            Rectangle()
-                                .fill(Color.primary)
-                                .frame(width: 20, height: 2)
-                        }
+                        Circle()
+                            .stroke(Color.primary, lineWidth: 2)
+                            .frame(width: 16, height: 16)
                     }
                     .padding(.bottom, 80)
                     
@@ -51,9 +43,6 @@ struct TimerView: View {
                     Button(action: {
                         if timeTracker.isRunning {
                             timeTracker.pauseTimer()
-                        } else if timeTracker.currentSessionStart != nil {
-                            // If paused, show options to continue or record
-                            showingRecordConfirmation = true
                         } else {
                             timeTracker.startTimer()
                         }
@@ -64,15 +53,10 @@ struct TimerView: View {
                             .overlay(
                                 Group {
                                     if timeTracker.isRunning {
-                                        // Pause icon (two rectangles)
-                                        HStack(spacing: 4) {
-                                            Rectangle()
-                                                .fill(Color.primary)
-                                                .frame(width: 6, height: 20)
-                                            Rectangle()
-                                                .fill(Color.primary)
-                                                .frame(width: 6, height: 20)
-                                        }
+                                        // Pause icon (square outline)
+                                        Rectangle()
+                                            .stroke(Color.primary, lineWidth: 2)
+                                            .frame(width: 16, height: 16)
                                     } else {
                                         // Play icon (triangle)
                                         Triangle()
@@ -85,6 +69,11 @@ struct TimerView: View {
                     }
                     .scaleEffect(timeTracker.isRunning ? 1.05 : 1.0)
                     .animation(.easeInOut(duration: 0.2), value: timeTracker.isRunning)
+                    .onLongPressGesture {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        showingResetConfirmation = true
+                    }
                     .padding(.bottom, geometry.safeAreaInsets.bottom + 60)
                 }
             }
@@ -95,20 +84,33 @@ struct TimerView: View {
         .sheet(isPresented: $showingStatistics) {
             StatisticsOverviewView()
         }
-        .actionSheet(isPresented: $showingRecordConfirmation) {
-            ActionSheet(
-                title: Text("Timer Paused"),
-                message: Text("What would you like to do?"),
-                buttons: [
-                    .default(Text("Continue")) {
-                        timeTracker.startTimer()
-                    },
-                    .destructive(Text("Record & Reset")) {
+        .sheet(isPresented: $showingResetConfirmation) {
+            VStack(spacing: 20) {
+                Text("Reset Timer")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                
+                Text("Are you sure you want to record the current session and reset the timer?")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                
+                HStack(spacing: 16) {
+                    Button("Cancel") {
+                        showingResetConfirmation = false
+                    }
+                    .foregroundColor(.secondary)
+                    
+                    Button("Record & Reset") {
                         timeTracker.recordTimer()
-                    },
-                    .cancel()
-                ]
-            )
+                        showingResetConfirmation = false
+                    }
+                    .foregroundColor(.red)
+                    .fontWeight(.semibold)
+                }
+                .padding(.top)
+            }
+            .padding(24)
+            .presentationDetents([.height(200)])
         }
     }
 }

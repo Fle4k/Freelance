@@ -46,14 +46,14 @@ struct DailyStatisticsView: View {
                 HStack {
                     Spacer()
                     
-                    Text("TODAY")
-                        .font(.headline)
+                    Text("today")
+                        .font(.custom("Major Mono Display Regular", size: 18))
                         .foregroundColor(.primary)
                     
                     Spacer()
                     
                     Text(String(format: "%.1f/8", totalHours))
-                        .font(.custom("EkMukta-ExtraLight", size: 17))
+                        .font(.custom("Major Mono Display Regular", size: 17))
                         .foregroundColor(.primary)
                 }
                 .padding(.horizontal, 20)
@@ -69,15 +69,15 @@ struct DailyStatisticsView: View {
                     
                     if todayEntries.isEmpty {
                         Text("No time tracked today")
-                            .font(.custom("EkMukta-ExtraLight", size: 17))
+                            .font(.custom("Major Mono Display Regular", size: 17))
                             .foregroundColor(.secondary)
                     }
                     
                     Spacer(minLength: 40)
                     
                     // Earnings
-                    Text(String(format: "%.0f. EURO", totalEarnings))
-                        .font(.custom("EkMukta-ExtraLight", size: 22))
+                    Text(String(format: "%.0f. euro", totalEarnings))
+                        .font(.custom("Major Mono Display Regular", size: 22))
                         .foregroundColor(.primary)
                     
                     Spacer(minLength: 40)
@@ -104,11 +104,11 @@ struct TimeSlotRow: View {
         HStack {
             if let endDate = entry.endDate {
                 Text("\(timeFormatter.string(from: entry.startDate)) – \(timeFormatter.string(from: endDate))")
-                                                .font(.custom("EkMukta-ExtraLight", size: 17))
+                                                .font(.custom("Major Mono Display Regular", size: 17))
                     .foregroundColor(.primary)
             } else {
-                Text("\(timeFormatter.string(from: entry.startDate)) – ACTIVE")
-                                                .font(.custom("EkMukta-ExtraLight", size: 17))
+                Text("\(timeFormatter.string(from: entry.startDate)) – active")
+                                                .font(.custom("Major Mono Display Regular", size: 17))
                     .foregroundColor(.primary)
             }
             
