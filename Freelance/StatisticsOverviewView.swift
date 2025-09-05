@@ -21,20 +21,32 @@ struct StatisticsOverviewView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
     @State private var showingDailyStats = false
-    @State private var selectedPeriod: StatisticsPeriod? = .today
+    @State private var selectedPeriod: StatisticsPeriod = .today
+    @State private var currentIndex: Int = 0
     @Environment(\.dismiss) private var dismiss
+    
+    private let periods: [StatisticsPeriod] = [.today, .thisWeek, .lastWeek]
     
     init() {
         // Load persisted selected period
         if let savedPeriodRaw = UserDefaults.standard.object(forKey: "selectedPeriod") as? String {
             switch savedPeriodRaw {
-            case "today": _selectedPeriod = State(initialValue: .today)
-            case "thisWeek": _selectedPeriod = State(initialValue: .thisWeek)
-            case "lastWeek": _selectedPeriod = State(initialValue: .lastWeek)
-            default: _selectedPeriod = State(initialValue: .today)
+            case "today": 
+                _selectedPeriod = State(initialValue: .today)
+                _currentIndex = State(initialValue: 0)
+            case "thisWeek": 
+                _selectedPeriod = State(initialValue: .thisWeek)
+                _currentIndex = State(initialValue: 1)
+            case "lastWeek": 
+                _selectedPeriod = State(initialValue: .lastWeek)
+                _currentIndex = State(initialValue: 2)
+            default: 
+                _selectedPeriod = State(initialValue: .today)
+                _currentIndex = State(initialValue: 0)
             }
         } else {
             _selectedPeriod = State(initialValue: .today)
+            _currentIndex = State(initialValue: 0)
         }
     }
     
@@ -89,7 +101,10 @@ struct StatisticsOverviewView: View {
                         // Time periods with chart interaction
                         VStack(spacing: 20) {
                             Button(action: { 
-                                selectedPeriod = selectedPeriod == .today ? nil : .today
+                                withAnimation {
+                                    currentIndex = 0
+                                    selectedPeriod = periods[currentIndex]
+                                }
                                 saveSelectedPeriod()
                             }) {
                                 StatisticRow(
@@ -101,7 +116,10 @@ struct StatisticsOverviewView: View {
                             .foregroundColor(.primary)
                             
                             Button(action: { 
-                                selectedPeriod = selectedPeriod == .thisWeek ? nil : .thisWeek
+                                withAnimation {
+                                    currentIndex = 1
+                                    selectedPeriod = periods[currentIndex]
+                                }
                                 saveSelectedPeriod()
                             }) {
                                 StatisticRow(
@@ -113,7 +131,10 @@ struct StatisticsOverviewView: View {
                             .foregroundColor(.primary)
                             
                             Button(action: { 
-                                selectedPeriod = selectedPeriod == .lastWeek ? nil : .lastWeek
+                                withAnimation {
+                                    currentIndex = 2
+                                    selectedPeriod = periods[currentIndex]
+                                }
                                 saveSelectedPeriod()
                             }) {
                                 StatisticRow(
@@ -126,37 +147,21 @@ struct StatisticsOverviewView: View {
                         }
                         .padding(.horizontal, 40)
                         
-                        // Chart placeholder area
-                        if selectedPeriod != nil {
-                            Divider()
-                                .padding(.horizontal, 40)
-                            
-                            VStack(spacing: 0) {
-                                // Chart title at top
-                                Text("chart for \(selectedPeriod?.displayName ?? "")")
-                                    .font(.custom("Major Mono Display Regular", size: 14))
-                                    .foregroundColor(.secondary)
-                                    .padding(.top, 20)
-                                    .padding(.bottom, 10)
-                                
-                                Spacer()
-                                
-                                // Chart bars spread across full width
-                                HStack(alignment: .bottom, spacing: 0) {
-                                    ForEach(0..<7) { index in
-                                        Rectangle()
-                                            .fill(Color.primary.opacity(0.3))
-                                            .frame(width: 2, height: CGFloat.random(in: 20...80))
-                                        
-                                        if index < 6 {
-                                            Spacer()
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 40)
-                                .padding(.bottom, 20)
+                        // Chart carousel (always visible with fixed size)
+                        Divider()
+                            .padding(.horizontal, 40)
+                        
+                        TabView(selection: $currentIndex) {
+                            ForEach(0..<periods.count, id: \.self) { index in
+                                ChartView(period: periods[index])
+                                    .tag(index)
                             }
-                            .frame(minHeight: 120)
+                        }
+                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                        .frame(height: 160)
+                        .onChange(of: currentIndex) { newIndex in
+                            selectedPeriod = periods[newIndex]
+                            saveSelectedPeriod()
                         }
                         
                         Spacer(minLength: 40)
@@ -262,18 +267,66 @@ struct StatisticsOverviewView: View {
     }
     
     private func saveSelectedPeriod() {
-        guard let period = selectedPeriod else {
-            UserDefaults.standard.removeObject(forKey: "selectedPeriod")
-            return
-        }
-        
         let periodString: String
-        switch period {
+        switch selectedPeriod {
         case .today: periodString = "today"
         case .thisWeek: periodString = "thisWeek"
         case .lastWeek: periodString = "lastWeek"
         }
         UserDefaults.standard.set(periodString, forKey: "selectedPeriod")
+    }
+}
+
+struct ChartView: View {
+    let period: StatisticsPeriod
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Chart title at top
+            Text("chart for \(period.displayName)")
+                .font(.custom("Major Mono Display Regular", size: 17))
+                .foregroundColor(.secondary)
+                .padding(.top, 20)
+                .padding(.bottom, 10)
+            
+            Spacer()
+            
+            // Chart bars with day labels for week views
+            VStack(spacing: 8) {
+                HStack(alignment: .bottom, spacing: 0) {
+                    ForEach(0..<7) { index in
+                        VStack(spacing: 4) {
+                            Rectangle()
+                                .fill(Color.primary.opacity(0.3))
+                                .frame(width: 2, height: getBarHeight(for: index))
+                            
+                            if period == .thisWeek || period == .lastWeek {
+                                Text(getDayLabel(for: index))
+                                    .font(.custom("Major Mono Display Regular", size: 17))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        if index < 6 {
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 40)
+            .padding(.bottom, 20)
+        }
+    }
+    
+    private func getBarHeight(for index: Int) -> CGFloat {
+        // Static heights for consistent display (no animation)
+        let heights: [CGFloat] = [45, 25, 60, 30, 40, 55, 20]
+        return heights[index]
+    }
+    
+    private func getDayLabel(for index: Int) -> String {
+        let labels = ["m", "d", "m", "d", "f", "s", "s"]
+        return labels[index]
     }
 }
 

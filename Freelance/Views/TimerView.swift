@@ -10,7 +10,7 @@ import SwiftUI
 struct TimerView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @State private var showingStatistics = false
-    @State private var showingResetConfirmation = false
+    @State private var showingResetAlert = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -29,51 +29,48 @@ struct TimerView: View {
                     
                     Spacer()
                     
-                    // Circle Menu (centered above record button)
+                    // Menu Button (centered above record button)
                     Button(action: {
                         showingStatistics = true
                     }) {
-                        Circle()
-                            .stroke(Color.primary, lineWidth: 2)
-                            .frame(width: 16, height: 16)
+                        Image(systemName: "circle")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(.primary)
+                            .symbolEffect(.disappear, isActive: showingStatistics)
                     }
                     .padding(.bottom, 80)
                     
                     // Record/Pause Button
-                    Button(action: {
-                        if timeTracker.isRunning {
-                            timeTracker.pauseTimer()
-                        } else {
-                            timeTracker.startTimer()
-                        }
-                    }) {
-                        Circle()
-                            .fill(Color.clear)
-                            .frame(width: 80, height: 80)
-                            .overlay(
-                                Group {
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: 80, height: 80)
+                        .overlay(
+                            Image(systemName: timeTracker.isRunning ? "square" : "play.fill")
+                                .font(.system(size: 16, weight: .regular))
+                                .foregroundColor(.primary)
+                                .contentTransition(.symbolEffect(.replace))
+                                .animation(.easeInOut(duration: 0.3), value: timeTracker.isRunning)
+                        )
+                        .scaleEffect(timeTracker.isRunning ? 1.05 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: timeTracker.isRunning)
+                        .simultaneousGesture(
+                            TapGesture()
+                                .onEnded { _ in
                                     if timeTracker.isRunning {
-                                        // Pause icon (square outline)
-                                        Rectangle()
-                                            .stroke(Color.primary, lineWidth: 2)
-                                            .frame(width: 16, height: 16)
+                                        timeTracker.pauseTimer()
                                     } else {
-                                        // Play icon (triangle)
-                                        Triangle()
-                                            .fill(Color.primary)
-                                            .frame(width: 16, height: 16)
-                                            .offset(x: 2)
+                                        timeTracker.startTimer()
                                     }
                                 }
-                            )
-                    }
-                    .scaleEffect(timeTracker.isRunning ? 1.05 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: timeTracker.isRunning)
-                    .onLongPressGesture {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
-                        showingResetConfirmation = true
-                    }
+                        )
+                        .simultaneousGesture(
+                            LongPressGesture(minimumDuration: 1.0)
+                                .onEnded { _ in
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                    impactFeedback.impactOccurred()
+                                    showingResetAlert = true
+                                }
+                        )
                     .padding(.bottom, geometry.safeAreaInsets.bottom + 60)
                 }
             }
@@ -84,47 +81,18 @@ struct TimerView: View {
         .sheet(isPresented: $showingStatistics) {
             StatisticsOverviewView()
         }
-        .sheet(isPresented: $showingResetConfirmation) {
-            VStack(spacing: 20) {
-                Text("Reset Timer")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                
-                Text("Are you sure you want to record the current session and reset the timer?")
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
-                
-                HStack(spacing: 16) {
-                    Button("Cancel") {
-                        showingResetConfirmation = false
-                    }
-                    .foregroundColor(.secondary)
-                    
-                    Button("Record & Reset") {
-                        timeTracker.recordTimer()
-                        showingResetConfirmation = false
-                    }
-                    .foregroundColor(.red)
-                    .fontWeight(.semibold)
-                }
-                .padding(.top)
+        .alert("reset timer", isPresented: $showingResetAlert) {
+            Button("cancel", role: .cancel) { }
+            Button("store and reset") {
+                timeTracker.recordTimer()
+                timeTracker.startTimer()
             }
-            .padding(24)
-            .presentationDetents([.height(200)])
+        } message: {
+            Text("Store time and start a new session?")
         }
     }
 }
 
-struct Triangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
-    }
-}
 
 #Preview {
     TimerView()
