@@ -13,6 +13,8 @@ extension StatisticsPeriod {
         case .today: return "today"
         case .thisWeek: return "this week"
         case .lastWeek: return "last week"
+        case .thisMonth: return "this month"
+        case .total: return "total"
         }
     }
 }
@@ -23,9 +25,17 @@ struct StatisticsOverviewView: View {
     @State private var showingDailyStats = false
     @State private var selectedPeriod: StatisticsPeriod = .today
     @State private var currentIndex: Int = 0
+    @State private var showingDeadManSwitchPicker = false
+    @State private var showingMotionThresholdPicker = false
+    @State private var showingSalaryInput = false
+    @State private var showingCustomDeadManInput = false
+    @State private var showingCustomMotionInput = false
+    @State private var customDeadManValue = ""
+    @State private var customMotionValue = ""
+    @State private var salaryInputValue = ""
     @Environment(\.dismiss) private var dismiss
     
-    private let periods: [StatisticsPeriod] = [.today, .thisWeek, .lastWeek]
+    private let periods: [StatisticsPeriod] = [.today, .thisWeek, .thisMonth]
     
     init() {
         // Load persisted selected period
@@ -37,8 +47,8 @@ struct StatisticsOverviewView: View {
             case "thisWeek": 
                 _selectedPeriod = State(initialValue: .thisWeek)
                 _currentIndex = State(initialValue: 1)
-            case "lastWeek": 
-                _selectedPeriod = State(initialValue: .lastWeek)
+            case "thisMonth": 
+                _selectedPeriod = State(initialValue: .thisMonth)
                 _currentIndex = State(initialValue: 2)
             default: 
                 _selectedPeriod = State(initialValue: .today)
@@ -54,118 +64,89 @@ struct StatisticsOverviewView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
-                    // Header
-                    HStack {
-                        Spacer()
-                        
-                        Text("statistics")
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.primary)
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
                     Spacer(minLength: 30)
                     
-                    VStack(spacing: 30) {
-                        // Always show total time and earnings
-                        VStack(spacing: 15) {
-                            HStack {
-                                Text("total time")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Text(timeTracker.formattedTotalTime(for: .today))
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            HStack {
-                                Text("total earnings")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Text(String(format: "%.0f euro", timeTracker.getEarnings(for: .today)))
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                        .padding(.horizontal, 40)
-                        
-                        // Time periods with chart interaction
+                    // Swipable carousel with cards
+                    TabView(selection: $currentIndex) {
+                        // Card 0: Today
                         VStack(spacing: 20) {
-                            Button(action: { 
-                                withAnimation {
-                                    currentIndex = 0
-                                    selectedPeriod = periods[currentIndex]
-                                }
-                                saveSelectedPeriod()
-                            }) {
-                                StatisticRow(
-                                    title: "today",
-                                    value: timeTracker.formattedTotalTime(for: .today),
-                                    unit: ""
-                                )
-                            }
-                            .foregroundColor(.primary)
+                            Text("today")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.primary)
                             
-                            Button(action: { 
-                                withAnimation {
-                                    currentIndex = 1
-                                    selectedPeriod = periods[currentIndex]
-                                }
-                                saveSelectedPeriod()
-                            }) {
-                                StatisticRow(
-                                    title: "this week",
-                                    value: String(format: "%.0f", timeTracker.getTotalHours(for: .thisWeek)),
-                                    unit: "h"
-                                )
+                            VStack(spacing: 10) {
+                                Text(timeTracker.formattedTimeHMS(for: .today))
+                                    .font(.custom("Major Mono Display Regular", size: 24))
+                                    .foregroundColor(.primary)
+                                
+                                Text(String(format: "%.0fe", timeTracker.getEarnings(for: .today)))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
                             }
-                            .foregroundColor(.primary)
-                            
-                            Button(action: { 
-                                withAnimation {
-                                    currentIndex = 2
-                                    selectedPeriod = periods[currentIndex]
-                                }
-                                saveSelectedPeriod()
-                            }) {
-                                StatisticRow(
-                                    title: "last week",
-                                    value: String(format: "%.0f", timeTracker.getTotalHours(for: .lastWeek)),
-                                    unit: "h"
-                                )
-                            }
-                            .foregroundColor(.primary)
+                            Spacer(minLength: 40)
+                            ChartView(period: .today)
+                                .frame(height: 120)
                         }
                         .padding(.horizontal, 40)
+                        .tag(0)
                         
-                        // Chart carousel (always visible with fixed size)
-                        Divider()
-                            .padding(.horizontal, 40)
-                        
-                        TabView(selection: $currentIndex) {
-                            ForEach(0..<periods.count, id: \.self) { index in
-                                ChartView(period: periods[index])
-                                    .tag(index)
+                        // Card 1: This Week
+                        VStack(spacing: 20) {
+                            Text("this week")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.primary)
+                            
+                            VStack(spacing: 10) {
+                                Text(timeTracker.formattedTimeHMS(for: .thisWeek))
+                                    .font(.custom("Major Mono Display Regular", size: 24))
+                                    .foregroundColor(.primary)
+                                
+                                Text(String(format: "%.0fe", timeTracker.getEarnings(for: .thisWeek)))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
                             }
+                            
+                            ChartView(period: .thisWeek)
+                                .frame(height: 120)
                         }
-                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                        .frame(height: 160)
-                        .onChange(of: currentIndex) { newIndex in
-                            selectedPeriod = periods[newIndex]
-                            saveSelectedPeriod()
-                        }
+                        .padding(.horizontal, 40)
+                        .tag(1)
                         
-                        Spacer(minLength: 40)
+                        // Card 2: This Month
+                        VStack(spacing: 20) {
+                            Text("this month")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.primary)
+                            
+                            VStack(spacing: 10) {
+                                Text(timeTracker.formattedTimeHMS(for: .thisMonth))
+                                    .font(.custom("Major Mono Display Regular", size: 24))
+                                    .foregroundColor(.primary)
+                                
+                                Text(String(format: "%.0fe", timeTracker.getEarnings(for: .thisMonth)))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
+                            }
+                            ChartView(period: .thisMonth)
+                                .frame(height: 120)
+                        }
+                        .padding(.horizontal, 40)
+                        .tag(2)
                     }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
+                    .frame(height: 350)
+                    .onChange(of: currentIndex) {
+                        // Update selectedPeriod based on card index
+                        switch currentIndex {
+                        case 0: selectedPeriod = .today
+                        case 1: selectedPeriod = .thisWeek
+                        case 2: selectedPeriod = .thisMonth
+                        default: selectedPeriod = .today
+                        }
+                        saveSelectedPeriod()
+                    }
+                    
+                    Spacer(minLength: 80)
                     
                     // Settings at the bottom
                     VStack(spacing: 20) {
@@ -179,7 +160,9 @@ struct StatisticsOverviewView: View {
                         
                         VStack(spacing: 20) {
                             // Dead Man Switch
-                            VStack(spacing: 8) {
+                            Button(action: {
+                                showingDeadManSwitchPicker = true
+                            }) {
                                 HStack {
                                     Text("check in every")
                                         .font(.custom("Major Mono Display Regular", size: 17))
@@ -187,75 +170,65 @@ struct StatisticsOverviewView: View {
                                     
                                     Spacer()
                                     
-                                    Button(action: {
-                                        settings.deadManSwitchEnabled.toggle()
-                                    }) {
-                                        Text("\(Int(settings.deadManSwitchInterval))min")
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(settings.deadManSwitchEnabled ? .primary : .secondary)
-                                    }
+                                    Text("\(Int(settings.deadManSwitchInterval))min")
+                                        .font(.custom("Major Mono Display Regular", size: 17))
+                                        .foregroundColor(.primary)
                                 }
                             }
                             
                             // Motion Detection
-                            VStack(spacing: 8) {
+                            HStack(alignment: .center, spacing: 0) {
+                                Button(action: {
+                                    settings.motionDetectionEnabled.toggle()
+                                }) {
+                                    HStack {
+                                        Text("ask when i longer than")
+                                            .font(.custom("Major Mono Display Regular", size: 17))
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                    }
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: {
+                                    if settings.motionDetectionEnabled {
+                                        showingMotionThresholdPicker = true
+                                    }
+                                }) {
+                                    Text("\(Int(settings.motionThreshold))min")
+                                        .font(.custom("Major Mono Display Regular", size: 17))
+                                        .foregroundColor(.primary)
+                                }
+                                .disabled(!settings.motionDetectionEnabled)
+                            }
+                            .opacity(settings.motionDetectionEnabled ? 1.0 : 0.3)
+                            
+                            // Salary Setting
+                            Button(action: {
+                                salaryInputValue = String(format: "%.0f", settings.hourlyRate)
+                                showingSalaryInput = true
+                            }) {
                                 HStack {
-                                    Text("ask when i")
+                                    Text("salary")
                                         .font(.custom("Major Mono Display Regular", size: 17))
                                         .foregroundColor(.primary)
                                     
                                     Spacer()
                                     
-                                    Button(action: {
-                                        settings.askWhenMoving.toggle()
-                                    }) {
-                                        Text(settings.askWhenMoving ? "move" : "don't move")
+                                    HStack(spacing: 0) {
+                                        Text(String(format: "%.0f", settings.hourlyRate))
+                                            .font(.custom("Major Mono Display Regular", size: 17))
+                                            .foregroundColor(.primary)
+                                        
+                                        Text("/e")
                                             .font(.custom("Major Mono Display Regular", size: 17))
                                             .foregroundColor(.primary)
                                     }
                                 }
-                                
-                                HStack {
-                                    Text("longer than")
-                                        .font(.custom("Major Mono Display Regular", size: 17))
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
-                                    Button(action: {
-                                        settings.motionDetectionEnabled.toggle()
-                                    }) {
-                                        Text("\(Int(settings.motionThreshold))min")
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(settings.motionDetectionEnabled ? .primary : .secondary)
-                                    }
-                                }
-                            }
-                            
-                            // Salary Setting
-                            HStack {
-                                Text("salary")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                                            HStack(spacing: 0) {
-                                TextField("80", value: $settings.hourlyRate, format: .number)
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                                    .multilineTextAlignment(.trailing)
-                                    .frame(width: 60)
-                                
-                                Text("/H")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                            }
                             }
                         }
                         .padding(.horizontal, 40)
-                        
-                        Spacer(minLength: 40)
+                        .padding(.bottom, 40)
                     }
                 }
             }
@@ -264,6 +237,76 @@ struct StatisticsOverviewView: View {
         .onDisappear {
             settings.saveSettings()
         }
+        .confirmationDialog("check in every", isPresented: $showingDeadManSwitchPicker, titleVisibility: .visible) {
+            Button("5min") {
+                settings.deadManSwitchInterval = 5
+                settings.deadManSwitchEnabled = true
+            }
+            Button("10min") {
+                settings.deadManSwitchInterval = 10
+                settings.deadManSwitchEnabled = true
+            }
+            Button("30min") {
+                settings.deadManSwitchInterval = 30
+                settings.deadManSwitchEnabled = true
+            }
+            Button("custom") {
+                customDeadManValue = String(Int(settings.deadManSwitchInterval))
+                showingCustomDeadManInput = true
+            }
+            Button("cancel", role: .cancel) { }
+        }
+        .confirmationDialog("longer than", isPresented: $showingMotionThresholdPicker, titleVisibility: .visible) {
+            Button("5min") {
+                settings.motionThreshold = 5
+                settings.motionDetectionEnabled = true
+            }
+            Button("10min") {
+                settings.motionThreshold = 10
+                settings.motionDetectionEnabled = true
+            }
+            Button("30min") {
+                settings.motionThreshold = 30
+                settings.motionDetectionEnabled = true
+            }
+            Button("custom") {
+                customMotionValue = String(Int(settings.motionThreshold))
+                showingCustomMotionInput = true
+            }
+            Button("cancel", role: .cancel) { }
+        }
+        .alert("salary", isPresented: $showingSalaryInput) {
+            TextField("hourly rate", text: $salaryInputValue)
+                .keyboardType(.numberPad)
+            Button("cancel", role: .cancel) { }
+            Button("save") {
+                if let value = Double(salaryInputValue) {
+                    settings.hourlyRate = value
+                }
+            }
+        }
+        .alert("check in every", isPresented: $showingCustomDeadManInput) {
+            TextField("minutes", text: $customDeadManValue)
+                .keyboardType(.numberPad)
+            Button("cancel", role: .cancel) { }
+            Button("save") {
+                if let value = Double(customDeadManValue) {
+                    settings.deadManSwitchInterval = value
+                    settings.deadManSwitchEnabled = true
+                }
+            }
+        }
+        .alert("longer than", isPresented: $showingCustomMotionInput) {
+            TextField("minutes", text: $customMotionValue)
+                .keyboardType(.numberPad)
+            Button("cancel", role: .cancel) { }
+            Button("save") {
+                if let value = Double(customMotionValue) {
+                    settings.motionThreshold = value
+                    settings.motionDetectionEnabled = true
+                }
+            }
+        }
     }
     
     private func saveSelectedPeriod() {
@@ -271,7 +314,8 @@ struct StatisticsOverviewView: View {
         switch selectedPeriod {
         case .today: periodString = "today"
         case .thisWeek: periodString = "thisWeek"
-        case .lastWeek: periodString = "lastWeek"
+        case .thisMonth: periodString = "thisMonth"
+        default: periodString = "today"
         }
         UserDefaults.standard.set(periodString, forKey: "selectedPeriod")
     }
@@ -285,7 +329,7 @@ struct ChartView: View {
             // Chart title at top
             Text("chart for \(period.displayName)")
                 .font(.custom("Major Mono Display Regular", size: 17))
-                .foregroundColor(.secondary)
+                .foregroundColor(.primary)
                 .padding(.top, 20)
                 .padding(.bottom, 10)
             
@@ -303,7 +347,7 @@ struct ChartView: View {
                             if period == .thisWeek || period == .lastWeek {
                                 Text(getDayLabel(for: index))
                                     .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.primary)
                             }
                         }
                         
@@ -330,28 +374,22 @@ struct ChartView: View {
     }
 }
 
-struct StatisticRow: View {
+struct StatisticRowWithEarnings: View {
     let title: String
-    let value: String
-    let unit: String
+    let time: String
+    let earnings: Double
     
     var body: some View {
         HStack {
             Text(title)
-                                                    .font(.custom("Major Mono Display Regular", size: 17))
+                .font(.custom("Major Mono Display Regular", size: 17))
                 .foregroundColor(.primary)
             
             Spacer()
             
-            HStack(spacing: 4) {
-                Text(value)
-                                                        .font(.custom("Major Mono Display Regular", size: 17))
-                    .foregroundColor(.primary)
-                
-                Text(unit)
-                    .font(.custom("Major Mono Display Regular", size: 14))
-                    .foregroundColor(.secondary)
-            }
+            Text("\(time)/\(String(format: "%.0f", earnings))e")
+                .font(.custom("Major Mono Display Regular", size: 17))
+                .foregroundColor(.primary)
         }
     }
 }

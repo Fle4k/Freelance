@@ -29,17 +29,6 @@ struct TimerView: View {
                     
                     Spacer()
                     
-                    // Menu Button (centered above record button)
-                    Button(action: {
-                        showingStatistics = true
-                    }) {
-                        Image(systemName: "circle")
-                            .font(.system(size: 16, weight: .regular))
-                            .foregroundColor(.primary)
-                            .symbolEffect(.disappear, isActive: showingStatistics)
-                    }
-                    .padding(.bottom, 80)
-                    
                     // Record/Pause Button
                     Circle()
                         .fill(Color.clear)
@@ -71,6 +60,17 @@ struct TimerView: View {
                                     showingResetAlert = true
                                 }
                         )
+                    .padding(.bottom, 80)
+                    
+                    // Menu Button (centered below record button)
+                    Button(action: {
+                        showingStatistics = true
+                    }) {
+                        Image(systemName: "circle")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(.primary)
+                            .symbolEffect(.disappear, isActive: showingStatistics)
+                    }
                     .padding(.bottom, geometry.safeAreaInsets.bottom + 60)
                 }
             }

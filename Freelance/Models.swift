@@ -10,10 +10,17 @@ import SwiftUI
 
 // Time tracking session
 struct TimeEntry: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     let startDate: Date
     let endDate: Date?
     let isActive: Bool
+    
+    init(startDate: Date, endDate: Date?, isActive: Bool) {
+        self.id = UUID()
+        self.startDate = startDate
+        self.endDate = endDate
+        self.isActive = isActive
+    }
     
     var duration: TimeInterval {
         if let endDate = endDate {
@@ -51,9 +58,9 @@ class AppSettings: ObservableObject {
     
     private func loadSettings() {
         hourlyRate = UserDefaults.standard.object(forKey: "hourlyRate") as? Double ?? 80.0
-        deadManSwitchEnabled = UserDefaults.standard.bool(forKey: "deadManSwitchEnabled")
+        deadManSwitchEnabled = UserDefaults.standard.object(forKey: "deadManSwitchEnabled") as? Bool ?? true
         deadManSwitchInterval = UserDefaults.standard.object(forKey: "deadManSwitchInterval") as? Double ?? 10.0
-        motionDetectionEnabled = UserDefaults.standard.bool(forKey: "motionDetectionEnabled")
+        motionDetectionEnabled = UserDefaults.standard.object(forKey: "motionDetectionEnabled") as? Bool ?? false
         motionThreshold = UserDefaults.standard.object(forKey: "motionThreshold") as? Double ?? 5.0
         askWhenMoving = UserDefaults.standard.object(forKey: "askWhenMoving") as? Bool ?? true
     }
@@ -89,6 +96,32 @@ class TimeTracker: ObservableObject {
             return String(format: "%dh%02dm", hours, minutes)
         } else {
             return String(format: "%dm", minutes)
+        }
+    }
+    
+    func formattedTimeHMS(for period: StatisticsPeriod) -> String {
+        let totalSeconds = getTotalHours(for: period) * 3600
+        let hours = Int(totalSeconds) / 3600
+        let minutes = Int(totalSeconds) % 3600 / 60
+        let seconds = Int(totalSeconds) % 60
+        
+        // Show only relevant time units, removing leading zeros
+        if hours > 0 {
+            if minutes > 0 {
+                return String(format: "%dh%02dm%02ds", hours, minutes, seconds)
+            } else if seconds > 0 {
+                return String(format: "%dh%02ds", hours, seconds)
+            } else {
+                return String(format: "%dh", hours)
+            }
+        } else if minutes > 0 {
+            if seconds > 0 {
+                return String(format: "%dm%02ds", minutes, seconds)
+            } else {
+                return String(format: "%dm", minutes)
+            }
+        } else {
+            return String(format: "%ds", seconds)
         }
     }
     
@@ -153,6 +186,14 @@ class TimeTracker: ObservableObject {
             let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
             let startOfLastWeek = calendar.date(byAdding: .day, value: -7, to: startOfThisWeek)!
             entries = timeEntries.filter { $0.startDate >= startOfLastWeek && $0.startDate < startOfThisWeek }
+            
+        case .thisMonth:
+            let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
+            let endOfMonth = calendar.date(byAdding: .month, value: 1, to: startOfMonth)!
+            entries = timeEntries.filter { $0.startDate >= startOfMonth && $0.startDate < endOfMonth }
+            
+        case .total:
+            entries = timeEntries
         }
         
         // Include current session if it's running and falls within the period
@@ -173,6 +214,12 @@ class TimeTracker: ObservableObject {
                 let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
                 let startOfLastWeek = calendar.date(byAdding: .day, value: -7, to: startOfThisWeek)!
                 shouldInclude = currentStart >= startOfLastWeek && currentStart < startOfThisWeek
+            case .thisMonth:
+                let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
+                let endOfMonth = calendar.date(byAdding: .month, value: 1, to: startOfMonth)!
+                shouldInclude = currentStart >= startOfMonth && currentStart < endOfMonth
+            case .total:
+                shouldInclude = true
             }
             
             if shouldInclude {
@@ -225,5 +272,5 @@ class TimeTracker: ObservableObject {
 }
 
 enum StatisticsPeriod {
-    case today, thisWeek, lastWeek
+    case today, thisWeek, lastWeek, thisMonth, total
 }
