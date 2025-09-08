@@ -32,7 +32,7 @@ struct TimerView: View {
                     // Record/Pause Button
                     Circle()
                         .fill(Color.clear)
-                        .frame(width: 80, height: 80)
+                        .frame(width: 120, height: 120)
                         .overlay(
                             Image(systemName: timeTracker.isRunning ? "square" : "play.fill")
                                 .font(.system(size: 16, weight: .regular))
@@ -70,6 +70,8 @@ struct TimerView: View {
                             .font(.system(size: 16, weight: .regular))
                             .foregroundColor(.primary)
                             .symbolEffect(.disappear, isActive: showingStatistics)
+                            .frame(width: 80, height: 80)
+                            .background(Color.clear)
                     }
                     .padding(.bottom, geometry.safeAreaInsets.bottom + 60)
                 }

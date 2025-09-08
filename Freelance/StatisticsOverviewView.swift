@@ -83,7 +83,9 @@ struct StatisticsOverviewView: View {
                                     .font(.custom("Major Mono Display Regular", size: 20))
                                     .foregroundColor(.primary)
                             }
-                            Spacer(minLength: 40)
+                            
+                            Spacer(minLength: 25)
+                            
                             ChartView(period: .today)
                                 .frame(height: 120)
                         }
@@ -106,6 +108,8 @@ struct StatisticsOverviewView: View {
                                     .foregroundColor(.primary)
                             }
                             
+                            Spacer(minLength: 25)
+                            
                             ChartView(period: .thisWeek)
                                 .frame(height: 120)
                         }
@@ -127,13 +131,16 @@ struct StatisticsOverviewView: View {
                                     .font(.custom("Major Mono Display Regular", size: 20))
                                     .foregroundColor(.primary)
                             }
+                            
+                            Spacer(minLength: 25)
+                            
                             ChartView(period: .thisMonth)
                                 .frame(height: 120)
                         }
                         .padding(.horizontal, 40)
                         .tag(2)
                     }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                     .frame(height: 350)
                     .onChange(of: currentIndex) {
                         // Update selectedPeriod based on card index
@@ -160,16 +167,16 @@ struct StatisticsOverviewView: View {
                         
                         VStack(spacing: 20) {
                             // Dead Man Switch
-                            Button(action: {
-                                showingDeadManSwitchPicker = true
-                            }) {
-                                HStack {
-                                    Text("check in every")
-                                        .font(.custom("Major Mono Display Regular", size: 17))
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
+                            HStack {
+                                Text("check in every")
+                                    .font(.custom("Major Mono Display Regular", size: 17))
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    showingDeadManSwitchPicker = true
+                                }) {
                                     Text("\(Int(settings.deadManSwitchInterval))min")
                                         .font(.custom("Major Mono Display Regular", size: 17))
                                         .foregroundColor(.primary)
@@ -177,44 +184,70 @@ struct StatisticsOverviewView: View {
                             }
                             
                             // Motion Detection
-                            HStack(alignment: .center, spacing: 0) {
-                                Button(action: {
-                                    settings.motionDetectionEnabled.toggle()
-                                }) {
+                            Button(action: {
+                                settings.motionDetectionEnabled.toggle()
+                            }) {
+                                VStack(spacing: 8) {
                                     HStack {
-                                        Text("ask when i longer than")
+                                        Text("ask when i")
                                             .font(.custom("Major Mono Display Regular", size: 17))
                                             .foregroundColor(.primary)
+                                        
                                         Spacer()
+                                        
+                                        if settings.motionDetectionEnabled {
+                                            Button(action: {
+                                                settings.askWhenMoving.toggle()
+                                            }) {
+                                                Text(settings.askWhenMoving ? "move" : "don't move")
+                                                    .font(.custom("Major Mono Display Regular", size: 17))
+                                                    .foregroundColor(.primary)
+                                            }
+                                        } else {
+                                            Text(settings.askWhenMoving ? "move" : "don't move")
+                                                .font(.custom("Major Mono Display Regular", size: 17))
+                                                .foregroundColor(.primary)
+                                        }
+                                    }
+                                    
+                                    HStack {
+                                        Text("longer than")
+                                            .font(.custom("Major Mono Display Regular", size: 17))
+                                            .foregroundColor(.primary)
+                                        
+                                        Spacer()
+                                        
+                                        if settings.motionDetectionEnabled {
+                                            Button(action: {
+                                                showingMotionThresholdPicker = true
+                                            }) {
+                                                Text("\(Int(settings.motionThreshold))min")
+                                                    .font(.custom("Major Mono Display Regular", size: 17))
+                                                    .foregroundColor(.primary)
+                                            }
+                                        } else {
+                                            Text("\(Int(settings.motionThreshold))min")
+                                                .font(.custom("Major Mono Display Regular", size: 17))
+                                                .foregroundColor(.primary)
+                                        }
                                     }
                                 }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: {
-                                    if settings.motionDetectionEnabled {
-                                        showingMotionThresholdPicker = true
-                                    }
-                                }) {
-                                    Text("\(Int(settings.motionThreshold))min")
-                                        .font(.custom("Major Mono Display Regular", size: 17))
-                                        .foregroundColor(.primary)
-                                }
-                                .disabled(!settings.motionDetectionEnabled)
                             }
+                            .buttonStyle(PlainButtonStyle())
                             .opacity(settings.motionDetectionEnabled ? 1.0 : 0.3)
                             
                             // Salary Setting
-                            Button(action: {
-                                salaryInputValue = String(format: "%.0f", settings.hourlyRate)
-                                showingSalaryInput = true
-                            }) {
-                                HStack {
-                                    Text("salary")
-                                        .font(.custom("Major Mono Display Regular", size: 17))
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
+                            HStack {
+                                Text("salary")
+                                    .font(.custom("Major Mono Display Regular", size: 17))
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    salaryInputValue = String(format: "%.0f", settings.hourlyRate)
+                                    showingSalaryInput = true
+                                }) {
                                     HStack(spacing: 0) {
                                         Text(String(format: "%.0f", settings.hourlyRate))
                                             .font(.custom("Major Mono Display Regular", size: 17))
