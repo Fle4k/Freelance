@@ -53,8 +53,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         print("Will present notification: \(notification.request.content.title)")
         print("App state: \(UIApplication.shared.applicationState.rawValue)")
         
+        // Start timeout timer when dead man switch notification is presented
+        if notification.request.identifier == "dead_man_switch" {
+            TimeTracker.shared.startNotificationTimeout()
+        }
+        
         // Always show notifications even when app is in foreground
-        // Use .alert instead of .banner for better lock screen visibility
-        completionHandler([.alert, .sound, .badge])
+        // Use .banner and .list for persistent notification display (replaces deprecated .alert)
+        completionHandler([.banner, .list, .sound, .badge])
     }
 }

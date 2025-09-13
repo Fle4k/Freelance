@@ -13,7 +13,7 @@ struct StarfieldView: View {
     
     var body: some View {
         Canvas { context, size in
-            guard isActive && !particleSystem.particles.isEmpty else { return }
+            guard (isActive || particleSystem.isFadingOut) && !particleSystem.particles.isEmpty else { return }
             
             let centerX = size.width / 2
             let centerY = size.height / 2
@@ -47,12 +47,17 @@ struct StarfieldView: View {
 
 final class StarfieldParticleSystem: ObservableObject {
     @Published var particles: [StarParticle] = []
+    @Published var isFadingOut = false
     private var timer: Timer?
     private var isRunning = false
     
     func start() {
-        guard !isRunning else { return }
+        // Stop any existing timer and reset state
+        timer?.invalidate()
+        timer = nil
+        
         isRunning = true
+        isFadingOut = false
         particles = (0..<200).map { _ in StarParticle.random() }
         
         // Back to 20fps but slower movement
@@ -62,10 +67,21 @@ final class StarfieldParticleSystem: ObservableObject {
     }
     
     func stop() {
+        // Don't start fade out if already fading out
+        guard !isFadingOut else { return }
+        
         isRunning = false
-        timer?.invalidate()
-        timer = nil
-        particles.removeAll()
+        isFadingOut = true
+        
+        // Start fade out animation for all particles
+        for i in particles.indices {
+            particles[i].fadeOutProgress = 0.0
+        }
+        
+        // Continue updating particles during fade out
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0/20.0, repeats: true) { _ in
+            self.updateParticlesFadeOut()
+        }
     }
     
     private func updateParticles() {
@@ -75,13 +91,37 @@ final class StarfieldParticleSystem: ObservableObject {
             
             // Start fading out when particle gets close to the front
             if particles[i].z <= 0.1 {
-                particles[i].fadeOutProgress += 0.04  // Faster fade out (~0.5 seconds)
+                particles[i].fadeOutProgress += 0.04  // Original fade out rate (~1.25 seconds)
                 
                 // Only replace particle when fully faded out
                 if particles[i].fadeOutProgress >= 1.0 {
                     particles[i] = StarParticle.random()
                 }
             }
+        }
+    }
+    
+    private func updateParticlesFadeOut() {
+        var allFadedOut = true
+        
+        for i in particles.indices {
+            // Continue moving particles during fade out
+            particles[i].z -= particles[i].speed * 0.01
+            
+            // Fade out all particles at the same rate as individual particles
+            particles[i].fadeOutProgress += 0.04  // Same rate as individual particles (~1.25 seconds)
+            
+            if particles[i].fadeOutProgress < 1.0 {
+                allFadedOut = false
+            }
+        }
+        
+        // When all particles are fully faded out, stop the timer and clear particles
+        if allFadedOut {
+            timer?.invalidate()
+            timer = nil
+            particles.removeAll()
+            isFadingOut = false
         }
     }
 }

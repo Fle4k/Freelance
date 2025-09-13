@@ -110,13 +110,13 @@ class TimeTracker: ObservableObject {
     func setupNotificationCategories() {
         let continueAction = UNNotificationAction(
             identifier: "CONTINUE",
-            title: "✅ Continue",
+            title: "Continue",
             options: [.foreground]
         )
         
         let stopAction = UNNotificationAction(
             identifier: "STOP",
-            title: "⏹️ Stop",
+            title: "Stop",
             options: [.destructive, .foreground]
         )
         
@@ -129,13 +129,6 @@ class TimeTracker: ObservableObject {
         
         notificationCenter.setNotificationCategories([category])
         
-        // Debug: Check if categories were set
-        notificationCenter.getNotificationCategories { categories in
-            print("Notification categories set: \(categories.count)")
-            for category in categories {
-                print("Category: \(category.identifier) with \(category.actions.count) actions")
-            }
-        }
     }
     
     var formattedElapsedTime: String {
@@ -244,7 +237,57 @@ class TimeTracker: ObservableObject {
     func updateElapsedTime() {
         if let startDate = currentSessionStart, isRunning {
             elapsedTime = Date().timeIntervalSince(startDate)
+            
+            // Check for midnight rollover
+            checkForMidnightRollover()
         }
+    }
+    
+    private func checkForMidnightRollover() {
+        guard isRunning, let sessionStart = currentSessionStart else { return }
+        
+        let calendar = Calendar.current
+        let now = Date()
+        let sessionDay = calendar.startOfDay(for: sessionStart)
+        let currentDay = calendar.startOfDay(for: now)
+        
+        // If we've crossed midnight (session started on a different day)
+        if sessionDay < currentDay {
+            performMidnightRollover()
+        }
+    }
+    
+    private func performMidnightRollover() {
+        guard let sessionStart = currentSessionStart, isRunning else { return }
+        
+        print("Midnight rollover detected - storing current day and starting new day")
+        
+        // Calculate the time worked until midnight
+        let calendar = Calendar.current
+        let sessionDay = calendar.startOfDay(for: sessionStart)
+        let midnight = calendar.date(byAdding: .day, value: 1, to: sessionDay)!
+        
+        // Create time entry for the previous day (up to midnight)
+        let previousDayEntry = TimeEntry(
+            startDate: sessionStart,
+            endDate: midnight,
+            isActive: false
+        )
+        timeEntries.append(previousDayEntry)
+        
+        // Add the time worked to accumulated time
+        let timeWorked = midnight.timeIntervalSince(sessionStart)
+        totalAccumulatedTime += timeWorked
+        
+        // Save the changes
+        saveTimeEntries()
+        saveAccumulatedTime()
+        
+        // Start a new session for the new day
+        currentSessionStart = midnight
+        elapsedTime = Date().timeIntervalSince(midnight)
+        
+        print("Midnight rollover completed - new day started at \(midnight)")
     }
     
     // MARK: - Dead Man Switch
@@ -257,7 +300,6 @@ class TimeTracker: ObservableObject {
         
         lastDeadManCheck = Date()
         scheduleDeadManNotification()
-        debugPendingNotifications()
     }
     
     private func stopDeadManSwitch() {
@@ -274,16 +316,9 @@ class TimeTracker: ObservableObject {
         let settings = AppSettings.shared
         let intervalMinutes = settings.deadManSwitchInterval
         
-        // Check notification authorization first
-        notificationCenter.getNotificationSettings { settings in
-            print("Notification authorization status: \(settings.authorizationStatus.rawValue)")
-            print("Alert setting: \(settings.alertSetting.rawValue)")
-            print("Lock screen setting: \(settings.lockScreenSetting.rawValue)")
-            print("Badge setting: \(settings.badgeSetting.rawValue)")
-        }
         
         let content = UNMutableNotificationContent()
-        content.title = "⏰ Are you still working?"
+        content.title = "Are you still working?"
         content.body = "Tap Continue to keep tracking time, or Stop to pause. You have 2 minutes to respond."
         content.sound = .default
         content.badge = 1
@@ -318,8 +353,6 @@ class TimeTracker: ObservableObject {
                 print("Error scheduling notification: \(error)")
             } else {
                 print("Notification scheduled successfully")
-                // Start timeout timer when notification is scheduled
-                self.startNotificationTimeout()
             }
         }
     }
@@ -364,143 +397,45 @@ class TimeTracker: ObservableObject {
     
     private func cancelScheduledNotifications() {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_switch"])
-        print("Cancelled scheduled notifications")
     }
     
-    func debugPendingNotifications() {
-        notificationCenter.getPendingNotificationRequests { requests in
-            print("Pending notifications: \(requests.count)")
-            for request in requests {
-                if let calendarTrigger = request.trigger as? UNCalendarNotificationTrigger {
-                    let formatter = DateFormatter()
-                    formatter.timeStyle = .short
-                    print("Notification: \(request.identifier) - scheduled for \(formatter.string(from: calendarTrigger.nextTriggerDate() ?? Date()))")
-                } else {
-                    print("Notification: \(request.identifier) - \(request.trigger?.description ?? "no trigger")")
-                }
-            }
-        }
-    }
     
-    func testImmediateNotification() {
-        // Check notification settings first
-        notificationCenter.getNotificationSettings { settings in
-            print("=== NOTIFICATION SETTINGS ===")
-            print("Authorization: \(settings.authorizationStatus.rawValue)")
-            print("Alert: \(settings.alertSetting.rawValue)")
-            print("Lock Screen: \(settings.lockScreenSetting.rawValue)")
-            print("Badge: \(settings.badgeSetting.rawValue)")
-            print("Sound: \(settings.soundSetting.rawValue)")
-            print("=============================")
-        }
-        
-        let content = UNMutableNotificationContent()
-        content.title = "⏰ Test Notification"
-        content.body = "This is a test notification to check lock screen visibility."
-        content.sound = .default
-        content.badge = 1
-        content.categoryIdentifier = "DEAD_MAN_SWITCH"
-        content.userInfo = ["type": "test"]
-        
-        // Try immediate notification first
-        let immediateRequest = UNNotificationRequest(
-            identifier: "test_immediate_\(UUID().uuidString)",
-            content: content,
-            trigger: nil
-        )
-        
-        print("Sending immediate test notification")
-        notificationCenter.add(immediateRequest) { error in
-            if let error = error {
-                print("Error sending immediate test notification: \(error)")
-            } else {
-                print("Immediate test notification sent successfully")
-            }
-        }
-        
-        // Also try with a small delay using calendar trigger
-        let delayedContent = UNMutableNotificationContent()
-        delayedContent.title = "⏰ Calendar Test"
-        delayedContent.body = "This is a calendar-triggered test notification."
-        delayedContent.sound = .default
-        delayedContent.badge = 1
-        delayedContent.categoryIdentifier = "DEAD_MAN_SWITCH"
-        
-        let calendar = Calendar.current
-        let futureTime = Date().addingTimeInterval(3)
-        let dateComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: futureTime)
-        
-        let calendarTrigger = UNCalendarNotificationTrigger(
-            dateMatching: dateComponents,
-            repeats: false
-        )
-        
-        let calendarRequest = UNNotificationRequest(
-            identifier: "test_calendar_\(UUID().uuidString)",
-            content: delayedContent,
-            trigger: calendarTrigger
-        )
-        
-        print("Sending calendar test notification (3 seconds)")
-        print("Date components: \(dateComponents)")
-        notificationCenter.add(calendarRequest) { error in
-            if let error = error {
-                print("Error sending calendar test notification: \(error)")
-            } else {
-                print("Calendar test notification sent successfully")
-            }
-        }
-    }
-    
-    func testBackgroundNotification() {
-        print("Testing background notification - close the app and wait 5 seconds")
-        
-        let content = UNMutableNotificationContent()
-        content.title = "⏰ Background Test"
-        content.body = "This notification should appear when the app is closed."
-        content.sound = .default
-        content.badge = 1
-        content.categoryIdentifier = "DEAD_MAN_SWITCH"
-        
-        let calendar = Calendar.current
-        let futureTime = Date().addingTimeInterval(5)
-        let dateComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: futureTime)
-        
-        let trigger = UNCalendarNotificationTrigger(
-            dateMatching: dateComponents,
-            repeats: false
-        )
-        
-        let request = UNNotificationRequest(
-            identifier: "test_background_\(UUID().uuidString)",
-            content: content,
-            trigger: trigger
-        )
-        
-        print("Scheduling background test notification for 5 seconds from now")
-        notificationCenter.add(request) { error in
-            if let error = error {
-                print("Error scheduling background test: \(error)")
-            } else {
-                print("Background test notification scheduled successfully")
-            }
-        }
-    }
     
     private func clearNotificationBadge() {
         notificationCenter.setBadgeCount(0)
     }
     
-    private func startNotificationTimeout() {
+    private func sendTimerStoppedNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Timer stopped"
+        content.body = "No response received within 2 minutes. Timer has been paused."
+        content.sound = .default
+        content.badge = 1
+        content.userInfo = ["type": "timer_stopped"]
+        
+        let request = UNNotificationRequest(
+            identifier: "timer_stopped_\(UUID().uuidString)",
+            content: content,
+            trigger: nil // Immediate notification
+        )
+        
+        notificationCenter.add(request) { error in
+            if let error = error {
+                print("Error sending timer stopped notification: \(error)")
+            }
+        }
+    }
+    
+    func startNotificationTimeout() {
         // Cancel any existing timeout timer
         notificationTimeoutTimer?.invalidate()
+        
+        print("Starting 2-minute notification timeout")
         
         // Start 2-minute timeout timer
         notificationTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: false) { _ in
             self.handleNotificationTimeout()
         }
-        
-        print("Started 2-minute notification timeout")
     }
     
     private func handleNotificationTimeout() {
@@ -517,8 +452,8 @@ class TimeTracker: ObservableObject {
         // Stop the timer
         pauseTimer()
         
-        // Clear the badge
-        clearNotificationBadge()
+        // Send notification that timer stopped
+        sendTimerStoppedNotification()
     }
     
     
