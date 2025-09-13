@@ -62,25 +62,27 @@ struct DailyStatisticsView: View {
                 Spacer()
                 
                 // Daily Schedule
-                VStack(spacing: 20) {
-                    ForEach(todayEntries) { entry in
-                        TimeSlotRow(entry: entry)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        ForEach(todayEntries) { entry in
+                            TimeSlotRow(entry: entry)
+                        }
+                        
+                        if todayEntries.isEmpty {
+                            Text("No time tracked today")
+                                .font(.custom("Major Mono Display Regular", size: 17))
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer(minLength: 40)
+                        
+                        // Earnings
+                        Text(String(format: "%.0f. euro", totalEarnings))
+                            .font(.custom("Major Mono Display Regular", size: 22))
+                            .foregroundColor(.primary)
+                        
+                        Spacer(minLength: 40)
                     }
-                    
-                    if todayEntries.isEmpty {
-                        Text("No time tracked today")
-                            .font(.custom("Major Mono Display Regular", size: 17))
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer(minLength: 40)
-                    
-                    // Earnings
-                    Text(String(format: "%.0f. euro", totalEarnings))
-                        .font(.custom("Major Mono Display Regular", size: 22))
-                        .foregroundColor(.primary)
-                    
-                    Spacer(minLength: 40)
                 }
                 .padding(.horizontal, 40)
                 
