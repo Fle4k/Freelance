@@ -19,143 +19,278 @@ extension StatisticsPeriod {
     }
 }
 
+enum DetailViewType {
+    case today, thisWeek, thisMonth
+}
+
 struct StatisticsOverviewView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
-    @State private var showingDailyStats = false
-    @State private var selectedPeriod: StatisticsPeriod = .today
-    @State private var currentIndex: Int = 0
+    @State private var selectedDetailView: DetailViewType?
     @State private var showingDeadManSwitchPicker = false
     @State private var showingMotionThresholdPicker = false
     @State private var showingSalaryInput = false
     @State private var showingCustomDeadManInput = false
     @State private var showingCustomMotionInput = false
+    @State private var showingWeekStartsPicker = false
     @State private var customDeadManValue = ""
     @State private var customMotionValue = ""
     @State private var salaryInputValue = ""
     @Environment(\.dismiss) private var dismiss
     
-    private let periods: [StatisticsPeriod] = [.today, .thisWeek, .thisMonth]
-    
-    init() {
-        // Load persisted selected period
-        if let savedPeriodRaw = UserDefaults.standard.object(forKey: "selectedPeriod") as? String {
-            switch savedPeriodRaw {
-            case "today": 
-                _selectedPeriod = State(initialValue: .today)
-                _currentIndex = State(initialValue: 0)
-            case "thisWeek": 
-                _selectedPeriod = State(initialValue: .thisWeek)
-                _currentIndex = State(initialValue: 1)
-            case "thisMonth": 
-                _selectedPeriod = State(initialValue: .thisMonth)
-                _currentIndex = State(initialValue: 2)
-            default: 
-                _selectedPeriod = State(initialValue: .today)
-                _currentIndex = State(initialValue: 0)
+    var body: some View {
+        GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    Spacer(minLength: 30)
+                    
+                if selectedDetailView == nil {
+                    // Overview Page
+                    VStack(spacing: 30) {
+                        // Today Card
+                        Button(action: {
+                            selectedDetailView = .today
+                        }) {
+                            VStack(spacing: 10) {
+                                Text("today")
+                                    .font(.custom("Major Mono Display Regular", size: 18))
+                                    .foregroundColor(.secondary)
+                                
+                                Text(timeTracker.formattedTimeHMS(for: .today))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
+                                
+                                Text(String(format: "%.0f€", timeTracker.getEarnings(for: .today)))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
+                            }
+                            .padding(.vertical, 20)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // This Week Card
+                        Button(action: {
+                            selectedDetailView = .thisWeek
+                        }) {
+                            VStack(spacing: 10) {
+                            Text("this week")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.secondary)
+                            
+                                Text(timeTracker.formattedTimeHMS(for: .thisWeek))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
+                                
+                                Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
+                            }
+                            .padding(.vertical, 20)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // This Month Card
+                        Button(action: {
+                            selectedDetailView = .thisMonth
+                        }) {
+                            VStack(spacing: 10) {
+                            Text("this month")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.secondary)
+                            
+                                Text(timeTracker.formattedTimeHMS(for: .thisMonth))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
+                                
+                                Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisMonth)))
+                                    .font(.custom("Major Mono Display Regular", size: 20))
+                                    .foregroundColor(.primary)
+                            }
+                            .padding(.vertical, 20)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.horizontal, 40)
+                    
+                    Spacer()
+                    
+                    // Settings section - always at bottom
+                    SettingsSection(
+                        settings: settings,
+                        showingDeadManSwitchPicker: $showingDeadManSwitchPicker,
+                        showingMotionThresholdPicker: $showingMotionThresholdPicker,
+                        showingSalaryInput: $showingSalaryInput,
+                        showingCustomDeadManInput: $showingCustomDeadManInput,
+                        showingCustomMotionInput: $showingCustomMotionInput,
+                        showingWeekStartsPicker: $showingWeekStartsPicker,
+                        customDeadManValue: $customDeadManValue,
+                        customMotionValue: $customMotionValue,
+                        salaryInputValue: $salaryInputValue
+                    )
+                } else {
+                    // Detail View
+                    VStack(spacing: 0) {
+                        HStack {
+                            Button("back") {
+                                selectedDetailView = nil
+                            }
+                            .font(.custom("Major Mono Display Regular", size: 17))
+                            .foregroundColor(.primary)
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 40)
+                        .padding(.bottom, 20)
+                        
+                        // Match the spacing from overview to align headers
+                        VStack(spacing: 30) {
+                            switch selectedDetailView {
+                            case .today:
+                                TodayDetailView()
+                            case .thisWeek:
+                                WeekDetailView()
+                            case .thisMonth:
+                                MonthDetailView()
+                            case .none:
+                                EmptyView()
+                            }
+                        }
+                        .padding(.vertical, 20) // Same padding as overview cards
+                        
+                        Spacer()
+                    }
+                }
             }
-        } else {
-            _selectedPeriod = State(initialValue: .today)
-            _currentIndex = State(initialValue: 0)
+            .background(Color(.systemBackground))
+        }
+        .onDisappear {
+            settings.saveSettings()
+        }
+        .confirmationDialog("check in every", isPresented: $showingDeadManSwitchPicker, titleVisibility: .visible) {
+            Button("5min") {
+                settings.deadManSwitchInterval = 5
+                settings.deadManSwitchEnabled = true
+            }
+            Button("10min") {
+                settings.deadManSwitchInterval = 10
+                settings.deadManSwitchEnabled = true
+            }
+            Button("30min") {
+                settings.deadManSwitchInterval = 30
+                settings.deadManSwitchEnabled = true
+            }
+            Button("custom") {
+                customDeadManValue = String(Int(settings.deadManSwitchInterval))
+                showingCustomDeadManInput = true
+            }
+            Button("cancel", role: .cancel) { }
+        }
+        .confirmationDialog("longer than", isPresented: $showingMotionThresholdPicker, titleVisibility: .visible) {
+            Button("5min") {
+                settings.motionThreshold = 5
+                settings.motionDetectionEnabled = true
+            }
+            Button("10min") {
+                settings.motionThreshold = 10
+                settings.motionDetectionEnabled = true
+            }
+            Button("30min") {
+                settings.motionThreshold = 30
+                settings.motionDetectionEnabled = true
+            }
+            Button("custom") {
+                customMotionValue = String(Int(settings.motionThreshold))
+                showingCustomMotionInput = true
+            }
+            Button("cancel", role: .cancel) { }
+        }
+        .confirmationDialog("weekday starts", isPresented: $showingWeekStartsPicker, titleVisibility: .visible) {
+            Button("monday") {
+                settings.weekStartsOn = 2
+            }
+            Button("tuesday") {
+                settings.weekStartsOn = 3
+            }
+            Button("wednesday") {
+                settings.weekStartsOn = 4
+            }
+            Button("thursday") {
+                settings.weekStartsOn = 5
+            }
+            Button("friday") {
+                settings.weekStartsOn = 6
+            }
+            Button("saturday") {
+                settings.weekStartsOn = 7
+            }
+            Button("sunday") {
+                settings.weekStartsOn = 1
+            }
+            Button("cancel", role: .cancel) { }
+        }
+        .alert("salary", isPresented: $showingSalaryInput) {
+            TextField("hourly rate", text: $salaryInputValue)
+                .keyboardType(.numberPad)
+            Button("cancel", role: .cancel) { }
+            Button("save") {
+                if let value = Double(salaryInputValue) {
+                    settings.hourlyRate = value
+                }
+            }
+        }
+        .alert("check in every", isPresented: $showingCustomDeadManInput) {
+            TextField("minutes", text: $customDeadManValue)
+                .keyboardType(.numberPad)
+            Button("cancel", role: .cancel) { }
+            Button("save") {
+                if let value = Double(customDeadManValue) {
+                    settings.deadManSwitchInterval = value
+                    settings.deadManSwitchEnabled = true
+                }
+            }
+        }
+        .alert("longer than", isPresented: $showingCustomMotionInput) {
+            TextField("minutes", text: $customMotionValue)
+                .keyboardType(.numberPad)
+            Button("cancel", role: .cancel) { }
+            Button("save") {
+                if let value = Double(customMotionValue) {
+                    settings.motionThreshold = value
+                    settings.motionDetectionEnabled = true
+                }
+            }
+        }
+    }
+}
+
+struct SettingsSection: View {
+    @ObservedObject var settings: AppSettings
+    @Binding var showingDeadManSwitchPicker: Bool
+    @Binding var showingMotionThresholdPicker: Bool
+    @Binding var showingSalaryInput: Bool
+    @Binding var showingCustomDeadManInput: Bool
+    @Binding var showingCustomMotionInput: Bool
+    @Binding var showingWeekStartsPicker: Bool
+    @Binding var customDeadManValue: String
+    @Binding var customMotionValue: String
+    @Binding var salaryInputValue: String
+    
+    private var weekdayName: String {
+        switch settings.weekStartsOn {
+        case 1: return "sunday"
+        case 2: return "monday"
+        case 3: return "tuesday"
+        case 4: return "wednesday"
+        case 5: return "thursday"
+        case 6: return "friday"
+        case 7: return "saturday"
+        default: return "monday"
         }
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 0) {
-                    Spacer(minLength: 30)
-                    
-                    // Swipable carousel with cards
-                    TabView(selection: $currentIndex) {
-                        // Card 0: Today
-                        VStack(spacing: 20) {
-                            Text("today")
-                                .font(.custom("Major Mono Display Regular", size: 18))
-                                .foregroundColor(.primary)
-                            
-                            VStack(spacing: 10) {
-                                Text(timeTracker.formattedTimeHMS(for: .today))
-                                    .font(.custom("Major Mono Display Regular", size: 24))
-                                    .foregroundColor(.primary)
-                                
-                                Text(String(format: "%.0fe", timeTracker.getEarnings(for: .today)))
-                                    .font(.custom("Major Mono Display Regular", size: 20))
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            Spacer(minLength: 25)
-                            
-                            ChartView(period: .today)
-                                .frame(height: 120)
-                        }
-                        .padding(.horizontal, 40)
-                        .tag(0)
-                        
-                        // Card 1: This Week
-                        VStack(spacing: 20) {
-                            Text("this week")
-                                .font(.custom("Major Mono Display Regular", size: 18))
-                                .foregroundColor(.primary)
-                            
-                            VStack(spacing: 10) {
-                                Text(timeTracker.formattedTimeHMS(for: .thisWeek))
-                                    .font(.custom("Major Mono Display Regular", size: 24))
-                                    .foregroundColor(.primary)
-                                
-                                Text(String(format: "%.0fe", timeTracker.getEarnings(for: .thisWeek)))
-                                    .font(.custom("Major Mono Display Regular", size: 20))
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            Spacer(minLength: 25)
-                            
-                            ChartView(period: .thisWeek)
-                                .frame(height: 120)
-                        }
-                        .padding(.horizontal, 40)
-                        .tag(1)
-                        
-                        // Card 2: This Month
-                        VStack(spacing: 20) {
-                            Text("this month")
-                                .font(.custom("Major Mono Display Regular", size: 18))
-                                .foregroundColor(.primary)
-                            
-                            VStack(spacing: 10) {
-                                Text(timeTracker.formattedTimeHMS(for: .thisMonth))
-                                    .font(.custom("Major Mono Display Regular", size: 24))
-                                    .foregroundColor(.primary)
-                                
-                                Text(String(format: "%.0fe", timeTracker.getEarnings(for: .thisMonth)))
-                                    .font(.custom("Major Mono Display Regular", size: 20))
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            Spacer(minLength: 25)
-                            
-                            CalendarView(period: .thisMonth)
-                                .frame(height: 150)
-                        }
-                        .padding(.horizontal, 40)
-                        .tag(2)
-                    }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                    .frame(height: 350)
-                    .onChange(of: currentIndex) {
-                        // Update selectedPeriod based on card index
-                        switch currentIndex {
-                        case 0: selectedPeriod = .today
-                        case 1: selectedPeriod = .thisWeek
-                        case 2: selectedPeriod = .thisMonth
-                        default: selectedPeriod = .today
-                        }
-                        saveSelectedPeriod()
-                    }
-                    
-                    Spacer(minLength: 80)
-                    
-                    // Settings at the bottom
                     VStack(spacing: 20) {
                         Divider()
                             .padding(.horizontal, 40)
@@ -166,6 +301,23 @@ struct StatisticsOverviewView: View {
                             .padding(.bottom, 10)
                         
                         VStack(spacing: 20) {
+                // Week starts on
+                HStack {
+                    Text("weekday starts")
+                        .font(.custom("Major Mono Display Regular", size: 17))
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        showingWeekStartsPicker = true
+                    }) {
+                        Text(weekdayName)
+                            .font(.custom("Major Mono Display Regular", size: 17))
+                            .foregroundColor(.primary)
+                    }
+                }
+                
                             // Dead Man Switch
                             HStack {
                                 Text("check in every")
@@ -253,7 +405,7 @@ struct StatisticsOverviewView: View {
                                             .font(.custom("Major Mono Display Regular", size: 17))
                                             .foregroundColor(.primary)
                                         
-                                        Text("/e")
+                                Text("/€")
                                             .font(.custom("Major Mono Display Regular", size: 17))
                                             .foregroundColor(.primary)
                                     }
@@ -261,171 +413,310 @@ struct StatisticsOverviewView: View {
                             }
                         }
                         .padding(.horizontal, 40)
-                        .padding(.bottom, 40)
-                    }
-                }
-            }
-            .background(Color(.systemBackground))
+            .padding(.bottom, 20)
         }
-        .onDisappear {
-            settings.saveSettings()
-        }
-        .confirmationDialog("check in every", isPresented: $showingDeadManSwitchPicker, titleVisibility: .visible) {
-            Button("5min") {
-                settings.deadManSwitchInterval = 5
-                settings.deadManSwitchEnabled = true
-            }
-            Button("10min") {
-                settings.deadManSwitchInterval = 10
-                settings.deadManSwitchEnabled = true
-            }
-            Button("30min") {
-                settings.deadManSwitchInterval = 30
-                settings.deadManSwitchEnabled = true
-            }
-            Button("custom") {
-                customDeadManValue = String(Int(settings.deadManSwitchInterval))
-                showingCustomDeadManInput = true
-            }
-            Button("cancel", role: .cancel) { }
-        }
-        .confirmationDialog("longer than", isPresented: $showingMotionThresholdPicker, titleVisibility: .visible) {
-            Button("5min") {
-                settings.motionThreshold = 5
-                settings.motionDetectionEnabled = true
-            }
-            Button("10min") {
-                settings.motionThreshold = 10
-                settings.motionDetectionEnabled = true
-            }
-            Button("30min") {
-                settings.motionThreshold = 30
-                settings.motionDetectionEnabled = true
-            }
-            Button("custom") {
-                customMotionValue = String(Int(settings.motionThreshold))
-                showingCustomMotionInput = true
-            }
-            Button("cancel", role: .cancel) { }
-        }
-        .alert("salary", isPresented: $showingSalaryInput) {
-            TextField("hourly rate", text: $salaryInputValue)
-                .keyboardType(.numberPad)
-            Button("cancel", role: .cancel) { }
-            Button("save") {
-                if let value = Double(salaryInputValue) {
-                    settings.hourlyRate = value
-                }
-            }
-        }
-        .alert("check in every", isPresented: $showingCustomDeadManInput) {
-            TextField("minutes", text: $customDeadManValue)
-                .keyboardType(.numberPad)
-            Button("cancel", role: .cancel) { }
-            Button("save") {
-                if let value = Double(customDeadManValue) {
-                    settings.deadManSwitchInterval = value
-                    settings.deadManSwitchEnabled = true
-                }
-            }
-        }
-        .alert("longer than", isPresented: $showingCustomMotionInput) {
-            TextField("minutes", text: $customMotionValue)
-                .keyboardType(.numberPad)
-            Button("cancel", role: .cancel) { }
-            Button("save") {
-                if let value = Double(customMotionValue) {
-                    settings.motionThreshold = value
-                    settings.motionDetectionEnabled = true
-                }
-            }
-        }
-    }
-    
-    private func saveSelectedPeriod() {
-        let periodString: String
-        switch selectedPeriod {
-        case .today: periodString = "today"
-        case .thisWeek: periodString = "thisWeek"
-        case .thisMonth: periodString = "thisMonth"
-        default: periodString = "today"
-        }
-        UserDefaults.standard.set(periodString, forKey: "selectedPeriod")
     }
 }
 
-struct ChartView: View {
-    let period: StatisticsPeriod
+// Detail Views
+struct TodayDetailView: View {
+    @ObservedObject private var timeTracker = TimeTracker.shared
+    @ObservedObject private var settings = AppSettings.shared
+    
+    var todayEntries: [TimeEntry] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
+        
+        var entries = timeTracker.timeEntries.filter { entry in
+            entry.startDate >= today && entry.startDate < tomorrow && entry.endDate != nil
+        }
+        
+        // Include current session if it started today
+        if let currentStart = timeTracker.currentSessionStart,
+           currentStart >= today && currentStart < tomorrow {
+            let currentEntry = TimeEntry(startDate: currentStart, endDate: nil, isActive: true)
+            entries.append(currentEntry)
+        }
+        
+        return entries.sorted { $0.startDate > $1.startDate }
+    }
+    
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }
+    
+    private func formatDuration(from start: Date, to end: Date) -> String {
+        let duration = end.timeIntervalSince(start)
+        return formatDuration(from: duration)
+    }
+    
+    private func formatDuration(from duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3600
+        let minutes = Int(duration) % 3600 / 60
+        let seconds = Int(duration) % 60
+        
+        if hours > 0 {
+            return String(format: "%dh%02dm", hours, minutes)
+        } else if minutes > 0 {
+            return String(format: "%dm%02ds", minutes, seconds)
+        } else {
+            return String(format: "%ds", seconds)
+        }
+    }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Chart title at top
-            Text("chart for \(period.displayName)")
-                .font(.custom("Major Mono Display Regular", size: 17))
-                .foregroundColor(.primary)
-                .padding(.top, 20)
-                .padding(.bottom, 10)
+        VStack(spacing: 30) {
+            // Header matching overview style
+            VStack(spacing: 10) {
+                Text("today")
+                    .font(.custom("Major Mono Display Regular", size: 18))
+                    .foregroundColor(.secondary)
+                
+                Text(timeTracker.formattedTimeHMS(for: .today))
+                    .font(.custom("Major Mono Display Regular", size: 20))
+                    .foregroundColor(.primary)
+                
+                Text(String(format: "%.0f€", timeTracker.getEarnings(for: .today)))
+                    .font(.custom("Major Mono Display Regular", size: 20))
+                    .foregroundColor(.primary)
+            }
             
-            Spacer()
-            
-            // Chart bars with day labels for week views
-            VStack(spacing: 8) {
-                HStack(alignment: .bottom, spacing: 0) {
-                    ForEach(0..<7) { index in
-                        VStack(spacing: 4) {
-                            Rectangle()
-                                .fill(Color.primary.opacity(0.3))
-                                .frame(width: 2, height: getBarHeight(for: index))
-                            
-                            if period == .thisWeek || period == .lastWeek {
-                                Text(getDayLabel(for: index))
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                            }
+            // Time entries with smaller font
+            VStack(spacing: 15) {
+                ForEach(todayEntries) { entry in
+                    HStack {
+                        if let endDate = entry.endDate {
+                            Text("\(timeFormatter.string(from: entry.startDate))-\(timeFormatter.string(from: endDate))")
+                                .font(.custom("Major Mono Display Regular", size: 15))
+                                .foregroundColor(.primary)
+                        } else {
+                            ActiveTimerView(startDate: entry.startDate, timeFormatter: timeFormatter)
                         }
                         
-                        if index < 6 {
-                            Spacer()
+                        Spacer()
+                        
+                        if entry.isActive {
+                            Text(formatDuration(from: entry.startDate, to: Date()))
+                                .font(.custom("Major Mono Display Regular", size: 15))
+                                .foregroundColor(.primary)
+                        } else {
+                            Text(formatDuration(from: entry.duration))
+                                .font(.custom("Major Mono Display Regular", size: 15))
+                                .foregroundColor(.primary)
                         }
+                    }
+                }
+                
+                if todayEntries.isEmpty {
+                    HStack {
+                        Spacer()
+                        
+                        Text("-")
+                            .font(.custom("Major Mono Display Regular", size: 15))
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 40)
+    }
+}
+
+struct ActiveTimerView: View {
+    let startDate: Date
+    let timeFormatter: DateFormatter
+    @State private var currentTime = Date()
+    
+    var body: some View {
+        Text("\(timeFormatter.string(from: startDate))-\(timeFormatter.string(from: currentTime))")
+            .font(.custom("Major Mono Display Regular", size: 15))
+            .foregroundColor(.primary)
+            .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+                currentTime = Date()
+            }
+    }
+}
+
+struct WeekDetailView: View {
+    @ObservedObject private var timeTracker = TimeTracker.shared
+    @ObservedObject private var settings = AppSettings.shared
+    
+    private var weekEntries: [(Date, [TimeEntry])] {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Get start of week based on user setting
+        var startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+        if settings.weekStartsOn != calendar.firstWeekday {
+            let difference = settings.weekStartsOn - calendar.firstWeekday
+            startOfWeek = calendar.date(byAdding: .day, value: difference, to: startOfWeek) ?? startOfWeek
+        }
+        
+        var entries: [(Date, [TimeEntry])] = []
+        
+        for i in 0..<7 {
+            if let dayDate = calendar.date(byAdding: .day, value: i, to: startOfWeek) {
+                let dayStart = calendar.startOfDay(for: dayDate)
+                let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayDate
+                
+                let dayEntries = timeTracker.timeEntries.filter { entry in
+                    entry.startDate >= dayStart && entry.startDate < dayEnd
+                }
+                
+                if !dayEntries.isEmpty {
+                    entries.append((dayDate, dayEntries))
+                }
+            }
+        }
+        
+        // Sort by newest day first
+        return entries.sorted { $0.0 > $1.0 }
+    }
+    
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }
+    
+    private func formatDuration(from start: Date, to end: Date) -> String {
+        let duration = end.timeIntervalSince(start)
+        return formatDuration(from: duration)
+    }
+    
+    private func formatDuration(from duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3600
+        let minutes = Int(duration) % 3600 / 60
+        let seconds = Int(duration) % 60
+        
+        if hours > 0 {
+            return String(format: "%dh%02dm", hours, minutes)
+        } else if minutes > 0 {
+            return String(format: "%dm%02ds", minutes, seconds)
+        } else {
+            return String(format: "%ds", seconds)
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 30) {
+            // Header matching overview style
+            VStack(spacing: 10) {
+                Text("this week")
+                    .font(.custom("Major Mono Display Regular", size: 18))
+                    .foregroundColor(.secondary)
+                
+                Text(timeTracker.formattedTimeHMS(for: .thisWeek))
+                    .font(.custom("Major Mono Display Regular", size: 20))
+                    .foregroundColor(.primary)
+                
+                Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
+                    .font(.custom("Major Mono Display Regular", size: 20))
+                .foregroundColor(.primary)
+            }
+            
+            // Week entries with smaller font
+            VStack(spacing: 15) {
+                ForEach(weekEntries, id: \.0) { dayEntry in
+                    HStack {
+                        Text(formatDate(dayEntry.0))
+                            .font(.custom("Major Mono Display Regular", size: 15))
+                            .foregroundColor(.primary)
+        
+        Spacer()
+                        
+                        Text(formatDayDuration(for: dayEntry.0))
+                            .font(.custom("Major Mono Display Regular", size: 15))
+                                .foregroundColor(.primary)
+                    }
+                }
+                        
+                if weekEntries.isEmpty {
+                    Text("no time tracked this week")
+                        .font(.custom("Major Mono Display Regular", size: 15))
+                        .foregroundColor(.secondary)
                     }
                 }
             }
             .padding(.horizontal, 40)
-            .padding(.bottom, 20)
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy"
+        return formatter.string(from: date)
+    }
+    
+    private func formatTimeRange(_ start: Date, _ end: Date?) -> String {
+        let startTime = timeFormatter.string(from: start)
+        if let end = end {
+            let endTime = timeFormatter.string(from: end)
+            return "\(startTime)-\(endTime)"
         }
+        return startTime
     }
     
-    private func getBarHeight(for index: Int) -> CGFloat {
-        // Static heights for consistent display (no animation)
-        let heights: [CGFloat] = [45, 25, 60, 30, 40, 55, 20]
-        return heights[index]
-    }
-    
-    private func getDayLabel(for index: Int) -> String {
-        let labels = ["m", "d", "m", "d", "f", "s", "s"]
-        return labels[index]
+    private func formatDayDuration(for date: Date) -> String {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
+        
+        var dayEntries = timeTracker.timeEntries.filter { entry in
+            entry.startDate >= dayStart && entry.startDate < dayEnd
+        }
+        
+        // Include current session if it started on this day
+        if let currentStart = timeTracker.currentSessionStart,
+           currentStart >= dayStart && currentStart < dayEnd {
+            let currentEntry = TimeEntry(startDate: currentStart, endDate: nil, isActive: true)
+            dayEntries.append(currentEntry)
+        }
+        
+        let totalDuration = dayEntries.reduce(0) { total, entry in
+            if entry.isActive {
+                return total + Date().timeIntervalSince(entry.startDate)
+            } else {
+                return total + entry.duration
+            }
+        }
+        
+        return formatDuration(from: totalDuration)
     }
 }
 
-struct StatisticRowWithEarnings: View {
-    let title: String
-    let time: String
-    let earnings: Double
+struct MonthDetailView: View {
+    @ObservedObject private var timeTracker = TimeTracker.shared
     
     var body: some View {
-        HStack {
-            Text(title)
-                .font(.custom("Major Mono Display Regular", size: 17))
+        VStack(spacing: 30) {
+            // Header matching overview style
+            VStack(spacing: 10) {
+                Text("this month")
+                    .font(.custom("Major Mono Display Regular", size: 18))
+                    .foregroundColor(.secondary)
+                
+                Text(timeTracker.formattedTimeHMS(for: .thisMonth))
+                    .font(.custom("Major Mono Display Regular", size: 20))
                 .foregroundColor(.primary)
             
-            Spacer()
+                Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisMonth)))
+                    .font(.custom("Major Mono Display Regular", size: 20))
+                    .foregroundColor(.primary)
+            }
             
-            Text("\(time)/\(String(format: "%.0f", earnings))e")
-                .font(.custom("Major Mono Display Regular", size: 17))
-                .foregroundColor(.primary)
+            // Calendar only
+            CalendarView(period: .thisMonth)
+                .frame(height: 300)
         }
+        .padding(.horizontal, 40)
     }
 }
+
 
 struct CalendarView: View {
     let period: StatisticsPeriod
@@ -513,26 +804,23 @@ struct CalendarDayView: View {
     let day: Int
     let hasTimeEntry: Bool
     let isToday: Bool
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack {
             if day > 0 {
-                VStack(spacing: 2) {
                     Text("\(day)")
                         .font(.custom("Major Mono Display Regular", size: 18))
-                        .foregroundColor(.primary)
+                    .foregroundColor(textColor)
                         .frame(width: 35, height: 35)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
                                 .fill(backgroundColor)
-                        )
-                    
-                    // Underline for today
-                    Rectangle()
-                        .fill(.primary)
-                        .frame(width: 20, height: isToday ? 1 : 0)
-                        .opacity(isToday ? 1 : 0)
-                }
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(borderColor, lineWidth: 1)
+                            )
+                    )
             } else {
                 // Empty day
                 Text("")
@@ -542,13 +830,30 @@ struct CalendarDayView: View {
     }
     
     private var backgroundColor: Color {
-        if hasTimeEntry {
-            return Color.gray.opacity(0.2) // Light grey for days with time entries
+        if isToday {
+            return colorScheme == .dark ? .white : .black
         } else {
-            return Color.clear // Clear background as requested
+            return .clear
         }
     }
     
+    private var textColor: Color {
+        if isToday {
+            return colorScheme == .dark ? .black : .white
+        } else {
+            return .primary
+        }
+    }
+    
+    private var borderColor: Color {
+        if isToday {
+            return colorScheme == .dark ? .white : .black
+        } else if hasTimeEntry {
+            return .secondary
+        } else {
+            return .clear
+        }
+    }
 }
 
 #Preview {

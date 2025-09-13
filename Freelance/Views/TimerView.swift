@@ -14,7 +14,7 @@ struct ProgressCircle: View {
     var body: some View {
         Circle()
             .trim(from: 0, to: progress)
-            .stroke(Color.primary, lineWidth: 4)
+            .stroke(Color.primary, lineWidth: 1)
             .rotationEffect(.degrees(-90)) // Start from top and go counter-clockwise
             .scaleEffect(x: -1, y: 1) // Flip horizontally for true counter-clockwise
             .frame(width: size, height: size)
@@ -63,7 +63,7 @@ struct TimerView: View {
                             Image(systemName: timeTracker.isRunning ? "square" : "play")
                                 .font(.system(size: 20, weight: .regular))
                                 .foregroundColor(.primary)
-                                .contentTransition(.symbolEffect(.replace))
+                                .contentTransition(.symbolEffect(.replace.downUp))
                                 .animation(.easeInOut(duration: 0.3), value: timeTracker.isRunning)
                         )
                         .scaleEffect(timeTracker.isRunning ? 1.05 : 1.0)
@@ -141,8 +141,11 @@ struct TimerView: View {
                 timeTracker.recordTimer()
                 timeTracker.startTimer()
             }
+            Button("reset", role: .destructive) {
+                timeTracker.resetTimer()
+            }
         } message: {
-            Text("Store time and start a new session?")
+            Text("Store time and start a new session or reset without storing?")
         }
         .onDisappear {
             longPressTimer?.invalidate()
@@ -183,14 +186,16 @@ struct TimerView: View {
                 let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                 impactFeedback.impactOccurred()
                 
-                // Small delay to show complete circle before alert
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                // Longer delay to ensure circle visually completes before alert
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     // Show reset alert
                     self.showingResetAlert = true
                     
-                    // Reset progress state
-                    self.isLongPressing = false
-                    self.longPressProgress = 0.0
+                    // Reset progress state AFTER alert appears to prevent visual artifacts
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        self.isLongPressing = false
+                        self.longPressProgress = 0.0
+                    }
                 }
             }
         }
@@ -199,8 +204,13 @@ struct TimerView: View {
     private func endLongPress() {
         longPressTimer?.invalidate()
         longPressTimer = nil
-        isLongPressing = false
-        longPressProgress = 0.0
+        
+        // Only reset if circle hasn't completed (progress < 1.0)
+        // If completed, let the completion handler manage the reset
+        if longPressProgress < 1.0 {
+            isLongPressing = false
+            longPressProgress = 0.0
+        }
     }
 }
 

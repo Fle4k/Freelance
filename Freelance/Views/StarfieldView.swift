@@ -28,7 +28,7 @@ struct StarfieldView: View {
                 let alpha = min(depth * CGFloat(particle.alpha) * 1.5, 1.0)
                 
                 let rect = CGRect(x: x - scale/2, y: y - scale/2, width: scale, height: scale)
-                context.fill(Path(ellipseIn: rect), with: .color(.white.opacity(alpha)))
+                context.fill(Path(ellipseIn: rect), with: .color(.primary.opacity(alpha)))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

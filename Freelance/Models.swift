@@ -40,6 +40,7 @@ class AppSettings: ObservableObject {
     @Published var motionDetectionEnabled: Bool = false
     @Published var motionThreshold: Double = 5.0
     @Published var askWhenMoving: Bool = true // true = ask when moving, false = ask when not moving
+    @Published var weekStartsOn: Int = 2 // 1 = Sunday, 2 = Monday, 3 = Tuesday, etc.
     
     static let shared = AppSettings()
     
@@ -54,6 +55,7 @@ class AppSettings: ObservableObject {
         UserDefaults.standard.set(motionDetectionEnabled, forKey: "motionDetectionEnabled")
         UserDefaults.standard.set(motionThreshold, forKey: "motionThreshold")
         UserDefaults.standard.set(askWhenMoving, forKey: "askWhenMoving")
+        UserDefaults.standard.set(weekStartsOn, forKey: "weekStartsOn")
     }
     
     private func loadSettings() {
@@ -63,6 +65,7 @@ class AppSettings: ObservableObject {
         motionDetectionEnabled = UserDefaults.standard.object(forKey: "motionDetectionEnabled") as? Bool ?? false
         motionThreshold = UserDefaults.standard.object(forKey: "motionThreshold") as? Double ?? 5.0
         askWhenMoving = UserDefaults.standard.object(forKey: "askWhenMoving") as? Bool ?? true
+        weekStartsOn = UserDefaults.standard.object(forKey: "weekStartsOn") as? Int ?? 2
     }
 }
 
@@ -72,18 +75,21 @@ class TimeTracker: ObservableObject {
     @Published var currentSessionStart: Date?
     @Published var timeEntries: [TimeEntry] = []
     @Published var elapsedTime: TimeInterval = 0
+    @Published var totalAccumulatedTime: TimeInterval = 0 // Total time across all sessions
     
     static let shared = TimeTracker()
     
     private init() {
         loadTimeEntries()
         loadCurrentSession()
+        loadAccumulatedTime()
     }
     
     var formattedElapsedTime: String {
-        let hours = Int(elapsedTime) / 3600
-        let minutes = Int(elapsedTime) % 3600 / 60
-        let seconds = Int(elapsedTime) % 60
+        let totalTime = totalAccumulatedTime + (isRunning ? elapsedTime : 0)
+        let hours = Int(totalTime) / 3600
+        let minutes = Int(totalTime) % 3600 / 60
+        let seconds = Int(totalTime) % 60
         return String(format: "%dh%02dm%02ds", hours, minutes, seconds)
     }
     
@@ -126,34 +132,56 @@ class TimeTracker: ObservableObject {
     }
     
     func startTimer() {
-        if currentSessionStart == nil {
-            currentSessionStart = Date()
-            elapsedTime = 0
-        }
+        currentSessionStart = Date()
+        elapsedTime = 0
         isRunning = true
         saveCurrentSession()
     }
     
     func pauseTimer() {
+        if let startDate = currentSessionStart, isRunning {
+            // Add current session time to accumulated time
+            let sessionTime = Date().timeIntervalSince(startDate)
+            totalAccumulatedTime += sessionTime
+            
+            // Create a time entry for this session
+            let entry = TimeEntry(
+                startDate: startDate,
+                endDate: Date(),
+                isActive: false
+            )
+            timeEntries.append(entry)
+            saveTimeEntries()
+        }
+        
         isRunning = false
-        saveCurrentSession()
+        currentSessionStart = nil
+        elapsedTime = 0
+        saveAccumulatedTime()
+        clearCurrentSession()
     }
     
     func recordTimer() {
-        guard let startDate = currentSessionStart else { return }
+        // This is now called when storing and resetting from long press
+        if isRunning {
+            pauseTimer() // Stop current session and save it
+        }
         
-        let entry = TimeEntry(
-            startDate: startDate,
-            endDate: Date(),
-            isActive: false
-        )
+        // Reset all accumulated time
+        totalAccumulatedTime = 0
+        saveAccumulatedTime()
         
-        timeEntries.append(entry)
+        // Start a new timer session
+        startTimer()
+    }
+    
+    func resetTimer() {
+        // Reset without saving - discards current session and all accumulated time
         currentSessionStart = nil
         isRunning = false
         elapsedTime = 0
-        
-        saveTimeEntries()
+        totalAccumulatedTime = 0
+        saveAccumulatedTime()
         clearCurrentSession()
     }
     
@@ -268,6 +296,14 @@ class TimeTracker: ObservableObject {
     private func clearCurrentSession() {
         UserDefaults.standard.removeObject(forKey: "currentSessionStart")
         UserDefaults.standard.removeObject(forKey: "isRunning")
+    }
+    
+    private func saveAccumulatedTime() {
+        UserDefaults.standard.set(totalAccumulatedTime, forKey: "totalAccumulatedTime")
+    }
+    
+    private func loadAccumulatedTime() {
+        totalAccumulatedTime = UserDefaults.standard.object(forKey: "totalAccumulatedTime") as? TimeInterval ?? 0
     }
 }
 
