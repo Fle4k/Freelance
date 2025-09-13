@@ -6,5 +6,11 @@
 	<array>
 		<string>MajorMonoDisplay-Regular.ttf</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-processing</string>
+		<string>background-app-refresh</string>
+		<string>background-fetch</string>
+	</array>
 </dict>
 </plist>

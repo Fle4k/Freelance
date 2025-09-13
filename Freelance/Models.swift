@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import UserNotifications
 
 // Time tracking session
 struct TimeEntry: Identifiable, Codable {
@@ -58,9 +59,26 @@ class AppSettings: ObservableObject {
         UserDefaults.standard.set(weekStartsOn, forKey: "weekStartsOn")
     }
     
+    func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge, .provisional]) { granted, error in
+            DispatchQueue.main.async {
+                if granted {
+                    // Set up notification categories after permission is granted
+                    TimeTracker.shared.setupNotificationCategories()
+                    
+                    // Request critical alert permission for better lock screen visibility
+                    UNUserNotificationCenter.current().requestAuthorization(options: [.criticalAlert]) { criticalGranted, criticalError in
+                        print("Critical alert permission: \(criticalGranted)")
+                    }
+                }
+                completion(granted)
+            }
+        }
+    }
+    
     private func loadSettings() {
         hourlyRate = UserDefaults.standard.object(forKey: "hourlyRate") as? Double ?? 80.0
-        deadManSwitchEnabled = UserDefaults.standard.object(forKey: "deadManSwitchEnabled") as? Bool ?? true
+        deadManSwitchEnabled = UserDefaults.standard.object(forKey: "deadManSwitchEnabled") as? Bool ?? false
         deadManSwitchInterval = UserDefaults.standard.object(forKey: "deadManSwitchInterval") as? Double ?? 10.0
         motionDetectionEnabled = UserDefaults.standard.object(forKey: "motionDetectionEnabled") as? Bool ?? false
         motionThreshold = UserDefaults.standard.object(forKey: "motionThreshold") as? Double ?? 5.0
@@ -76,13 +94,48 @@ class TimeTracker: ObservableObject {
     @Published var timeEntries: [TimeEntry] = []
     @Published var elapsedTime: TimeInterval = 0
     @Published var totalAccumulatedTime: TimeInterval = 0 // Total time across all sessions
-    
     static let shared = TimeTracker()
+    
+    private var lastDeadManCheck: Date?
+    private var notificationTimeoutTimer: Timer?
+    private let notificationCenter = UNUserNotificationCenter.current()
     
     private init() {
         loadTimeEntries()
         loadCurrentSession()
         loadAccumulatedTime()
+        setupNotificationCategories()
+    }
+    
+    func setupNotificationCategories() {
+        let continueAction = UNNotificationAction(
+            identifier: "CONTINUE",
+            title: "✅ Continue",
+            options: [.foreground]
+        )
+        
+        let stopAction = UNNotificationAction(
+            identifier: "STOP",
+            title: "⏹️ Stop",
+            options: [.destructive, .foreground]
+        )
+        
+        let category = UNNotificationCategory(
+            identifier: "DEAD_MAN_SWITCH",
+            actions: [continueAction, stopAction],
+            intentIdentifiers: [],
+            options: [.customDismissAction, .allowInCarPlay]
+        )
+        
+        notificationCenter.setNotificationCategories([category])
+        
+        // Debug: Check if categories were set
+        notificationCenter.getNotificationCategories { categories in
+            print("Notification categories set: \(categories.count)")
+            for category in categories {
+                print("Category: \(category.identifier) with \(category.actions.count) actions")
+            }
+        }
     }
     
     var formattedElapsedTime: String {
@@ -136,6 +189,7 @@ class TimeTracker: ObservableObject {
         elapsedTime = 0
         isRunning = true
         saveCurrentSession()
+        startDeadManSwitch()
     }
     
     func pauseTimer() {
@@ -159,6 +213,7 @@ class TimeTracker: ObservableObject {
         elapsedTime = 0
         saveAccumulatedTime()
         clearCurrentSession()
+        stopDeadManSwitch()
     }
     
     func recordTimer() {
@@ -183,6 +238,7 @@ class TimeTracker: ObservableObject {
         totalAccumulatedTime = 0
         saveAccumulatedTime()
         clearCurrentSession()
+        stopDeadManSwitch()
     }
     
     func updateElapsedTime() {
@@ -191,11 +247,328 @@ class TimeTracker: ObservableObject {
         }
     }
     
+    // MARK: - Dead Man Switch
+    
+    private func startDeadManSwitch() {
+        stopDeadManSwitch() // Stop any existing timer
+        
+        let settings = AppSettings.shared
+        guard settings.deadManSwitchEnabled else { return }
+        
+        lastDeadManCheck = Date()
+        scheduleDeadManNotification()
+        debugPendingNotifications()
+    }
+    
+    private func stopDeadManSwitch() {
+        lastDeadManCheck = nil
+        clearNotificationBadge()
+        cancelScheduledNotifications()
+        
+        // Cancel timeout timer
+        notificationTimeoutTimer?.invalidate()
+        notificationTimeoutTimer = nil
+    }
+    
+    private func scheduleDeadManNotification() {
+        let settings = AppSettings.shared
+        let intervalMinutes = settings.deadManSwitchInterval
+        
+        // Check notification authorization first
+        notificationCenter.getNotificationSettings { settings in
+            print("Notification authorization status: \(settings.authorizationStatus.rawValue)")
+            print("Alert setting: \(settings.alertSetting.rawValue)")
+            print("Lock screen setting: \(settings.lockScreenSetting.rawValue)")
+            print("Badge setting: \(settings.badgeSetting.rawValue)")
+        }
+        
+        let content = UNMutableNotificationContent()
+        content.title = "⏰ Are you still working?"
+        content.body = "Tap Continue to keep tracking time, or Stop to pause. You have 2 minutes to respond."
+        content.sound = .default
+        content.badge = 1
+        content.categoryIdentifier = "DEAD_MAN_SWITCH"
+        content.userInfo = ["type": "dead_man_switch"]
+        
+        // Calculate the next clock-aligned time
+        let nextNotificationTime = calculateNextClockAlignment(intervalMinutes: intervalMinutes)
+        
+        // Use UNCalendarNotificationTrigger for better background reliability
+        let calendar = Calendar.current
+        let dateComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: nextNotificationTime)
+        
+        let trigger = UNCalendarNotificationTrigger(
+            dateMatching: dateComponents,
+            repeats: false
+        )
+        
+        let request = UNNotificationRequest(
+            identifier: "dead_man_switch",
+            content: content,
+            trigger: trigger
+        )
+        
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        print("Scheduling dead man switch notification for \(formatter.string(from: nextNotificationTime)) (every \(Int(intervalMinutes)) minutes)")
+        print("Date components: \(dateComponents)")
+        
+        notificationCenter.add(request) { error in
+            if let error = error {
+                print("Error scheduling notification: \(error)")
+            } else {
+                print("Notification scheduled successfully")
+                // Start timeout timer when notification is scheduled
+                self.startNotificationTimeout()
+            }
+        }
+    }
+    
+    private func calculateNextClockAlignment(intervalMinutes: Double) -> Date {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Get current time components
+        let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
+        let currentSecond = calendar.component(.second, from: now)
+        
+        // Calculate how many minutes have passed since the last interval boundary
+        let minutesSinceLastBoundary = currentMinute % Int(intervalMinutes)
+        
+        // Calculate the next boundary
+        var nextMinute: Int
+        if minutesSinceLastBoundary == 0 && currentSecond == 0 {
+            // We're exactly on a boundary, schedule for the next one
+            nextMinute = currentMinute + Int(intervalMinutes)
+        } else {
+            // Calculate next boundary
+            nextMinute = currentMinute - minutesSinceLastBoundary + Int(intervalMinutes)
+        }
+        
+        // Handle hour overflow
+        var nextHour = currentHour
+        if nextMinute >= 60 {
+            nextHour += nextMinute / 60
+            nextMinute = nextMinute % 60
+        }
+        
+        // Create the next notification time
+        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        dateComponents.hour = nextHour
+        dateComponents.minute = nextMinute
+        dateComponents.second = 0
+        
+        return calendar.date(from: dateComponents) ?? now
+    }
+    
+    private func cancelScheduledNotifications() {
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_switch"])
+        print("Cancelled scheduled notifications")
+    }
+    
+    func debugPendingNotifications() {
+        notificationCenter.getPendingNotificationRequests { requests in
+            print("Pending notifications: \(requests.count)")
+            for request in requests {
+                if let calendarTrigger = request.trigger as? UNCalendarNotificationTrigger {
+                    let formatter = DateFormatter()
+                    formatter.timeStyle = .short
+                    print("Notification: \(request.identifier) - scheduled for \(formatter.string(from: calendarTrigger.nextTriggerDate() ?? Date()))")
+                } else {
+                    print("Notification: \(request.identifier) - \(request.trigger?.description ?? "no trigger")")
+                }
+            }
+        }
+    }
+    
+    func testImmediateNotification() {
+        // Check notification settings first
+        notificationCenter.getNotificationSettings { settings in
+            print("=== NOTIFICATION SETTINGS ===")
+            print("Authorization: \(settings.authorizationStatus.rawValue)")
+            print("Alert: \(settings.alertSetting.rawValue)")
+            print("Lock Screen: \(settings.lockScreenSetting.rawValue)")
+            print("Badge: \(settings.badgeSetting.rawValue)")
+            print("Sound: \(settings.soundSetting.rawValue)")
+            print("=============================")
+        }
+        
+        let content = UNMutableNotificationContent()
+        content.title = "⏰ Test Notification"
+        content.body = "This is a test notification to check lock screen visibility."
+        content.sound = .default
+        content.badge = 1
+        content.categoryIdentifier = "DEAD_MAN_SWITCH"
+        content.userInfo = ["type": "test"]
+        
+        // Try immediate notification first
+        let immediateRequest = UNNotificationRequest(
+            identifier: "test_immediate_\(UUID().uuidString)",
+            content: content,
+            trigger: nil
+        )
+        
+        print("Sending immediate test notification")
+        notificationCenter.add(immediateRequest) { error in
+            if let error = error {
+                print("Error sending immediate test notification: \(error)")
+            } else {
+                print("Immediate test notification sent successfully")
+            }
+        }
+        
+        // Also try with a small delay using calendar trigger
+        let delayedContent = UNMutableNotificationContent()
+        delayedContent.title = "⏰ Calendar Test"
+        delayedContent.body = "This is a calendar-triggered test notification."
+        delayedContent.sound = .default
+        delayedContent.badge = 1
+        delayedContent.categoryIdentifier = "DEAD_MAN_SWITCH"
+        
+        let calendar = Calendar.current
+        let futureTime = Date().addingTimeInterval(3)
+        let dateComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: futureTime)
+        
+        let calendarTrigger = UNCalendarNotificationTrigger(
+            dateMatching: dateComponents,
+            repeats: false
+        )
+        
+        let calendarRequest = UNNotificationRequest(
+            identifier: "test_calendar_\(UUID().uuidString)",
+            content: delayedContent,
+            trigger: calendarTrigger
+        )
+        
+        print("Sending calendar test notification (3 seconds)")
+        print("Date components: \(dateComponents)")
+        notificationCenter.add(calendarRequest) { error in
+            if let error = error {
+                print("Error sending calendar test notification: \(error)")
+            } else {
+                print("Calendar test notification sent successfully")
+            }
+        }
+    }
+    
+    func testBackgroundNotification() {
+        print("Testing background notification - close the app and wait 5 seconds")
+        
+        let content = UNMutableNotificationContent()
+        content.title = "⏰ Background Test"
+        content.body = "This notification should appear when the app is closed."
+        content.sound = .default
+        content.badge = 1
+        content.categoryIdentifier = "DEAD_MAN_SWITCH"
+        
+        let calendar = Calendar.current
+        let futureTime = Date().addingTimeInterval(5)
+        let dateComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: futureTime)
+        
+        let trigger = UNCalendarNotificationTrigger(
+            dateMatching: dateComponents,
+            repeats: false
+        )
+        
+        let request = UNNotificationRequest(
+            identifier: "test_background_\(UUID().uuidString)",
+            content: content,
+            trigger: trigger
+        )
+        
+        print("Scheduling background test notification for 5 seconds from now")
+        notificationCenter.add(request) { error in
+            if let error = error {
+                print("Error scheduling background test: \(error)")
+            } else {
+                print("Background test notification scheduled successfully")
+            }
+        }
+    }
+    
+    private func clearNotificationBadge() {
+        notificationCenter.setBadgeCount(0)
+    }
+    
+    private func startNotificationTimeout() {
+        // Cancel any existing timeout timer
+        notificationTimeoutTimer?.invalidate()
+        
+        // Start 2-minute timeout timer
+        notificationTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: false) { _ in
+            self.handleNotificationTimeout()
+        }
+        
+        print("Started 2-minute notification timeout")
+    }
+    
+    private func handleNotificationTimeout() {
+        print("Notification timeout - stopping timer and subtracting 2 minutes")
+        
+        // Stop the timeout timer
+        notificationTimeoutTimer?.invalidate()
+        notificationTimeoutTimer = nil
+        
+        // Subtract 2 minutes from accumulated time
+        totalAccumulatedTime = max(0, totalAccumulatedTime - 120) // 120 seconds = 2 minutes
+        saveAccumulatedTime()
+        
+        // Stop the timer
+        pauseTimer()
+        
+        // Clear the badge
+        clearNotificationBadge()
+    }
+    
+    
+    func handleDeadManResponse(continue: Bool) {
+        // Cancel timeout timer since user responded
+        notificationTimeoutTimer?.invalidate()
+        notificationTimeoutTimer = nil
+        
+        clearNotificationBadge()
+        
+        if `continue` {
+            // Reset the timer for the next check
+            lastDeadManCheck = Date()
+            // Schedule the next notification at the next clock-aligned interval
+            scheduleDeadManNotification()
+        } else {
+            // Stop the timer
+            pauseTimer()
+        }
+    }
+    
+    func restartDeadManSwitch() {
+        if isRunning {
+            startDeadManSwitch()
+        }
+    }
+    
+    func handleNotificationResponse(_ response: UNNotificationResponse) {
+        switch response.actionIdentifier {
+        case "CONTINUE":
+            handleDeadManResponse(continue: true)
+        case "STOP":
+            handleDeadManResponse(continue: false)
+        default:
+            break
+        }
+    }
+    
     // MARK: - Statistics
+    
+    private func getStartOfWeek(for date: Date, calendar: Calendar, weekStartsOn: Int) -> Date {
+        let weekday = calendar.component(.weekday, from: date)
+        let daysFromStartOfWeek = (weekday - weekStartsOn + 7) % 7
+        return calendar.date(byAdding: .day, value: -daysFromStartOfWeek, to: calendar.startOfDay(for: date)) ?? date
+    }
     
     func getTotalHours(for period: StatisticsPeriod) -> Double {
         let calendar = Calendar.current
         let now = Date()
+        let settings = AppSettings.shared
         
         var entries: [TimeEntry]
         
@@ -206,12 +579,12 @@ class TimeTracker: ObservableObject {
             entries = timeEntries.filter { $0.startDate >= startOfDay && $0.startDate < endOfDay }
             
         case .thisWeek:
-            let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+            let startOfWeek = getStartOfWeek(for: now, calendar: calendar, weekStartsOn: settings.weekStartsOn)
             let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek)!
             entries = timeEntries.filter { $0.startDate >= startOfWeek && $0.startDate < endOfWeek }
             
         case .lastWeek:
-            let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+            let startOfThisWeek = getStartOfWeek(for: now, calendar: calendar, weekStartsOn: settings.weekStartsOn)
             let startOfLastWeek = calendar.date(byAdding: .day, value: -7, to: startOfThisWeek)!
             entries = timeEntries.filter { $0.startDate >= startOfLastWeek && $0.startDate < startOfThisWeek }
             
@@ -235,11 +608,11 @@ class TimeTracker: ObservableObject {
                 let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
                 shouldInclude = currentStart >= startOfDay && currentStart < endOfDay
             case .thisWeek:
-                let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+                let startOfWeek = getStartOfWeek(for: now, calendar: calendar, weekStartsOn: settings.weekStartsOn)
                 let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek)!
                 shouldInclude = currentStart >= startOfWeek && currentStart < endOfWeek
             case .lastWeek:
-                let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+                let startOfThisWeek = getStartOfWeek(for: now, calendar: calendar, weekStartsOn: settings.weekStartsOn)
                 let startOfLastWeek = calendar.date(byAdding: .day, value: -7, to: startOfThisWeek)!
                 shouldInclude = currentStart >= startOfLastWeek && currentStart < startOfThisWeek
             case .thisMonth:
@@ -310,3 +683,5 @@ class TimeTracker: ObservableObject {
 enum StatisticsPeriod {
     case today, thisWeek, lastWeek, thisMonth, total
 }
+
+

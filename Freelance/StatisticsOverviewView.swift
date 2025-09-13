@@ -36,6 +36,16 @@ struct StatisticsOverviewView: View {
     @State private var salaryInputValue = ""
     @Environment(\.dismiss) private var dismiss
     
+    private func requestNotificationPermissionAndEnable(interval: Double) {
+        settings.requestNotificationPermission { granted in
+            if granted {
+                settings.deadManSwitchInterval = interval
+                settings.deadManSwitchEnabled = true
+                TimeTracker.shared.restartDeadManSwitch()
+            }
+        }
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
@@ -132,19 +142,21 @@ struct StatisticsOverviewView: View {
         }
         .onDisappear {
             settings.saveSettings()
+            TimeTracker.shared.restartDeadManSwitch()
         }
         .confirmationDialog("check in every", isPresented: $showingDeadManSwitchPicker, titleVisibility: .visible) {
+            Button("none") {
+                settings.deadManSwitchEnabled = false
+                TimeTracker.shared.restartDeadManSwitch()
+            }
             Button("5min") {
-                settings.deadManSwitchInterval = 5
-                settings.deadManSwitchEnabled = true
+                requestNotificationPermissionAndEnable(interval: 5)
             }
             Button("10min") {
-                settings.deadManSwitchInterval = 10
-                settings.deadManSwitchEnabled = true
+                requestNotificationPermissionAndEnable(interval: 10)
             }
             Button("30min") {
-                settings.deadManSwitchInterval = 30
-                settings.deadManSwitchEnabled = true
+                requestNotificationPermissionAndEnable(interval: 30)
             }
             Button("custom") {
                 customDeadManValue = String(Int(settings.deadManSwitchInterval))
@@ -211,8 +223,7 @@ struct StatisticsOverviewView: View {
             Button("cancel", role: .cancel) { }
             Button("save") {
                 if let value = Double(customDeadManValue) {
-                    settings.deadManSwitchInterval = value
-                    settings.deadManSwitchEnabled = true
+                    requestNotificationPermissionAndEnable(interval: value)
                 }
             }
         }
@@ -250,6 +261,42 @@ struct SettingsSection: View {
     @Binding var customDeadManValue: String
     @Binding var customMotionValue: String
     @Binding var salaryInputValue: String
+    
+    private func getNextNotificationTime() -> String {
+        let calendar = Calendar.current
+        let now = Date()
+        let intervalMinutes = settings.deadManSwitchInterval
+        
+        // Calculate next clock-aligned time (same logic as in TimeTracker)
+        let currentMinute = calendar.component(.minute, from: now)
+        let minutesSinceLastBoundary = currentMinute % Int(intervalMinutes)
+        
+        var nextMinute: Int
+        if minutesSinceLastBoundary == 0 {
+            nextMinute = currentMinute + Int(intervalMinutes)
+        } else {
+            nextMinute = currentMinute - minutesSinceLastBoundary + Int(intervalMinutes)
+        }
+        
+        var nextHour = calendar.component(.hour, from: now)
+        if nextMinute >= 60 {
+            nextHour += nextMinute / 60
+            nextMinute = nextMinute % 60
+        }
+        
+        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        dateComponents.hour = nextHour
+        dateComponents.minute = nextMinute
+        dateComponents.second = 0
+        
+        if let nextTime = calendar.date(from: dateComponents) {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            return formatter.string(from: nextTime)
+        }
+        
+        return "unknown"
+    }
     
     private var weekdayName: String {
         switch settings.weekStartsOn {
@@ -293,19 +340,27 @@ struct SettingsSection: View {
                 }
                 
                             // Dead Man Switch
-                            HStack {
-                                Text("check in every")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    showingDeadManSwitchPicker = true
-                                }) {
-                                    Text("\(Int(settings.deadManSwitchInterval))min")
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text("check in every")
                                         .font(.custom("Major Mono Display Regular", size: 17))
                                         .foregroundColor(.primary)
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: {
+                                        showingDeadManSwitchPicker = true
+                                    }) {
+                                        Text(settings.deadManSwitchEnabled ? "\(Int(settings.deadManSwitchInterval))min" : "none")
+                                            .font(.custom("Major Mono Display Regular", size: 17))
+                                            .foregroundColor(.primary)
+                                    }
+                                }
+                                
+                                if settings.deadManSwitchEnabled && TimeTracker.shared.isRunning {
+                                    Text("next: \(getNextNotificationTime())")
+                                        .font(.custom("Major Mono Display Regular", size: 12))
+                                        .foregroundColor(.secondary)
                                 }
                             }
                             

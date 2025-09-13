@@ -126,6 +126,30 @@ struct TimerView: View {
                     }
                     .contentShape(Circle())
                     .padding(.bottom, geometry.safeAreaInsets.bottom + 60)
+                    
+                    // Debug button for testing notifications (only in debug builds)
+                    #if DEBUG
+                    VStack(spacing: 8) {
+                        Button("Debug Notifications") {
+                            TimeTracker.shared.debugPendingNotifications()
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        
+                        Button("Test Immediate") {
+                            TimeTracker.shared.testImmediateNotification()
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        
+                        Button("Test Background") {
+                            TimeTracker.shared.testBackgroundNotification()
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    }
+                    .padding(.bottom, 20)
+                    #endif
                 }
             }
         }
