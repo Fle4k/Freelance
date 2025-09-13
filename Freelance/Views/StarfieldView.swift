@@ -24,8 +24,10 @@ struct StarfieldView: View {
                 let x = centerX + CGFloat(particle.x) * depth * 0.5
                 let y = centerY + CGFloat(particle.y) * depth * 0.5
                 
-                // Better fade calculation
-                let alpha = min(depth * CGFloat(particle.alpha) * 1.5, 1.0)
+                // Better fade calculation with fade out
+                let baseAlpha = min(depth * CGFloat(particle.alpha) * 1.5, 1.0)
+                let fadeOutAlpha = 1.0 - CGFloat(particle.fadeOutProgress)
+                let alpha = baseAlpha * fadeOutAlpha
                 
                 let rect = CGRect(x: x - scale/2, y: y - scale/2, width: scale, height: scale)
                 context.fill(Path(ellipseIn: rect), with: .color(.primary.opacity(alpha)))
@@ -71,8 +73,14 @@ final class StarfieldParticleSystem: ObservableObject {
             // Slower but not too slow
             particles[i].z -= particles[i].speed * 0.01
             
-            if particles[i].z <= 0.0 {
-                particles[i] = StarParticle.random()
+            // Start fading out when particle gets close to the front
+            if particles[i].z <= 0.1 {
+                particles[i].fadeOutProgress += 0.04  // Faster fade out (~0.5 seconds)
+                
+                // Only replace particle when fully faded out
+                if particles[i].fadeOutProgress >= 1.0 {
+                    particles[i] = StarParticle.random()
+                }
             }
         }
     }
@@ -85,6 +93,7 @@ struct StarParticle {
     var speed: Float
     var size: Float
     var alpha: Float
+    var fadeOutProgress: Float = 0.0  // 0.0 = fully visible, 1.0 = fully faded
     
     static func random() -> StarParticle {
         StarParticle(
@@ -93,7 +102,8 @@ struct StarParticle {
             z: Float.random(in: 0.85...1.0),        // Closer starting point
             speed: Float.random(in: 0.2...0.6),     // Moderate speeds
             size: Float.random(in: 1.5...4.0),      // Bigger particles
-            alpha: Float.random(in: 0.8...1.0)      // High visibility
+            alpha: Float.random(in: 0.8...1.0),     // High visibility
+            fadeOutProgress: 0.0                     // Start fully visible
         )
     }
 }

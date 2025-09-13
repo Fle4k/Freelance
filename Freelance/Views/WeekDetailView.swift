@@ -72,23 +72,28 @@ struct WeekDetailView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                Spacer(minLength: 30)
+                Spacer(minLength: 60)
                 
                 VStack(spacing: 30) {
                     // Header matching overview style
-                    VStack(spacing: 10) {
-                        Text("this week")
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.secondary)
-                        
-                        Text(timeTracker.formattedTimeHMS(for: .thisWeek))
-                            .font(.custom("Major Mono Display Regular", size: 20))
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        VStack(spacing: 10) {
+                            Text("this week")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.secondary)
+                            
+                            Text(timeTracker.formattedTimeHMS(for: .thisWeek))
+                                .font(.custom("Major Mono Display Regular", size: 20))
+                                .foregroundColor(.primary)
+                            
+                            Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
+                                .font(.custom("Major Mono Display Regular", size: 20))
                             .foregroundColor(.primary)
-                        
-                        Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
-                            .font(.custom("Major Mono Display Regular", size: 20))
-                        .foregroundColor(.primary)
+                        }
                     }
+                    .buttonStyle(PlainButtonStyle())
                     
                     // Week entries with smaller font
                     ScrollView(.vertical, showsIndicators: false) {

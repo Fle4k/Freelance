@@ -38,11 +38,11 @@ struct StatisticsOverviewView: View {
     
     var body: some View {
         GeometryReader { geometry in
-                VStack(spacing: 0) {
-                    Spacer(minLength: 30)
-                    
+            VStack(spacing: 0) {
+                Spacer(minLength: 40)
+                
                 // Overview Page
-                VStack(spacing: 30) {
+                VStack(spacing: 20) {
                     // Today Card
                     Button(action: {
                         showingTodayDetail = true
@@ -110,10 +110,9 @@ struct StatisticsOverviewView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 40)
+                .padding(.bottom, 40)
                 
-                Spacer()
-                
-                // Settings section - always at bottom
+                // Settings section - moved up
                 SettingsSection(
                     settings: settings,
                     showingDeadManSwitchPicker: $showingDeadManSwitchPicker,
@@ -126,6 +125,8 @@ struct StatisticsOverviewView: View {
                     customMotionValue: $customMotionValue,
                     salaryInputValue: $salaryInputValue
                 )
+                
+                Spacer()
             }
             .background(Color(.systemBackground))
         }
@@ -386,7 +387,7 @@ struct SettingsSection: View {
                             }
                         }
                         .padding(.horizontal, 40)
-            .padding(.bottom, 20)
+            .padding(.bottom, 10)
         }
     }
 }
