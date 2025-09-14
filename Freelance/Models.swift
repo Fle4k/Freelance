@@ -156,7 +156,40 @@ class TimeTracker: ObservableObject {
         let hours = Int(totalTime) / 3600
         let minutes = Int(totalTime) % 3600 / 60
         let seconds = Int(totalTime) % 60
-        return String(format: "%dh%02dm%02ds", hours, minutes, seconds)
+        
+        // Show only necessary units
+        if hours > 0 {
+            // After 59 minutes, show "1h00m"
+            return String(format: "%dh%02dm", hours, minutes)
+        } else if minutes > 0 {
+            // After 59 seconds, show "1m00s"
+            return String(format: "%dm%02ds", minutes, seconds)
+        } else {
+            // Start with only seconds
+            return String(format: "%ds", seconds)
+        }
+    }
+    
+    // Computed properties for timer display components (MVVM compliance)
+    var timerDisplayComponents: [(digits: String, unit: String)] {
+        let totalTime = totalAccumulatedTime + (isRunning ? elapsedTime : 0)
+        let hours = Int(totalTime) / 3600
+        let minutes = Int(totalTime) % 3600 / 60
+        let seconds = Int(totalTime) % 60
+        
+        var components: [(digits: String, unit: String)] = []
+        
+        if hours > 0 {
+            components.append((digits: String(hours), unit: "h"))
+            components.append((digits: String(format: "%02d", minutes), unit: "m"))
+        } else if minutes > 0 {
+            components.append((digits: String(minutes), unit: "m"))
+            components.append((digits: String(format: "%02d", seconds), unit: "s"))
+        } else {
+            components.append((digits: String(seconds), unit: "s"))
+        }
+        
+        return components
     }
     
     func formattedTotalTime(for period: StatisticsPeriod) -> String {
