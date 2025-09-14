@@ -77,7 +77,7 @@ class AppSettings: ObservableObject {
     }
     
     private func loadSettings() {
-        hourlyRate = UserDefaults.standard.object(forKey: "hourlyRate") as? Double ?? 80.0
+        hourlyRate = UserDefaults.standard.object(forKey: "hourlyRate") as? Double ?? 0.0
         deadManSwitchEnabled = UserDefaults.standard.object(forKey: "deadManSwitchEnabled") as? Bool ?? false
         deadManSwitchInterval = UserDefaults.standard.object(forKey: "deadManSwitchInterval") as? Double ?? 10.0
         motionDetectionEnabled = UserDefaults.standard.object(forKey: "motionDetectionEnabled") as? Bool ?? false
@@ -110,13 +110,13 @@ class TimeTracker: ObservableObject {
     func setupNotificationCategories() {
         let continueAction = UNNotificationAction(
             identifier: "CONTINUE",
-            title: "Continue",
+            title: "continue",
             options: [.foreground]
         )
         
         let stopAction = UNNotificationAction(
             identifier: "STOP",
-            title: "Stop",
+            title: "stop",
             options: [.destructive, .foreground]
         )
         
@@ -130,13 +130,13 @@ class TimeTracker: ObservableObject {
         // Timer stopped notification actions
         let continueWithTimeAction = UNNotificationAction(
             identifier: "CONTINUE_WITH_TIME",
-            title: "Continue & Add Time",
+            title: "continue & add time",
             options: [.foreground]
         )
         
         let newTimerAction = UNNotificationAction(
             identifier: "NEW_TIMER",
-            title: "New Timer",
+            title: "new timer",
             options: [.foreground]
         )
         
@@ -591,6 +591,161 @@ class TimeTracker: ObservableObject {
         startTimer()
     }
     
+    // MARK: - Time Management Actions
+    
+    func copyTime(for period: StatisticsPeriod) {
+        let timeString = formattedTotalTime(for: period)
+        UIPasteboard.general.string = timeString
+        print("Copied time for \(period.displayName): \(timeString)")
+    }
+    
+    func resetTime(for period: StatisticsPeriod) {
+        switch period {
+        case .today:
+            // Reset only today's entries
+            let calendar = Calendar.current
+            let today = Date()
+            timeEntries = timeEntries.filter { !calendar.isDate($0.startDate, inSameDayAs: today) }
+            saveTimeEntries()
+        case .thisWeek:
+            // Reset this week's entries
+            let calendar = Calendar.current
+            let now = Date()
+            let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+            timeEntries = timeEntries.filter { $0.startDate < weekStart }
+            saveTimeEntries()
+        case .thisMonth:
+            // Reset this month's entries
+            let calendar = Calendar.current
+            let now = Date()
+            let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? now
+            timeEntries = timeEntries.filter { $0.startDate < monthStart }
+            saveTimeEntries()
+        case .lastWeek, .total:
+            // Reset all entries
+            timeEntries = []
+            totalAccumulatedTime = 0
+            saveTimeEntries()
+            saveAccumulatedTime()
+        }
+        
+        // Stop current timer if running
+        if isRunning {
+            pauseTimer()
+        }
+        
+        print("Reset time for \(period.displayName)")
+    }
+    
+    func editTime(for period: StatisticsPeriod, newTime: TimeInterval) {
+        switch period {
+        case .today:
+            editTodayTime(newTime: newTime)
+        case .thisWeek:
+            editThisWeekTime(newTime: newTime)
+        case .thisMonth:
+            editThisMonthTime(newTime: newTime)
+        case .lastWeek, .total:
+            editTotalTime(newTime: newTime)
+        }
+        
+        print("Edited time for \(period.displayName) to \(newTime) seconds")
+    }
+    
+    func adjustTime(for period: StatisticsPeriod, newTime: TimeInterval) {
+        let currentTime = getTotalHours(for: period) * 3600
+        let difference = newTime - currentTime
+        
+        if abs(difference) < 1 { return } // No significant change
+        
+        // Create an adjustment entry
+        let now = Date()
+        let adjustmentEntry: TimeEntry
+        
+        if difference > 0 {
+            // Adding time - create a positive entry
+            adjustmentEntry = TimeEntry(
+                startDate: now,
+                endDate: now.addingTimeInterval(difference),
+                isActive: false
+            )
+        } else {
+            // Subtracting time - create a negative entry (end before start)
+            adjustmentEntry = TimeEntry(
+                startDate: now.addingTimeInterval(difference),
+                endDate: now,
+                isActive: false
+            )
+        }
+        
+        timeEntries.append(adjustmentEntry)
+        saveTimeEntries()
+        
+        print("Adjusted \(period.displayName) by \(difference) seconds")
+    }
+    
+    private func editTodayTime(newTime: TimeInterval) {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Remove today's entries
+        timeEntries = timeEntries.filter { !calendar.isDate($0.startDate, inSameDayAs: today) }
+        
+        // Add a single entry for today with the new time
+        if newTime > 0 {
+            let startTime = calendar.startOfDay(for: today)
+            let endTime = startTime.addingTimeInterval(newTime)
+            let newEntry = TimeEntry(startDate: startTime, endDate: endTime, isActive: false)
+            timeEntries.append(newEntry)
+        }
+        
+        saveTimeEntries()
+    }
+    
+    private func editThisWeekTime(newTime: TimeInterval) {
+        let calendar = Calendar.current
+        let now = Date()
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+        
+        // Remove this week's entries
+        timeEntries = timeEntries.filter { $0.startDate < weekStart }
+        
+        // Add a single entry for this week with the new time
+        if newTime > 0 {
+            let endTime = weekStart.addingTimeInterval(newTime)
+            let newEntry = TimeEntry(startDate: weekStart, endDate: endTime, isActive: false)
+            timeEntries.append(newEntry)
+        }
+        
+        saveTimeEntries()
+    }
+    
+    private func editThisMonthTime(newTime: TimeInterval) {
+        let calendar = Calendar.current
+        let now = Date()
+        let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? now
+        
+        // Remove this month's entries
+        timeEntries = timeEntries.filter { $0.startDate < monthStart }
+        
+        // Add a single entry for this month with the new time
+        if newTime > 0 {
+            let endTime = monthStart.addingTimeInterval(newTime)
+            let newEntry = TimeEntry(startDate: monthStart, endDate: endTime, isActive: false)
+            timeEntries.append(newEntry)
+        }
+        
+        saveTimeEntries()
+    }
+    
+    private func editTotalTime(newTime: TimeInterval) {
+        // Clear all entries and set total accumulated time
+        timeEntries = []
+        totalAccumulatedTime = newTime
+        saveTimeEntries()
+        saveAccumulatedTime()
+    }
+
     // MARK: - Statistics
     
     private func getStartOfWeek(for date: Date, calendar: Calendar, weekStartsOn: Int) -> Date {

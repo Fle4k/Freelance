@@ -161,7 +161,7 @@ struct TimerView: View {
                 timeTracker.resetTimer()
             }
         } message: {
-            Text("Store time and start a new session or reset without storing?")
+            Text("store time and start a new session or reset without storing?")
         }
         .onDisappear {
             longPressTimer?.invalidate()

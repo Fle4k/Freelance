@@ -69,7 +69,7 @@ struct DailyStatisticsView: View {
                         }
                         
                         if todayEntries.isEmpty {
-                            Text("No time tracked today")
+                            Text("no time tracked today")
                                 .font(.custom("Major Mono Display Regular", size: 17))
                                 .foregroundColor(.secondary)
                         }
