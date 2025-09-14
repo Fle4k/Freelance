@@ -52,6 +52,9 @@ final class StarfieldParticleSystem: ObservableObject {
     private var isRunning = false
     
     func start() {
+        // Don't start if already running
+        guard !isRunning else { return }
+        
         // Stop any existing timer and reset state
         timer?.invalidate()
         timer = nil
@@ -60,15 +63,19 @@ final class StarfieldParticleSystem: ObservableObject {
         isFadingOut = false
         particles = (0..<200).map { _ in StarParticle.random() }
         
-        // Back to 20fps but slower movement
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0/20.0, repeats: true) { _ in
+        // Higher framerate for smoother animation
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0/60.0, repeats: true) { _ in
             self.updateParticles()
         }
     }
     
     func stop() {
-        // Don't start fade out if already fading out
-        guard !isFadingOut else { return }
+        // Don't start fade out if already fading out or not running
+        guard !isFadingOut && isRunning else { return }
+        
+        // Stop any existing timer first
+        timer?.invalidate()
+        timer = nil
         
         isRunning = false
         isFadingOut = true
@@ -79,19 +86,19 @@ final class StarfieldParticleSystem: ObservableObject {
         }
         
         // Continue updating particles during fade out
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0/20.0, repeats: true) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0/60.0, repeats: true) { _ in
             self.updateParticlesFadeOut()
         }
     }
     
     private func updateParticles() {
         for i in particles.indices {
-            // Slower but not too slow
-            particles[i].z -= particles[i].speed * 0.01
+            // Smooth movement at 60fps - reduced speed to maintain same visual speed
+            particles[i].z -= particles[i].speed * 0.0033
             
             // Start fading out when particle gets close to the front
             if particles[i].z <= 0.1 {
-                particles[i].fadeOutProgress += 0.04  // Original fade out rate (~1.25 seconds)
+                particles[i].fadeOutProgress += 0.013  // Adjusted for 60fps (~1.25 seconds)
                 
                 // Only replace particle when fully faded out
                 if particles[i].fadeOutProgress >= 1.0 {
@@ -106,10 +113,10 @@ final class StarfieldParticleSystem: ObservableObject {
         
         for i in particles.indices {
             // Continue moving particles during fade out
-            particles[i].z -= particles[i].speed * 0.01
+            particles[i].z -= particles[i].speed * 0.0033
             
             // Fade out all particles at the same rate as individual particles
-            particles[i].fadeOutProgress += 0.04  // Same rate as individual particles (~1.25 seconds)
+            particles[i].fadeOutProgress += 0.013  // Adjusted for 60fps (~1.25 seconds)
             
             if particles[i].fadeOutProgress < 1.0 {
                 allFadedOut = false
@@ -122,6 +129,7 @@ final class StarfieldParticleSystem: ObservableObject {
             timer = nil
             particles.removeAll()
             isFadingOut = false
+            isRunning = false  // Reset running state
         }
     }
 }
