@@ -120,14 +120,34 @@ class TimeTracker: ObservableObject {
             options: [.destructive, .foreground]
         )
         
-        let category = UNNotificationCategory(
+        let deadManCategory = UNNotificationCategory(
             identifier: "DEAD_MAN_SWITCH",
             actions: [continueAction, stopAction],
             intentIdentifiers: [],
             options: [.customDismissAction, .allowInCarPlay]
         )
         
-        notificationCenter.setNotificationCategories([category])
+        // Timer stopped notification actions
+        let continueWithTimeAction = UNNotificationAction(
+            identifier: "CONTINUE_WITH_TIME",
+            title: "Continue & Add Time",
+            options: [.foreground]
+        )
+        
+        let newTimerAction = UNNotificationAction(
+            identifier: "NEW_TIMER",
+            title: "New Timer",
+            options: [.foreground]
+        )
+        
+        let timerStoppedCategory = UNNotificationCategory(
+            identifier: "TIMER_STOPPED",
+            actions: [continueWithTimeAction, newTimerAction],
+            intentIdentifiers: [],
+            options: [.customDismissAction, .allowInCarPlay]
+        )
+        
+        notificationCenter.setNotificationCategories([deadManCategory, timerStoppedCategory])
         
     }
     
@@ -346,6 +366,10 @@ class TimeTracker: ObservableObject {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         print("Scheduling dead man switch notification for \(formatter.string(from: nextNotificationTime)) (every \(Int(intervalMinutes)) minutes)")
+        
+        // Start the 2-minute timeout timer when the notification is scheduled
+        // This ensures it works whether the app is in foreground or background
+        startNotificationTimeout()
         print("Date components: \(dateComponents)")
         
         notificationCenter.add(request) { error in
@@ -411,6 +435,7 @@ class TimeTracker: ObservableObject {
         content.body = "No response received within 2 minutes. Timer has been paused."
         content.sound = .default
         content.badge = 1
+        content.categoryIdentifier = "TIMER_STOPPED"
         content.userInfo = ["type": "timer_stopped"]
         
         let request = UNNotificationRequest(
@@ -487,9 +512,50 @@ class TimeTracker: ObservableObject {
             handleDeadManResponse(continue: true)
         case "STOP":
             handleDeadManResponse(continue: false)
+        case "CONTINUE_WITH_TIME":
+            handleContinueWithTime()
+        case "NEW_TIMER":
+            handleNewTimer()
         default:
             break
         }
+    }
+    
+    private func handleContinueWithTime() {
+        print("User chose to continue with time that passed")
+        
+        // Clear notification badge
+        clearNotificationBadge()
+        
+        // Add the time that passed since the last dead man check to accumulated time
+        if let lastCheck = lastDeadManCheck {
+            let timePassed = Date().timeIntervalSince(lastCheck)
+            totalAccumulatedTime += timePassed
+            saveAccumulatedTime()
+            print("Added \(Int(timePassed)) seconds to accumulated time")
+        }
+        
+        // Start a new timer session
+        startTimer()
+    }
+    
+    private func handleNewTimer() {
+        print("User chose to start a new timer")
+        
+        // Clear notification badge
+        clearNotificationBadge()
+        
+        // Store current session and reset (same as recordTimer but without starting)
+        if isRunning {
+            pauseTimer() // This will save the current session
+        }
+        
+        // Reset all accumulated time
+        totalAccumulatedTime = 0
+        saveAccumulatedTime()
+        
+        // Start a new timer session
+        startTimer()
     }
     
     // MARK: - Statistics
