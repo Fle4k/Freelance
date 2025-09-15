@@ -34,6 +34,9 @@ struct StatisticsOverviewView: View {
     @State private var customDeadManValue = ""
     @State private var customMotionValue = ""
     @State private var salaryInputValue = ""
+    @State private var selectedDeadManInterval = 0
+    @State private var selectedMotionThreshold = 5
+    @State private var selectedWeekStarts = 2
     // Unified edit state
     @State private var showingEditSheet = false
     @State private var editingPeriod: StatisticsPeriod = .today
@@ -71,7 +74,7 @@ struct StatisticsOverviewView: View {
         showingResetConfirmation = true
     }
     
-    private func getCustomTitle(for period: StatisticsPeriod) -> String {
+    private func getCustomTitle(for period: StatisticsPeriod) -> String? {
         let formatter = DateFormatter()
         
         switch period {
@@ -89,20 +92,8 @@ struct StatisticsOverviewView: View {
         }
     }
     
-    private func confirmReset() {
-        TimeTracker.shared.resetTime(for: resettingPeriod)
-        showingResetConfirmation = false
-    }
-    
-    
-    var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                Spacer(minLength: 40)
-                
-                // Overview Page
-                VStack(spacing: 20) {
-                    // Today Card
+    // MARK: - Card Views
+    private var todayCard: some View {
                     Button(action: {
                         showingTodayDetail = true
                     }) {
@@ -111,10 +102,10 @@ struct StatisticsOverviewView: View {
                                 .font(.custom("Major Mono Display Regular", size: 18))
                                 .foregroundColor(.secondary)
                             
-                            ProportionalTimeDisplay(
-                                timeString: timeTracker.formattedTimeHMS(for: .today),
-                                digitFontSize: 20
-                            )
+                ProportionalTimeDisplay(
+                    timeString: timeTracker.formattedTimeHMS(for: .today),
+                    digitFontSize: 20
+                )
                             
                             Text(String(format: "%.0f€", timeTracker.getEarnings(for: .today)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
@@ -122,8 +113,8 @@ struct StatisticsOverviewView: View {
                         }
                         .padding(.vertical, 20)
                         .frame(maxWidth: .infinity)
-                        .frame(minHeight: 80) // Ensure minimum touch target
-                        .contentShape(Rectangle()) // Make entire area tappable
+            .frame(minHeight: 80)
+            .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
                     .contextMenu {
@@ -135,10 +126,11 @@ struct StatisticsOverviewView: View {
                         }
                         Button("reset", role: .destructive) {
                             resetTime(for: .today)
+            }
                         }
                     }
                     
-                    // This Week Card
+    private var weekCard: some View {
                     Button(action: {
                         showingWeekDetail = true
                     }) {
@@ -147,10 +139,10 @@ struct StatisticsOverviewView: View {
                             .font(.custom("Major Mono Display Regular", size: 18))
                             .foregroundColor(.secondary)
                         
-                            ProportionalTimeDisplay(
-                                timeString: timeTracker.formattedTimeHMS(for: .thisWeek),
-                                digitFontSize: 20
-                            )
+                ProportionalTimeDisplay(
+                    timeString: timeTracker.formattedTimeHMS(for: .thisWeek),
+                    digitFontSize: 20
+                )
                             
                             Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
@@ -158,8 +150,8 @@ struct StatisticsOverviewView: View {
                         }
                         .padding(.vertical, 20)
                         .frame(maxWidth: .infinity)
-                        .frame(minHeight: 80) // Ensure minimum touch target
-                        .contentShape(Rectangle()) // Make entire area tappable
+            .frame(minHeight: 80)
+            .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
                     .contextMenu {
@@ -171,10 +163,11 @@ struct StatisticsOverviewView: View {
                         }
                         Button("reset", role: .destructive) {
                             resetTime(for: .thisWeek)
+            }
                         }
                     }
                     
-                    // This Month Card
+    private var monthCard: some View {
                     Button(action: {
                         showingMonthDetail = true
                     }) {
@@ -183,10 +176,10 @@ struct StatisticsOverviewView: View {
                             .font(.custom("Major Mono Display Regular", size: 18))
                             .foregroundColor(.secondary)
                         
-                            ProportionalTimeDisplay(
-                                timeString: timeTracker.formattedTimeHMS(for: .thisMonth),
-                                digitFontSize: 20
-                            )
+                ProportionalTimeDisplay(
+                    timeString: timeTracker.formattedTimeHMS(for: .thisMonth),
+                    digitFontSize: 20
+                )
                             
                             Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisMonth)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
@@ -194,8 +187,8 @@ struct StatisticsOverviewView: View {
                         }
                         .padding(.vertical, 20)
                         .frame(maxWidth: .infinity)
-                        .frame(minHeight: 80) // Ensure minimum touch target
-                        .contentShape(Rectangle()) // Make entire area tappable
+            .frame(minHeight: 80)
+            .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
                     .contextMenu {
@@ -210,216 +203,25 @@ struct StatisticsOverviewView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 40)
+    
+    // MARK: - View Modifiers
+    private var mainView: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                Spacer(minLength: 40)
+                
+                // Overview Page
+                    VStack(spacing: 20) {
+                    todayCard
+                    
+                    weekCard
+                    
+                    monthCard
+                    }
+                    .padding(.horizontal, 40)
                 .padding(.bottom, 40)
                 
-                // Settings section - moved up
-                SettingsSection(
-                    settings: settings,
-                    showingDeadManSwitchPicker: $showingDeadManSwitchPicker,
-                    showingMotionThresholdPicker: $showingMotionThresholdPicker,
-                    showingSalaryInput: $showingSalaryInput,
-                    showingCustomDeadManInput: $showingCustomDeadManInput,
-                    showingCustomMotionInput: $showingCustomMotionInput,
-                    showingWeekStartsPicker: $showingWeekStartsPicker,
-                    customDeadManValue: $customDeadManValue,
-                    customMotionValue: $customMotionValue,
-                    salaryInputValue: $salaryInputValue
-                )
-                
-                Spacer()
-            }
-            .background(Color(.systemBackground))
-        }
-        .onDisappear {
-            settings.saveSettings()
-            TimeTracker.shared.restartDeadManSwitch()
-        }
-        .confirmationDialog("check in every", isPresented: $showingDeadManSwitchPicker, titleVisibility: .visible) {
-            Button("none") {
-                settings.deadManSwitchEnabled = false
-                TimeTracker.shared.restartDeadManSwitch()
-            }
-            Button("5min") {
-                requestNotificationPermissionAndEnable(interval: 5)
-            }
-            Button("10min") {
-                requestNotificationPermissionAndEnable(interval: 10)
-            }
-            Button("30min") {
-                requestNotificationPermissionAndEnable(interval: 30)
-            }
-            Button("custom") {
-                customDeadManValue = String(Int(settings.deadManSwitchInterval))
-                showingCustomDeadManInput = true
-            }
-            Button("cancel", role: .cancel) { }
-        }
-        .confirmationDialog("longer than", isPresented: $showingMotionThresholdPicker, titleVisibility: .visible) {
-            Button("5min") {
-                settings.motionThreshold = 5
-                settings.motionDetectionEnabled = true
-            }
-            Button("10min") {
-                settings.motionThreshold = 10
-                settings.motionDetectionEnabled = true
-            }
-            Button("30min") {
-                settings.motionThreshold = 30
-                settings.motionDetectionEnabled = true
-            }
-            Button("custom") {
-                customMotionValue = String(Int(settings.motionThreshold))
-                showingCustomMotionInput = true
-            }
-            Button("cancel", role: .cancel) { }
-        }
-        .confirmationDialog("weekday starts", isPresented: $showingWeekStartsPicker, titleVisibility: .visible) {
-            Button("monday") {
-                settings.weekStartsOn = 2
-            }
-            Button("tuesday") {
-                settings.weekStartsOn = 3
-            }
-            Button("wednesday") {
-                settings.weekStartsOn = 4
-            }
-            Button("thursday") {
-                settings.weekStartsOn = 5
-            }
-            Button("friday") {
-                settings.weekStartsOn = 6
-            }
-            Button("saturday") {
-                settings.weekStartsOn = 7
-            }
-            Button("sunday") {
-                settings.weekStartsOn = 1
-            }
-            Button("cancel", role: .cancel) { }
-        }
-        .alert("salary", isPresented: $showingSalaryInput) {
-            TextField("hourly rate", text: $salaryInputValue)
-                .keyboardType(.numberPad)
-            Button("cancel", role: .cancel) { }
-            Button("save") {
-                if let value = Double(salaryInputValue) {
-                    settings.hourlyRate = value
-                }
-            }
-        }
-        .alert("check in every", isPresented: $showingCustomDeadManInput) {
-            TextField("minutes", text: $customDeadManValue)
-                .keyboardType(.numberPad)
-            Button("cancel", role: .cancel) { }
-            Button("save") {
-                if let value = Double(customDeadManValue) {
-                    requestNotificationPermissionAndEnable(interval: value)
-                }
-            }
-        }
-        .alert("longer than", isPresented: $showingCustomMotionInput) {
-            TextField("minutes", text: $customMotionValue)
-                .keyboardType(.numberPad)
-            Button("cancel", role: .cancel) { }
-            Button("save") {
-                if let value = Double(customMotionValue) {
-                    settings.motionThreshold = value
-                    settings.motionDetectionEnabled = true
-                }
-            }
-        }
-        .sheet(isPresented: $showingTodayDetail) {
-            TodayDetailView()
-        }
-        .sheet(isPresented: $showingWeekDetail) {
-            WeekDetailView()
-        }
-        .sheet(isPresented: $showingMonthDetail) {
-            MonthDetailView()
-        }
-        .confirmationDialog("reset \(resettingPeriod.displayName)", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
-            Button("reset", role: .destructive) {
-                confirmReset()
-            }
-            Button("cancel", role: .cancel) { }
-        } message: {
-            Text("are you sure you want to reset \(resettingPeriod.displayName)? this will permanently delete all time data for this period.")
-        }
-        .sheet(isPresented: $showingEditSheet) {
-            EditTimeSheet(
-                period: editingPeriod,
-                currentTime: timeTracker.formattedTimeHMS(for: editingPeriod),
-                isPresented: $showingEditSheet,
-                customTitle: getCustomTitle(for: editingPeriod)
-            )
-        }
-    }
-}
-
-
-struct SettingsSection: View {
-    @ObservedObject var settings: AppSettings
-    @Binding var showingDeadManSwitchPicker: Bool
-    @Binding var showingMotionThresholdPicker: Bool
-    @Binding var showingSalaryInput: Bool
-    @Binding var showingCustomDeadManInput: Bool
-    @Binding var showingCustomMotionInput: Bool
-    @Binding var showingWeekStartsPicker: Bool
-    @Binding var customDeadManValue: String
-    @Binding var customMotionValue: String
-    @Binding var salaryInputValue: String
-    
-    private func getNextNotificationTime() -> String {
-        let calendar = Calendar.current
-        let now = Date()
-        let intervalMinutes = settings.deadManSwitchInterval
-        
-        // Calculate next clock-aligned time (same logic as in TimeTracker)
-        let currentMinute = calendar.component(.minute, from: now)
-        let minutesSinceLastBoundary = currentMinute % Int(intervalMinutes)
-        
-        var nextMinute: Int
-        if minutesSinceLastBoundary == 0 {
-            nextMinute = currentMinute + Int(intervalMinutes)
-        } else {
-            nextMinute = currentMinute - minutesSinceLastBoundary + Int(intervalMinutes)
-        }
-        
-        var nextHour = calendar.component(.hour, from: now)
-        if nextMinute >= 60 {
-            nextHour += nextMinute / 60
-            nextMinute = nextMinute % 60
-        }
-        
-        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
-        dateComponents.hour = nextHour
-        dateComponents.minute = nextMinute
-        dateComponents.second = 0
-        
-        if let nextTime = calendar.date(from: dateComponents) {
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            return formatter.string(from: nextTime)
-        }
-        
-        return "unknown"
-    }
-    
-    private var weekdayName: String {
-        switch settings.weekStartsOn {
-        case 1: return "sunday"
-        case 2: return "monday"
-        case 3: return "tuesday"
-        case 4: return "wednesday"
-        case 5: return "thursday"
-        case 6: return "friday"
-        case 7: return "saturday"
-        default: return "monday"
-        }
-    }
-    
-    var body: some View {
+                // Settings section
                     VStack(spacing: 20) {
                         Divider()
                             .padding(.horizontal, 40)
@@ -439,6 +241,7 @@ struct SettingsSection: View {
                     Spacer()
                     
                     Button(action: {
+                            selectedWeekStarts = settings.weekStartsOn
                         showingWeekStartsPicker = true
                     }) {
                         Text(weekdayName)
@@ -457,6 +260,7 @@ struct SettingsSection: View {
                                     Spacer()
                                     
                                     Button(action: {
+                            selectedDeadManInterval = settings.deadManSwitchEnabled ? Int(settings.deadManSwitchInterval) : 0
                                         showingDeadManSwitchPicker = true
                                     }) {
                                         Text(settings.deadManSwitchEnabled ? "\(Int(settings.deadManSwitchInterval))min" : "none")
@@ -508,6 +312,7 @@ struct SettingsSection: View {
                                         
                                         if settings.motionDetectionEnabled {
                                             Button(action: {
+                            selectedMotionThreshold = Int(settings.motionThreshold)
                                                 showingMotionThresholdPicker = true
                                             }) {
                                                 Text("\(Int(settings.motionThreshold))min")
@@ -551,9 +356,285 @@ struct SettingsSection: View {
                         }
                         .padding(.horizontal, 40)
             .padding(.bottom, 10)
+                }
+                
+                Spacer()
+            }
+            .background(Color(.systemBackground))
+        }
+        }
+    
+    
+    private func confirmReset() {
+        TimeTracker.shared.resetTime(for: resettingPeriod)
+        showingResetConfirmation = false
+    }
+    
+    private func getNextNotificationTime() -> String {
+        let calendar = Calendar.current
+        let now = Date()
+        let intervalMinutes = settings.deadManSwitchInterval
+        
+        // Calculate next clock-aligned time (same logic as in TimeTracker)
+        let currentMinute = calendar.component(.minute, from: now)
+        let minutesSinceLastBoundary = currentMinute % Int(intervalMinutes)
+        
+        var nextMinute: Int
+        if minutesSinceLastBoundary == 0 {
+            nextMinute = currentMinute + Int(intervalMinutes)
+        } else {
+            nextMinute = currentMinute - minutesSinceLastBoundary + Int(intervalMinutes)
+        }
+        
+        var nextHour = calendar.component(.hour, from: now)
+        if nextMinute >= 60 {
+            nextHour += nextMinute / 60
+            nextMinute = nextMinute % 60
+        }
+        
+        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        dateComponents.hour = nextHour
+        dateComponents.minute = nextMinute
+        dateComponents.second = 0
+        
+        if let nextTime = calendar.date(from: dateComponents) {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            return formatter.string(from: nextTime)
+        }
+        
+        return "unknown"
+    }
+    
+    private var weekdayName: String {
+        switch settings.weekStartsOn {
+        case 1: return "sunday"
+        case 2: return "monday"
+        case 3: return "tuesday"
+        case 4: return "wednesday"
+        case 5: return "thursday"
+        case 6: return "friday"
+        case 7: return "saturday"
+        default: return "monday"
+        }
+    }
+    
+    
+    var body: some View {
+        mainView
+            .onDisappear {
+                settings.saveSettings()
+                TimeTracker.shared.restartDeadManSwitch()
+            }
+            .sheet(isPresented: $showingDeadManSwitchPicker) {
+                NavigationView {
+                    VStack(spacing: 20) {
+                        Text("check in every")
+                            .font(.custom("Major Mono Display Regular", size: 18))
+                            .foregroundColor(.secondary)
+                            .padding(.top, 20)
+                        
+                        VStack(spacing: 8) {
+                            Picker("Interval", selection: $selectedDeadManInterval) {
+                            Text("none").tag(0)
+                            Text("5min").tag(5)
+                            Text("10min").tag(10)
+                            Text("30min").tag(30)
+                            Text("custom").tag(-1)
+                        }
+                        .pickerStyle(WheelPickerStyle())
+                        .frame(height: 200)
+                        
+                        if selectedDeadManInterval == -1 {
+                            TextField("minutes", text: $customDeadManValue)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.numberPad)
+                                .padding(.horizontal, 40)
+                        }
+                        }
+                        
+                        Spacer()
+                    }
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("cancel") {
+                                showingDeadManSwitchPicker = false
+                            }
+                        }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("save") {
+                                if selectedDeadManInterval == 0 {
+                                    settings.deadManSwitchEnabled = false
+                                    TimeTracker.shared.restartDeadManSwitch()
+                                } else if selectedDeadManInterval == -1 {
+                                    if let value = Double(customDeadManValue) {
+                                        requestNotificationPermissionAndEnable(interval: value)
+                                    }
+                                } else {
+                                    requestNotificationPermissionAndEnable(interval: Double(selectedDeadManInterval))
+                                }
+                                showingDeadManSwitchPicker = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.fraction(0.45)])
+            }
+            .sheet(isPresented: $showingMotionThresholdPicker) {
+                NavigationView {
+                    VStack(spacing: 20) {
+                        Text("longer than")
+                            .font(.custom("Major Mono Display Regular", size: 18))
+                            .foregroundColor(.secondary)
+                            .padding(.top, 20)
+                        
+                        VStack(spacing: 8) {
+                            Picker("Threshold", selection: $selectedMotionThreshold) {
+                            Text("5min").tag(5)
+                            Text("10min").tag(10)
+                            Text("30min").tag(30)
+                            Text("custom").tag(-1)
+                        }
+                        .pickerStyle(WheelPickerStyle())
+                        .frame(height: 200)
+                        
+                        if selectedMotionThreshold == -1 {
+                            TextField("minutes", text: $customMotionValue)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.numberPad)
+                                .padding(.horizontal, 40)
+                        }
+                        }
+                        
+                        Spacer()
+                    }
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("cancel") {
+                                showingMotionThresholdPicker = false
+                            }
+                        }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("save") {
+                                if selectedMotionThreshold == -1 {
+                                    if let value = Double(customMotionValue) {
+                                        settings.motionThreshold = value
+                                        settings.motionDetectionEnabled = true
+                                    }
+                                } else {
+                                    settings.motionThreshold = Double(selectedMotionThreshold)
+                                    settings.motionDetectionEnabled = true
+                                }
+                                showingMotionThresholdPicker = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.fraction(0.45)])
+            }
+            .sheet(isPresented: $showingWeekStartsPicker) {
+                NavigationView {
+                    VStack(spacing: 20) {
+                        Text("weekday starts")
+                            .font(.custom("Major Mono Display Regular", size: 18))
+                            .foregroundColor(.secondary)
+                            .padding(.top, 20)
+                        
+                        VStack(spacing: 8) {
+                            Picker("Weekday", selection: $selectedWeekStarts) {
+                            Text("monday").tag(2)
+                            Text("tuesday").tag(3)
+                            Text("wednesday").tag(4)
+                            Text("thursday").tag(5)
+                            Text("friday").tag(6)
+                            Text("saturday").tag(7)
+                            Text("sunday").tag(1)
+                        }
+                        .pickerStyle(WheelPickerStyle())
+                        .frame(height: 200)
+                        }
+                        
+                        Spacer()
+                    }
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("cancel") {
+                                showingWeekStartsPicker = false
+                            }
+                        }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("save") {
+                                settings.weekStartsOn = selectedWeekStarts
+                                showingWeekStartsPicker = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.fraction(0.45)])
+            }
+            .alert("salary", isPresented: $showingSalaryInput) {
+                TextField("hourly rate", text: $salaryInputValue)
+                    .keyboardType(.numberPad)
+                Button("cancel", role: .cancel) { }
+                Button("save") {
+                    if let value = Double(salaryInputValue) {
+                        settings.hourlyRate = value
+                    }
+                }
+            }
+            .alert("check in every", isPresented: $showingCustomDeadManInput) {
+                TextField("minutes", text: $customDeadManValue)
+                    .keyboardType(.numberPad)
+                Button("cancel", role: .cancel) { }
+                Button("save") {
+                    if let value = Double(customDeadManValue) {
+                        requestNotificationPermissionAndEnable(interval: value)
+                    }
+                }
+            }
+            .alert("longer than", isPresented: $showingCustomMotionInput) {
+                TextField("minutes", text: $customMotionValue)
+                    .keyboardType(.numberPad)
+                Button("cancel", role: .cancel) { }
+                Button("save") {
+                    if let value = Double(customMotionValue) {
+                        settings.motionThreshold = value
+                        settings.motionDetectionEnabled = true
+                    }
+                }
+            }
+        .sheet(isPresented: $showingTodayDetail) {
+            TodayDetailView()
+        }
+        .sheet(isPresented: $showingWeekDetail) {
+            WeekDetailView()
+        }
+        .sheet(isPresented: $showingMonthDetail) {
+            MonthDetailView()
+        }
+        .confirmationDialog("reset \(resettingPeriod.displayName)", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
+            Button("reset", role: .destructive) {
+                confirmReset()
+            }
+            Button("cancel", role: .cancel) { }
+        } message: {
+            Text("are you sure you want to reset \(resettingPeriod.displayName)? this will permanently delete all time data for this period.")
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            EditTimeSheet(
+                period: editingPeriod,
+                currentTime: timeTracker.formattedTimeHMS(for: editingPeriod),
+                isPresented: $showingEditSheet,
+                customTitle: getCustomTitle(for: editingPeriod)
+            )
         }
     }
 }
+
+
 
 #Preview {
     StatisticsOverviewView()

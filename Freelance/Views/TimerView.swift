@@ -127,7 +127,7 @@ struct TimerView: View {
                     Button(action: {
                         showingStatistics = true
                     }) {
-                        Image(systemName: "circle")
+                        Image(systemName: "line.3.horizontal")
                             .font(.system(size: 18, weight: .regular))
                             .foregroundColor(.primary)
                             .symbolEffect(.disappear, isActive: showingStatistics)

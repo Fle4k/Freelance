@@ -300,7 +300,7 @@ struct MonthDetailView: View {
         }
     }
     
-    private func getCustomTitle(for period: StatisticsPeriod) -> String {
+    private func getCustomTitle(for period: StatisticsPeriod) -> String? {
         let formatter = DateFormatter()
         
         switch period {
