@@ -34,25 +34,9 @@ struct StatisticsOverviewView: View {
     @State private var customDeadManValue = ""
     @State private var customMotionValue = ""
     @State private var salaryInputValue = ""
-    // Separate edit states for each period
-    @State private var showingEditTodayPicker = false
-    @State private var showingEditWeekPicker = false
-    @State private var showingEditMonthPicker = false
-    
-    // Today edit state
-    @State private var editingTodayHours = 0
-    @State private var editingTodayMinutes = 0
-    @State private var currentTodayTime = ""
-    
-    // Week edit state
-    @State private var editingWeekHoursText = ""
-    @State private var editingWeekMinutesText = ""
-    @State private var currentWeekTime = ""
-    
-    // Month edit state
-    @State private var editingMonthHoursText = ""
-    @State private var editingMonthMinutesText = ""
-    @State private var currentMonthTime = ""
+    // Unified edit state
+    @State private var showingEditSheet = false
+    @State private var editingPeriod: StatisticsPeriod = .today
     @State private var showingResetConfirmation = false
     @State private var resettingPeriod: StatisticsPeriod = .today
     @Environment(\.dismiss) private var dismiss
@@ -73,49 +57,8 @@ struct StatisticsOverviewView: View {
     
     private func editTime(for period: StatisticsPeriod) {
         print("🔧 editTime called for period: \(period)")
-        
-        // Hide all existing sheets first
-        showingEditTodayPicker = false
-        showingEditWeekPicker = false
-        showingEditMonthPicker = false
-        
-        let currentTime = TimeTracker.shared.getTotalHours(for: period)
-        let formattedTime = TimeTracker.shared.formattedTimeHMS(for: period)
-        
-        // Use DispatchQueue to ensure state is updated before showing sheet
-        DispatchQueue.main.async {
-            switch period {
-            case .today:
-                print("🔧 Showing today picker")
-                let hours = Int(currentTime)
-                let minutes = Int((currentTime - Double(hours)) * 60)
-                self.editingTodayHours = hours
-                self.editingTodayMinutes = minutes
-                self.currentTodayTime = formattedTime
-                self.showingEditTodayPicker = true
-                
-            case .thisWeek:
-                print("🔧 Showing week picker")
-                let hours = Int(currentTime)
-                let minutes = Int((currentTime - Double(hours)) * 60)
-                self.editingWeekHoursText = hours > 0 ? "\(hours)" : ""
-                self.editingWeekMinutesText = minutes > 0 ? "\(minutes)" : ""
-                self.currentWeekTime = formattedTime
-                self.showingEditWeekPicker = true
-                
-            case .thisMonth:
-                print("🔧 Showing month picker")
-                let hours = Int(currentTime)
-                let minutes = Int((currentTime - Double(hours)) * 60)
-                self.editingMonthHoursText = hours > 0 ? "\(hours)" : ""
-                self.editingMonthMinutesText = minutes > 0 ? "\(minutes)" : ""
-                self.currentMonthTime = formattedTime
-                self.showingEditMonthPicker = true
-                
-            default:
-                break
-            }
-        }
+        editingPeriod = period
+        showingEditSheet = true
     }
     
     private func resetTime(for period: StatisticsPeriod) {
@@ -128,27 +71,6 @@ struct StatisticsOverviewView: View {
         showingResetConfirmation = false
     }
     
-    private func saveEditedTodayTime() {
-        let totalSeconds = TimeInterval(editingTodayHours * 3600 + editingTodayMinutes * 60)
-        TimeTracker.shared.editTime(for: .today, newTime: totalSeconds)
-        showingEditTodayPicker = false
-    }
-    
-    private func saveEditedWeekTime() {
-        let hours = Int(editingWeekHoursText) ?? 0
-        let minutes = Int(editingWeekMinutesText) ?? 0
-        let totalSeconds = TimeInterval(hours * 3600 + minutes * 60)
-        TimeTracker.shared.adjustTime(for: .thisWeek, newTime: totalSeconds)
-        showingEditWeekPicker = false
-    }
-    
-    private func saveEditedMonthTime() {
-        let hours = Int(editingMonthHoursText) ?? 0
-        let minutes = Int(editingMonthMinutesText) ?? 0
-        let totalSeconds = TimeInterval(hours * 3600 + minutes * 60)
-        TimeTracker.shared.adjustTime(for: .thisMonth, newTime: totalSeconds)
-        showingEditMonthPicker = false
-    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -177,6 +99,7 @@ struct StatisticsOverviewView: View {
                         .padding(.vertical, 20)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 80) // Ensure minimum touch target
+                        .contentShape(Rectangle()) // Make entire area tappable
                     }
                     .buttonStyle(PlainButtonStyle())
                     .contextMenu {
@@ -211,6 +134,7 @@ struct StatisticsOverviewView: View {
                         .padding(.vertical, 20)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 80) // Ensure minimum touch target
+                        .contentShape(Rectangle()) // Make entire area tappable
                     }
                     .buttonStyle(PlainButtonStyle())
                     .contextMenu {
@@ -245,6 +169,7 @@ struct StatisticsOverviewView: View {
                         .padding(.vertical, 20)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 80) // Ensure minimum touch target
+                        .contentShape(Rectangle()) // Make entire area tappable
                     }
                     .buttonStyle(PlainButtonStyle())
                     .contextMenu {
@@ -395,287 +320,16 @@ struct StatisticsOverviewView: View {
         } message: {
             Text("are you sure you want to reset \(resettingPeriod.displayName)? this will permanently delete all time data for this period.")
         }
-        .sheet(isPresented: $showingEditTodayPicker) {
-            NavigationView {
-                VStack(spacing: 30) {
-                    Text("edit today time")
-                        .font(.custom("Major Mono Display Regular", size: 24))
-                        .foregroundColor(.primary)
-                        .padding(.top, 20)
-                    
-                    // Show current total time
-                    VStack(spacing: 10) {
-                        Text("current total")
-                            .font(.custom("Major Mono Display Regular", size: 16))
-                            .foregroundColor(.secondary)
-                        
-                        Text(currentTodayTime)
-                            .font(.custom("Major Mono Display Regular", size: 20))
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.bottom, 10)
-                    
-                    // Wheel picker for today
-                    VStack(spacing: 20) {
-                        HStack {
-                            Text("hours")
-                                .font(.custom("Major Mono Display Regular", size: 18))
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            Picker("hours", selection: $editingTodayHours) {
-                                ForEach(0..<24, id: \.self) { hour in
-                                    Text("\(hour)").tag(hour)
-                                }
-                            }
-                            .pickerStyle(WheelPickerStyle())
-                            .frame(width: 80)
-                        }
-                        
-                        HStack {
-                            Text("minutes")
-                                .font(.custom("Major Mono Display Regular", size: 18))
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            Picker("minutes", selection: $editingTodayMinutes) {
-                                ForEach(0..<60, id: \.self) { minute in
-                                    Text("\(minute)").tag(minute)
-                                }
-                            }
-                            .pickerStyle(WheelPickerStyle())
-                            .frame(width: 80)
-                        }
-                    }
-                    .padding(.horizontal, 40)
-                    
-                    Spacer()
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("cancel") {
-                            showingEditTodayPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("save") {
-                            saveEditedTodayTime()
-                        }
-                    }
-                }
-            }
-        }
-        // Week edit sheet
-        .sheet(isPresented: $showingEditWeekPicker) {
-            NavigationView {
-                VStack(spacing: 30) {
-                    Text("edit this week time")
-                        .font(.custom("Major Mono Display Regular", size: 24))
-                        .foregroundColor(.primary)
-                        .padding(.top, 20)
-                    
-                    // Show current total time
-                    VStack(spacing: 10) {
-                        Text("current total")
-                            .font(.custom("Major Mono Display Regular", size: 16))
-                            .foregroundColor(.secondary)
-                        
-                        Text(currentWeekTime)
-                            .font(.custom("Major Mono Display Regular", size: 20))
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.bottom, 10)
-                    
-                    // Text input for week
-                    VStack(spacing: 0) {
-                        HStack {
-                            Text("hours")
-                                .font(.custom("Major Mono Display Regular", size: 16))
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            SelectAllTextField(text: $editingWeekHoursText, shouldBecomeFirstResponder: true)
-                                .keyboardType(.numberPad)
-                                .frame(width: 80)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                        }
-                        
-                        HStack {
-                            Text("minutes")
-                                .font(.custom("Major Mono Display Regular", size: 16))
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            SelectAllTextField(text: $editingWeekMinutesText)
-                                .keyboardType(.numberPad)
-                                .frame(width: 80)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                        }
-                    }
-                    .padding(.horizontal, 40)
-                    
-                    Spacer()
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("cancel") {
-                            showingEditWeekPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("save") {
-                            saveEditedWeekTime()
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Month edit sheet
-        .sheet(isPresented: $showingEditMonthPicker) {
-            NavigationView {
-                VStack(spacing: 30) {
-                    Text("edit this month time")
-                        .font(.custom("Major Mono Display Regular", size: 24))
-                        .foregroundColor(.primary)
-                        .padding(.top, 20)
-                    
-                    // Show current total time
-                    VStack(spacing: 10) {
-                        Text("current total")
-                            .font(.custom("Major Mono Display Regular", size: 16))
-                            .foregroundColor(.secondary)
-                        
-                        Text(currentMonthTime)
-                            .font(.custom("Major Mono Display Regular", size: 20))
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.bottom, 10)
-                    
-                    // Text input for month
-                    VStack(spacing: 0) {
-                        HStack {
-                            Text("hours")
-                                .font(.custom("Major Mono Display Regular", size: 16))
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            SelectAllTextField(text: $editingMonthHoursText, shouldBecomeFirstResponder: true)
-                                .keyboardType(.numberPad)
-                                .frame(width: 80)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                        }
-                        
-                        HStack {
-                            Text("minutes")
-                                .font(.custom("Major Mono Display Regular", size: 16))
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            SelectAllTextField(text: $editingMonthMinutesText)
-                                .keyboardType(.numberPad)
-                                .frame(width: 80)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                        }
-                    }
-                    .padding(.horizontal, 40)
-                    
-                    Spacer()
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("cancel") {
-                            showingEditMonthPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("save") {
-                            saveEditedMonthTime()
-                        }
-                    }
-                }
-            }
+        .sheet(isPresented: $showingEditSheet) {
+            EditTimeSheet(
+                period: editingPeriod,
+                currentTime: timeTracker.formattedTimeHMS(for: editingPeriod),
+                isPresented: $showingEditSheet
+            )
         }
     }
 }
 
-struct SelectAllTextField: UIViewRepresentable {
-    @Binding var text: String
-    let shouldBecomeFirstResponder: Bool
-    
-    init(text: Binding<String>, shouldBecomeFirstResponder: Bool = false) {
-        self._text = text
-        self.shouldBecomeFirstResponder = shouldBecomeFirstResponder
-    }
-
-    func makeUIView(context: Context) -> UITextField {
-        let textField = UITextField()
-        textField.delegate = context.coordinator
-        textField.textAlignment = .center
-        textField.borderStyle = .none
-        textField.backgroundColor = UIColor.clear
-        
-        // Apply custom font
-        if let customFont = UIFont(name: "Major Mono Display Regular", size: 20) {
-            textField.font = customFont
-        }
-        
-        // Set text color to match SwiftUI primary color
-        textField.textColor = UIColor.label
-        
-        // Set keyboard type to number pad
-        textField.keyboardType = .numberPad
-        
-        return textField
-    }
-
-    func updateUIView(_ uiView: UITextField, context: Context) {
-        uiView.text = text
-        
-        // Auto-focus if this is the hours field
-        if shouldBecomeFirstResponder && !uiView.isFirstResponder {
-            DispatchQueue.main.async {
-                uiView.becomeFirstResponder()
-            }
-        }
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    class Coordinator: NSObject, UITextFieldDelegate {
-        var parent: SelectAllTextField
-
-        init(_ parent: SelectAllTextField) {
-            self.parent = parent
-        }
-
-        func textFieldDidBeginEditing(_ textField: UITextField) {
-            // Select all text when editing begins
-            DispatchQueue.main.async {
-                textField.selectAll(nil)
-            }
-        }
-
-        func textFieldDidChangeSelection(_ textField: UITextField) {
-            parent.text = textField.text ?? ""
-        }
-    }
-}
 
 struct SettingsSection: View {
     @ObservedObject var settings: AppSettings
