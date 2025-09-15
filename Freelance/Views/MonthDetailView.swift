@@ -12,6 +12,7 @@ struct MonthDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var currentMonthIndex = 0
     @State private var months: [Date] = []
+    @State private var showingEditSheet = false
     
     private var monthEntries: [(Date, [TimeEntry])] {
         let calendar = Calendar.current
@@ -163,29 +164,30 @@ struct MonthDetailView: View {
                 Spacer(minLength: 60)
                 
                 VStack(spacing: 30) {
-                    // Header with month navigation
-                    VStack(spacing: 10) {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            VStack(spacing: 10) {
-                                Text(months.isEmpty ? "this month" : getMonthTitle(for: months[currentMonthIndex]))
-                                    .font(.custom("Major Mono Display Regular", size: 18))
-                                    .foregroundColor(.secondary)
-                                
-                                ProportionalTimeDisplay(
-                                    timeString: formatTime(months.isEmpty ? 0 : getMonthTime(for: months[currentMonthIndex])),
-                                    digitFontSize: 20
-                                )
-                                
-                                Text(String(format: "%.0f€", months.isEmpty ? 0 : getMonthEarnings(for: months[currentMonthIndex])))
-                                    .font(.custom("Major Mono Display Regular", size: 20))
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
+                    // Header with month navigation - interactive title button
+                    Button(action: {
+                        // Add haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
                         
+                        showingEditSheet = true
+                    }) {
+                        VStack(spacing: 10) {
+                            Text(months.isEmpty ? "this month" : getMonthTitle(for: months[currentMonthIndex]))
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.secondary)
+                            
+                            ProportionalTimeDisplay(
+                                timeString: formatTime(months.isEmpty ? 0 : getMonthTime(for: months[currentMonthIndex])),
+                                digitFontSize: 20
+                            )
+                            
+                            Text(String(format: "%.0f€", months.isEmpty ? 0 : getMonthEarnings(for: months[currentMonthIndex])))
+                                .font(.custom("Major Mono Display Regular", size: 20))
+                                .foregroundColor(.primary)
+                        }
                     }
+                    .buttonStyle(PlainButtonStyle())
                     
                     // Calendar with swipe navigation
                     Group {
@@ -284,11 +286,37 @@ struct MonthDetailView: View {
                     }
             )
         }
-        .onAppear {
-            setupMonths()
+            .onAppear {
+                setupMonths()
+            }
+            .sheet(isPresented: $showingEditSheet) {
+                EditTimeSheet(
+                    period: .thisMonth,
+                    currentTime: formatTime(months.isEmpty ? 0 : getMonthTime(for: months[currentMonthIndex])),
+                    isPresented: $showingEditSheet,
+                    customTitle: getCustomTitle(for: .thisMonth)
+                )
+            }
         }
     }
-}
+    
+    private func getCustomTitle(for period: StatisticsPeriod) -> String {
+        let formatter = DateFormatter()
+        
+        switch period {
+        case .today:
+            formatter.dateFormat = "EEEE"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        case .thisWeek:
+            formatter.dateFormat = "MMMM"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        case .thisMonth:
+            formatter.dateFormat = "MMMM"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        default:
+            return "edit time"
+        }
+    }
 
 #Preview {
     MonthDetailView()

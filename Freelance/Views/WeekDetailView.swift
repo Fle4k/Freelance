@@ -11,6 +11,7 @@ struct WeekDetailView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
     @Environment(\.dismiss) private var dismiss
+    @State private var showingEditSheet = false
     
     private var weekEntries: [(Date, [TimeEntry])] {
         let calendar = Calendar.current
@@ -75,9 +76,13 @@ struct WeekDetailView: View {
                 Spacer(minLength: 60)
                 
                 VStack(spacing: 30) {
-                    // Header matching overview style
+                    // Header matching overview style - interactive title button
                     Button(action: {
-                        dismiss()
+                        // Add haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        
+                        showingEditSheet = true
                     }) {
                         VStack(spacing: 10) {
                             Text("this week")
@@ -91,7 +96,7 @@ struct WeekDetailView: View {
                             
                             Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
-                            .foregroundColor(.primary)
+                                .foregroundColor(.primary)
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -126,6 +131,32 @@ struct WeekDetailView: View {
                 Spacer()
             }
             .background(Color(.systemBackground))
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            EditTimeSheet(
+                period: .thisWeek,
+                currentTime: timeTracker.formattedTimeHMS(for: .thisWeek),
+                isPresented: $showingEditSheet,
+                customTitle: getCustomTitle(for: .thisWeek)
+            )
+        }
+    }
+    
+    private func getCustomTitle(for period: StatisticsPeriod) -> String {
+        let formatter = DateFormatter()
+        
+        switch period {
+        case .today:
+            formatter.dateFormat = "EEEE"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        case .thisWeek:
+            formatter.dateFormat = "MMMM"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        case .thisMonth:
+            formatter.dateFormat = "MMMM"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        default:
+            return "edit time"
         }
     }
     

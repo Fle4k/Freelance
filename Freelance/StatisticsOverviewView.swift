@@ -57,6 +57,11 @@ struct StatisticsOverviewView: View {
     
     private func editTime(for period: StatisticsPeriod) {
         print("🔧 editTime called for period: \(period)")
+        
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
         editingPeriod = period
         showingEditSheet = true
     }
@@ -64,6 +69,24 @@ struct StatisticsOverviewView: View {
     private func resetTime(for period: StatisticsPeriod) {
         resettingPeriod = period
         showingResetConfirmation = true
+    }
+    
+    private func getCustomTitle(for period: StatisticsPeriod) -> String {
+        let formatter = DateFormatter()
+        
+        switch period {
+        case .today:
+            formatter.dateFormat = "EEEE"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        case .thisWeek:
+            formatter.dateFormat = "MMMM"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        case .thisMonth:
+            formatter.dateFormat = "MMMM"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        default:
+            return "edit time"
+        }
     }
     
     private func confirmReset() {
@@ -327,7 +350,8 @@ struct StatisticsOverviewView: View {
             EditTimeSheet(
                 period: editingPeriod,
                 currentTime: timeTracker.formattedTimeHMS(for: editingPeriod),
-                isPresented: $showingEditSheet
+                isPresented: $showingEditSheet,
+                customTitle: getCustomTitle(for: editingPeriod)
             )
         }
     }

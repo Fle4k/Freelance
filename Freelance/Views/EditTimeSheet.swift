@@ -11,6 +11,7 @@ struct EditTimeSheet: View {
     let period: StatisticsPeriod
     let currentTime: String
     @Binding var isPresented: Bool
+    let customTitle: String?
     @State private var hoursText: String = ""
     @State private var minutesText: String = ""
     @State private var isHoursFocused: Bool = true
@@ -18,6 +19,10 @@ struct EditTimeSheet: View {
     @State private var originalMinutesText: String = ""
     
     private var periodTitle: String {
+        if let customTitle = customTitle {
+            return customTitle
+        }
+        
         switch period {
         case .today: return "edit this day"
         case .thisWeek: return "edit this week"
@@ -236,6 +241,7 @@ struct SelectAllTextField: UIViewRepresentable {
     EditTimeSheet(
         period: .today,
         currentTime: "2h30m",
-        isPresented: .constant(true)
+        isPresented: .constant(true),
+        customTitle: nil
     )
 }

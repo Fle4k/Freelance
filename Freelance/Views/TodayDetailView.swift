@@ -11,6 +11,7 @@ struct TodayDetailView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
     @Environment(\.dismiss) private var dismiss
+    @State private var showingEditSheet = false
     
     var todayEntries: [TimeEntry] {
         let calendar = Calendar.current
@@ -62,9 +63,13 @@ struct TodayDetailView: View {
                 Spacer(minLength: 60)
                 
                 VStack(spacing: 30) {
-                    // Header matching overview style
+                    // Header matching overview style - interactive title button
                     Button(action: {
-                        dismiss()
+                        // Add haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        
+                        showingEditSheet = true
                     }) {
                         VStack(spacing: 10) {
                             Text("today")
@@ -129,6 +134,32 @@ struct TodayDetailView: View {
                 Spacer()
             }
             .background(Color(.systemBackground))
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            EditTimeSheet(
+                period: .today,
+                currentTime: timeTracker.formattedTimeHMS(for: .today),
+                isPresented: $showingEditSheet,
+                customTitle: getCustomTitle(for: .today)
+            )
+        }
+    }
+    
+    private func getCustomTitle(for period: StatisticsPeriod) -> String {
+        let formatter = DateFormatter()
+        
+        switch period {
+        case .today:
+            formatter.dateFormat = "EEEE"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        case .thisWeek:
+            formatter.dateFormat = "MMMM"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        case .thisMonth:
+            formatter.dateFormat = "MMMM"
+            return "edit \(formatter.string(from: Date()).lowercased())"
+        default:
+            return "edit time"
         }
     }
 }
