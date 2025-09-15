@@ -44,9 +44,10 @@ struct EditTimeSheet: View {
                             .font(.custom("Major Mono Display Regular", size: 16))
                             .foregroundColor(.secondary)
                         
-                        Text(currentTime)
-                            .font(.custom("Major Mono Display Regular", size: 20))
-                            .foregroundColor(.primary)
+                        ProportionalTimeDisplay(
+                            timeString: currentTime,
+                            digitFontSize: 20
+                        )
                     }
                     .padding(.bottom, 10)
                     

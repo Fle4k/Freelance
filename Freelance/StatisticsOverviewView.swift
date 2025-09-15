@@ -88,9 +88,10 @@ struct StatisticsOverviewView: View {
                                 .font(.custom("Major Mono Display Regular", size: 18))
                                 .foregroundColor(.secondary)
                             
-                            Text(timeTracker.formattedTimeHMS(for: .today))
-                                .font(.custom("Major Mono Display Regular", size: 20))
-                                .foregroundColor(.primary)
+                            ProportionalTimeDisplay(
+                                timeString: timeTracker.formattedTimeHMS(for: .today),
+                                digitFontSize: 20
+                            )
                             
                             Text(String(format: "%.0f€", timeTracker.getEarnings(for: .today)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
@@ -123,9 +124,10 @@ struct StatisticsOverviewView: View {
                             .font(.custom("Major Mono Display Regular", size: 18))
                             .foregroundColor(.secondary)
                         
-                            Text(timeTracker.formattedTimeHMS(for: .thisWeek))
-                                .font(.custom("Major Mono Display Regular", size: 20))
-                                .foregroundColor(.primary)
+                            ProportionalTimeDisplay(
+                                timeString: timeTracker.formattedTimeHMS(for: .thisWeek),
+                                digitFontSize: 20
+                            )
                             
                             Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
@@ -158,9 +160,10 @@ struct StatisticsOverviewView: View {
                             .font(.custom("Major Mono Display Regular", size: 18))
                             .foregroundColor(.secondary)
                         
-                            Text(timeTracker.formattedTimeHMS(for: .thisMonth))
-                                .font(.custom("Major Mono Display Regular", size: 20))
-                                .foregroundColor(.primary)
+                            ProportionalTimeDisplay(
+                                timeString: timeTracker.formattedTimeHMS(for: .thisMonth),
+                                digitFontSize: 20
+                            )
                             
                             Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisMonth)))
                                 .font(.custom("Major Mono Display Regular", size: 20))

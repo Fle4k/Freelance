@@ -71,9 +71,10 @@ struct TodayDetailView: View {
                                 .font(.custom("Major Mono Display Regular", size: 18))
                                 .foregroundColor(.secondary)
                             
-                            Text(timeTracker.formattedTimeHMS(for: .today))
-                                .font(.custom("Major Mono Display Regular", size: 20))
-                                .foregroundColor(.primary)
+                            ProportionalTimeDisplay(
+                                timeString: timeTracker.formattedTimeHMS(for: .today),
+                                digitFontSize: 20
+                            )
                             
                             Text(String(format: "%.0f€", timeTracker.getEarnings(for: .today)))
                                 .font(.custom("Major Mono Display Regular", size: 20))

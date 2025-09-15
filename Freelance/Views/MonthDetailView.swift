@@ -173,9 +173,10 @@ struct MonthDetailView: View {
                                     .font(.custom("Major Mono Display Regular", size: 18))
                                     .foregroundColor(.secondary)
                                 
-                                Text(formatTime(months.isEmpty ? 0 : getMonthTime(for: months[currentMonthIndex])))
-                                    .font(.custom("Major Mono Display Regular", size: 20))
-                                    .foregroundColor(.primary)
+                                ProportionalTimeDisplay(
+                                    timeString: formatTime(months.isEmpty ? 0 : getMonthTime(for: months[currentMonthIndex])),
+                                    digitFontSize: 20
+                                )
                                 
                                 Text(String(format: "%.0f€", months.isEmpty ? 0 : getMonthEarnings(for: months[currentMonthIndex])))
                                     .font(.custom("Major Mono Display Regular", size: 20))
