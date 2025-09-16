@@ -10,12 +10,14 @@ import SwiftUI
 struct CalendarView: View {
     let period: StatisticsPeriod
     let monthDate: Date
+    let onDaySelected: ((Date) -> Void)?
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
     
-    init(period: StatisticsPeriod, monthDate: Date = Date()) {
+    init(period: StatisticsPeriod, monthDate: Date = Date(), onDaySelected: ((Date) -> Void)? = nil) {
         self.period = period
         self.monthDate = monthDate
+        self.onDaySelected = onDaySelected
     }
     
     var body: some View {
@@ -32,11 +34,15 @@ struct CalendarView: View {
             
             // Calendar grid
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 9) {
-                ForEach(getCalendarDays(), id: \.self) { day in
+                ForEach(Array(getCalendarDays().enumerated()), id: \.offset) { index, day in
                     CalendarDayView(
                         day: day,
                         hasTimeEntry: hasTimeEntry(for: day),
-                        isToday: isToday(day)
+                        isToday: isToday(day),
+                        onTap: { selectedDay in
+                            onDaySelected?(selectedDay)
+                        },
+                        getDateForDay: getDateForDay
                     )
                 }
             }
@@ -121,29 +127,50 @@ struct CalendarView: View {
         let todayDay = calendar.component(.day, from: today)
         return day == todayDay
     }
+    
+    private func getDateForDay(_ day: Int) -> Date? {
+        guard day > 0 else { return nil }
+        
+        let calendar = Calendar.current
+        guard let monthStart = calendar.dateInterval(of: .month, for: monthDate)?.start else {
+            return nil
+        }
+        
+        return calendar.date(byAdding: .day, value: day - 1, to: monthStart)
+    }
 }
 
 struct CalendarDayView: View {
     let day: Int
     let hasTimeEntry: Bool
     let isToday: Bool
+    let onTap: ((Date) -> Void)?
+    let getDateForDay: (Int) -> Date?
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack {
             if day > 0 {
-                    Text("\(day)")
-                        .font(.custom("Major Mono Display Regular", size: 18))
+                Text("\(day)")
+                    .font(.custom("Major Mono Display Regular", size: 18))
                     .foregroundColor(textColor)
-                        .frame(width: 35, height: 35)
-                        .background(
+                    .frame(width: 35, height: 35)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(backgroundColor)
+                        .overlay(
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(backgroundColor)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(borderColor, lineWidth: 1)
-                            )
+                                .stroke(borderColor, lineWidth: 1)
+                        )
                     )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if let date = getDateForDay(day) {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                            impactFeedback.impactOccurred()
+                            onTap?(date)
+                        }
+                    }
             } else {
                 // Empty day
                 Text("")

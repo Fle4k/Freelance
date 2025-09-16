@@ -122,6 +122,8 @@ struct WeekDetailView: View {
                                 Text("no time tracked this week")
                                     .font(.custom("Major Mono Display Regular", size: 15))
                                     .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity)
+                                    .multilineTextAlignment(.center)
                                 }
                             }
                     }
@@ -162,8 +164,8 @@ struct WeekDetailView: View {
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM.yyyy"
-        return formatter.string(from: date)
+        formatter.dateFormat = "E dd.MM.yyyy"
+        return formatter.string(from: date).lowercased()
     }
     
     private func formatTimeRange(_ start: Date, _ end: Date?) -> String {
