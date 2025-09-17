@@ -396,7 +396,7 @@ struct MonthDetailView: View {
                         }
                 }
             }
-            .onChange(of: showingDayDetail) { isShowing in
+            .onChange(of: showingDayDetail) { oldValue, isShowing in
                 if isShowing {
                     print("📋 Sheet state changed to showing: \(isShowing)")
                     print("📋 Selected day: \(selectedDay?.description ?? "nil")")

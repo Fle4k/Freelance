@@ -97,7 +97,6 @@ class TimeTracker: ObservableObject {
     static let shared = TimeTracker()
     
     private var lastDeadManCheck: Date?
-    private var notificationTimeoutTimer: Timer?
     private let notificationCenter = UNUserNotificationCenter.current()
     
     private init() {
@@ -359,10 +358,6 @@ class TimeTracker: ObservableObject {
         lastDeadManCheck = nil
         clearNotificationBadge()
         cancelScheduledNotifications()
-        
-        // Cancel timeout timer
-        notificationTimeoutTimer?.invalidate()
-        notificationTimeoutTimer = nil
     }
     
     private func scheduleDeadManNotification() {
@@ -400,9 +395,9 @@ class TimeTracker: ObservableObject {
         formatter.timeStyle = .short
         print("Scheduling dead man switch notification for \(formatter.string(from: nextNotificationTime)) (every \(Int(intervalMinutes)) minutes)")
         
-        // Start the 2-minute timeout timer when the notification is scheduled
-        // This ensures it works whether the app is in foreground or background
-        startNotificationTimeout()
+        // Schedule automatic timeout notification for 2 minutes after the dead man switch
+        scheduleTimeoutNotification(for: nextNotificationTime)
+        
         print("Date components: \(dateComponents)")
         
         notificationCenter.add(request) { error in
@@ -453,8 +448,48 @@ class TimeTracker: ObservableObject {
     }
     
     private func cancelScheduledNotifications() {
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_switch"])
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_switch", "dead_man_timeout"])
     }
+    
+    private func scheduleTimeoutNotification(for deadManTime: Date) {
+        // Schedule a notification 2 minutes after the dead man switch notification
+        let timeoutTime = deadManTime.addingTimeInterval(120) // 2 minutes = 120 seconds
+        
+        let content = UNMutableNotificationContent()
+        content.title = "Timer stopped"
+        content.body = "No response received within 2 minutes. Timer has been paused."
+        content.sound = .default
+        content.badge = 1
+        content.categoryIdentifier = "TIMER_STOPPED"
+        content.userInfo = ["type": "dead_man_timeout", "original_dead_man_time": deadManTime.timeIntervalSince1970]
+        
+        let calendar = Calendar.current
+        let dateComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: timeoutTime)
+        
+        let trigger = UNCalendarNotificationTrigger(
+            dateMatching: dateComponents,
+            repeats: false
+        )
+        
+        let request = UNNotificationRequest(
+            identifier: "dead_man_timeout",
+            content: content,
+            trigger: trigger
+        )
+        
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        print("Scheduling timeout notification for \(formatter.string(from: timeoutTime)) (2 minutes after dead man switch)")
+        
+        notificationCenter.add(request) { error in
+            if let error = error {
+                print("Error scheduling timeout notification: \(error)")
+            } else {
+                print("Timeout notification scheduled successfully")
+            }
+        }
+    }
+    
     
     
     
@@ -462,46 +497,9 @@ class TimeTracker: ObservableObject {
         notificationCenter.setBadgeCount(0)
     }
     
-    private func sendTimerStoppedNotification() {
-        let content = UNMutableNotificationContent()
-        content.title = "Timer stopped"
-        content.body = "No response received within 2 minutes. Timer has been paused."
-        content.sound = .default
-        content.badge = 1
-        content.categoryIdentifier = "TIMER_STOPPED"
-        content.userInfo = ["type": "timer_stopped"]
-        
-        let request = UNNotificationRequest(
-            identifier: "timer_stopped_\(UUID().uuidString)",
-            content: content,
-            trigger: nil // Immediate notification
-        )
-        
-        notificationCenter.add(request) { error in
-            if let error = error {
-                print("Error sending timer stopped notification: \(error)")
-            }
-        }
-    }
     
-    func startNotificationTimeout() {
-        // Cancel any existing timeout timer
-        notificationTimeoutTimer?.invalidate()
-        
-        print("Starting 2-minute notification timeout")
-        
-        // Start 2-minute timeout timer
-        notificationTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: false) { _ in
-            self.handleNotificationTimeout()
-        }
-    }
-    
-    private func handleNotificationTimeout() {
-        print("Notification timeout - stopping timer and subtracting 2 minutes")
-        
-        // Stop the timeout timer
-        notificationTimeoutTimer?.invalidate()
-        notificationTimeoutTimer = nil
+    func handleTimeoutNotification() {
+        print("Timeout notification received - stopping timer and subtracting 2 minutes")
         
         // Subtract 2 minutes from accumulated time
         totalAccumulatedTime = max(0, totalAccumulatedTime - 120) // 120 seconds = 2 minutes
@@ -510,15 +508,15 @@ class TimeTracker: ObservableObject {
         // Stop the timer
         pauseTimer()
         
-        // Send notification that timer stopped
-        sendTimerStoppedNotification()
+        // Clear any pending notifications
+        clearNotificationBadge()
     }
     
     
+    
     func handleDeadManResponse(continue: Bool) {
-        // Cancel timeout timer since user responded
-        notificationTimeoutTimer?.invalidate()
-        notificationTimeoutTimer = nil
+        // Cancel timeout notification since user responded
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_timeout"])
         
         clearNotificationBadge()
         

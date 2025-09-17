@@ -45,13 +45,30 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         print("Received notification response: \(response.actionIdentifier)")
-        TimeTracker.shared.handleNotificationResponse(response)
+        
+        // Check if this is a timeout notification being dismissed/opened
+        if let userInfo = response.notification.request.content.userInfo["type"] as? String,
+           userInfo == "dead_man_timeout" && response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+            // User opened the timeout notification - handle it as a timeout
+            TimeTracker.shared.handleTimeoutNotification()
+        } else {
+            // Handle other notification responses normally
+            TimeTracker.shared.handleNotificationResponse(response)
+        }
+        
         completionHandler()
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         print("Will present notification: \(notification.request.content.title)")
         print("App state: \(UIApplication.shared.applicationState.rawValue)")
+        
+        // Check if this is a timeout notification
+        if let userInfo = notification.request.content.userInfo["type"] as? String,
+           userInfo == "dead_man_timeout" {
+            print("Timeout notification delivered - stopping timer")
+            TimeTracker.shared.handleTimeoutNotification()
+        }
         
         // Always show notifications even when app is in foreground
         // Use .banner and .list for persistent notification display (replaces deprecated .alert)

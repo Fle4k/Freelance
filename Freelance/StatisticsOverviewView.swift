@@ -6,6 +6,70 @@
 //
 
 import SwiftUI
+import UIKit
+
+struct FocusableTextField: UIViewRepresentable {
+    @Binding var text: String
+    let placeholder: String
+    let font: UIFont
+    let shouldFocus: Bool
+    
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField()
+        textField.placeholder = placeholder
+        textField.font = font
+        textField.textAlignment = .center
+        textField.keyboardType = .numberPad
+        textField.backgroundColor = .clear
+        textField.borderStyle = .none
+        textField.delegate = context.coordinator
+        textField.autocapitalizationType = .none
+        textField.autocorrectionType = .no
+        return textField
+    }
+    
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        uiView.text = text
+        
+        if shouldFocus && !uiView.isFirstResponder {
+            DispatchQueue.main.async {
+                uiView.becomeFirstResponder()
+                
+                // If there's existing text, select it all for easy replacement
+                if !text.isEmpty {
+                    uiView.selectAll(nil)
+                } else {
+                    // Center the cursor by setting an empty selection
+                    uiView.selectedTextRange = uiView.textRange(from: uiView.beginningOfDocument, to: uiView.beginningOfDocument)
+                }
+            }
+        } else if !shouldFocus && uiView.isFirstResponder {
+            uiView.resignFirstResponder()
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UITextFieldDelegate {
+        let parent: FocusableTextField
+        
+        init(_ parent: FocusableTextField) {
+            self.parent = parent
+        }
+        
+        func textFieldDidChangeSelection(_ textField: UITextField) {
+            parent.text = textField.text ?? ""
+        }
+        
+        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            let newText = (textField.text as NSString?)?.replacingCharacters(in: range, with: string) ?? string
+            parent.text = newText
+            return true
+        }
+    }
+}
 
 extension StatisticsPeriod {
     var displayName: String {
@@ -435,7 +499,7 @@ struct StatisticsOverviewView: View {
                             .padding(.top, 20)
                         
                         VStack(spacing: 8) {
-                            Picker("Interval", selection: $selectedDeadManInterval) {
+                            Picker("interval", selection: $selectedDeadManInterval) {
                             Text("none").tag(0)
                             Text("5min").tag(5)
                             Text("10min").tag(10)
@@ -444,12 +508,27 @@ struct StatisticsOverviewView: View {
                         }
                         .pickerStyle(WheelPickerStyle())
                         .frame(height: 200)
+                        .onChange(of: selectedDeadManInterval) { oldValue, newValue in
+                            if newValue == -1 {
+                                // Preload with current setting if it's a custom value (not 5, 10, or 30)
+                                let currentInterval = Int(settings.deadManSwitchInterval)
+                                if settings.deadManSwitchEnabled && ![5, 10, 30].contains(currentInterval) {
+                                    customDeadManValue = String(currentInterval)
+                                } else {
+                                    customDeadManValue = ""
+                                }
+                            }
+                        }
                         
                         if selectedDeadManInterval == -1 {
-                            TextField("minutes", text: $customDeadManValue)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .keyboardType(.numberPad)
-                                .padding(.horizontal, 40)
+                            FocusableTextField(
+                                text: $customDeadManValue,
+                                placeholder: "minutes",
+                                font: UIFont(name: "Major Mono Display Regular", size: 18) ?? UIFont.systemFont(ofSize: 18),
+                                shouldFocus: true
+                            )
+                            .frame(height: 40)
+                            .padding(.horizontal, 40)
                         }
                         }
                         
