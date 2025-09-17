@@ -45,10 +45,8 @@ struct WeekDetailView: View {
         return entries.sorted { $0.0 > $1.0 }
     }
     
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter
+    private func formatTime(_ date: Date) -> String {
+        return AppSettings.shared.formatTime(date)
     }
     
     private func formatDuration(from start: Date, to end: Date) -> String {
@@ -169,9 +167,9 @@ struct WeekDetailView: View {
     }
     
     private func formatTimeRange(_ start: Date, _ end: Date?) -> String {
-        let startTime = timeFormatter.string(from: start)
+        let startTime = formatTime(start)
         if let end = end {
-            let endTime = timeFormatter.string(from: end)
+            let endTime = formatTime(end)
             return "\(startTime)-\(endTime)"
         }
         return startTime

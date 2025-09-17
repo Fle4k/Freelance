@@ -437,11 +437,9 @@ struct DayDetailView: View {
     @State private var dayEarnings: Double = 0
     @State private var dayTitle: String = ""
     
-    private let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter
-    }()
+    private func formatTime(_ date: Date) -> String {
+        return AppSettings.shared.formatTime(date)
+    }
     
     private func precomputeDayData() {
         print("🎯 DayDetailView precomputeDayData called")
@@ -551,11 +549,11 @@ struct DayDetailView: View {
                             ForEach(dayEntries) { entry in
                                 HStack {
                                     if let endDate = entry.endDate {
-                                        Text("\(timeFormatter.string(from: entry.startDate))-\(timeFormatter.string(from: endDate))")
+                                        Text("\(formatTime(entry.startDate))-\(formatTime(endDate))")
                                             .font(.custom("Major Mono Display Regular", size: 15))
                                             .foregroundColor(.primary)
                                     } else {
-                                        ActiveTimerView(startDate: entry.startDate, timeFormatter: timeFormatter)
+                                        ActiveTimerView(startDate: entry.startDate)
                                     }
                                     
                                     Spacer()

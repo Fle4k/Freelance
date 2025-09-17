@@ -32,10 +32,8 @@ struct TodayDetailView: View {
         return entries.sorted { $0.startDate > $1.startDate }
     }
     
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter
+    private func formatTime(_ date: Date) -> String {
+        return AppSettings.shared.formatTime(date)
     }
     
     private func formatDuration(from start: Date, to end: Date) -> String {
@@ -94,11 +92,11 @@ struct TodayDetailView: View {
                             ForEach(todayEntries) { entry in
                                 HStack {
                                     if let endDate = entry.endDate {
-                                        Text("\(timeFormatter.string(from: entry.startDate))-\(timeFormatter.string(from: endDate))")
+                                        Text("\(formatTime(entry.startDate))-\(formatTime(endDate))")
                                             .font(.custom("Major Mono Display Regular", size: 15))
                                             .foregroundColor(.primary)
                                     } else {
-                                        ActiveTimerView(startDate: entry.startDate, timeFormatter: timeFormatter)
+                                        ActiveTimerView(startDate: entry.startDate)
                                     }
                                     
                                     Spacer()
@@ -166,11 +164,14 @@ struct TodayDetailView: View {
 
 struct ActiveTimerView: View {
     let startDate: Date
-    let timeFormatter: DateFormatter
     @State private var currentTime = Date()
     
+    private func formatTime(_ date: Date) -> String {
+        return AppSettings.shared.formatTime(date)
+    }
+    
     var body: some View {
-        Text("\(timeFormatter.string(from: startDate))-\(timeFormatter.string(from: currentTime))")
+        Text("\(formatTime(startDate))-\(formatTime(currentTime))")
             .font(.custom("Major Mono Display Regular", size: 15))
             .foregroundColor(.primary)
             .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in

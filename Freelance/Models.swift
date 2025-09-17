@@ -42,6 +42,7 @@ class AppSettings: ObservableObject {
     @Published var motionThreshold: Double = 5.0
     @Published var askWhenMoving: Bool = true // true = ask when moving, false = ask when not moving
     @Published var weekStartsOn: Int = 2 // 1 = Sunday, 2 = Monday, 3 = Tuesday, etc.
+    @Published var use24HourFormat: Bool = true // true = 24h, false = AM/PM
     
     static let shared = AppSettings()
     
@@ -57,6 +58,7 @@ class AppSettings: ObservableObject {
         UserDefaults.standard.set(motionThreshold, forKey: "motionThreshold")
         UserDefaults.standard.set(askWhenMoving, forKey: "askWhenMoving")
         UserDefaults.standard.set(weekStartsOn, forKey: "weekStartsOn")
+        UserDefaults.standard.set(use24HourFormat, forKey: "use24HourFormat")
     }
     
     func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
@@ -84,6 +86,21 @@ class AppSettings: ObservableObject {
         motionThreshold = UserDefaults.standard.object(forKey: "motionThreshold") as? Double ?? 5.0
         askWhenMoving = UserDefaults.standard.object(forKey: "askWhenMoving") as? Bool ?? true
         weekStartsOn = UserDefaults.standard.object(forKey: "weekStartsOn") as? Int ?? 2
+        use24HourFormat = UserDefaults.standard.object(forKey: "use24HourFormat") as? Bool ?? true
+    }
+    
+    // Helper for time formatting
+    func timeFormat() -> String {
+        return use24HourFormat ? "HH:mm" : "h:mm a"
+    }
+    
+    // Helper to get formatted time string with lowercase am/pm
+    func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = timeFormat()
+        let timeString = formatter.string(from: date)
+        // Convert AM/PM to lowercase am/pm for our custom font
+        return timeString.replacingOccurrences(of: "AM", with: "am").replacingOccurrences(of: "PM", with: "pm")
     }
 }
 
@@ -392,7 +409,7 @@ class TimeTracker: ObservableObject {
         )
         
         let formatter = DateFormatter()
-        formatter.timeStyle = .short
+        formatter.dateFormat = AppSettings.shared.timeFormat()
         print("Scheduling dead man switch notification for \(formatter.string(from: nextNotificationTime)) (every \(Int(intervalMinutes)) minutes)")
         
         // Schedule automatic timeout notification for 2 minutes after the dead man switch
@@ -478,7 +495,7 @@ class TimeTracker: ObservableObject {
         )
         
         let formatter = DateFormatter()
-        formatter.timeStyle = .short
+        formatter.dateFormat = AppSettings.shared.timeFormat()
         print("Scheduling timeout notification for \(formatter.string(from: timeoutTime)) (2 minutes after dead man switch)")
         
         notificationCenter.add(request) { error in

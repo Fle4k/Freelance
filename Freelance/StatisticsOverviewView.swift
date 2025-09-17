@@ -89,18 +89,7 @@ struct StatisticsOverviewView: View {
     @State private var showingTodayDetail = false
     @State private var showingWeekDetail = false
     @State private var showingMonthDetail = false
-    @State private var showingDeadManSwitchPicker = false
-    @State private var showingMotionThresholdPicker = false
-    @State private var showingSalaryInput = false
-    @State private var showingCustomDeadManInput = false
-    @State private var showingCustomMotionInput = false
-    @State private var showingWeekStartsPicker = false
-    @State private var customDeadManValue = ""
-    @State private var customMotionValue = ""
-    @State private var salaryInputValue = ""
-    @State private var selectedDeadManInterval = 0
-    @State private var selectedMotionThreshold = 5
-    @State private var selectedWeekStarts = 2
+    @State private var showingSettings = false
     // Unified edit state
     @State private var showingEditSheet = false
     @State private var editingPeriod: StatisticsPeriod = .today
@@ -108,15 +97,6 @@ struct StatisticsOverviewView: View {
     @State private var resettingPeriod: StatisticsPeriod = .today
     @Environment(\.dismiss) private var dismiss
     
-    private func requestNotificationPermissionAndEnable(interval: Double) {
-        settings.requestNotificationPermission { granted in
-            if granted {
-                settings.deadManSwitchInterval = interval
-                settings.deadManSwitchEnabled = true
-                TimeTracker.shared.restartDeadManSwitch()
-            }
-        }
-    }
     
     private func copyTime(for period: StatisticsPeriod) {
         TimeTracker.shared.copyTime(for: period)
@@ -286,140 +266,18 @@ struct StatisticsOverviewView: View {
                 .padding(.bottom, 40)
                 
                 // Settings section
-                    VStack(spacing: 20) {
-                        Divider()
-                            .padding(.horizontal, 40)
-                        
+                VStack(spacing: 20) {
+                    Divider()
+                        .padding(.horizontal, 40)
+                    
+                    Button(action: {
+                        showingSettings = true
+                    }) {
                         Text("settings")
                             .font(.custom("Major Mono Display Regular", size: 18))
                             .foregroundColor(.primary)
-                            .padding(.bottom, 10)
-                        
-                        VStack(spacing: 20) {
-                // Week starts on
-                HStack {
-                    Text("weekday starts")
-                        .font(.custom("Major Mono Display Regular", size: 17))
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                            selectedWeekStarts = settings.weekStartsOn
-                        showingWeekStartsPicker = true
-                    }) {
-                        Text(weekdayName)
-                            .font(.custom("Major Mono Display Regular", size: 17))
-                            .foregroundColor(.primary)
                     }
-                }
-                
-                            // Dead Man Switch
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text("check in every")
-                                        .font(.custom("Major Mono Display Regular", size: 17))
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
-                                    Button(action: {
-                            selectedDeadManInterval = settings.deadManSwitchEnabled ? Int(settings.deadManSwitchInterval) : 0
-                                        showingDeadManSwitchPicker = true
-                                    }) {
-                                        Text(settings.deadManSwitchEnabled ? "\(Int(settings.deadManSwitchInterval))min" : "none")
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(.primary)
-                                    }
-                                }
-                                
-                                if settings.deadManSwitchEnabled && TimeTracker.shared.isRunning {
-                                    Text("next: \(getNextNotificationTime())")
-                                        .font(.custom("Major Mono Display Regular", size: 12))
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            
-                            // Motion Detection
-                            Button(action: {
-                                settings.motionDetectionEnabled.toggle()
-                            }) {
-                                VStack(spacing: 8) {
-                                    HStack {
-                                        Text("ask when i")
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(.primary)
-                                        
-                                        Spacer()
-                                        
-                                        if settings.motionDetectionEnabled {
-                                            Button(action: {
-                                                settings.askWhenMoving.toggle()
-                                            }) {
-                                                Text(settings.askWhenMoving ? "move" : "don't move")
-                                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                                    .foregroundColor(.primary)
-                                            }
-                                        } else {
-                                            Text(settings.askWhenMoving ? "move" : "don't move")
-                                                .font(.custom("Major Mono Display Regular", size: 17))
-                                                .foregroundColor(.primary)
-                                        }
-                                    }
-                                    
-                                    HStack {
-                                        Text("longer than")
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(.primary)
-                                        
-                                        Spacer()
-                                        
-                                        if settings.motionDetectionEnabled {
-                                            Button(action: {
-                            selectedMotionThreshold = Int(settings.motionThreshold)
-                                                showingMotionThresholdPicker = true
-                                            }) {
-                                                Text("\(Int(settings.motionThreshold))min")
-                                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                                    .foregroundColor(.primary)
-                                            }
-                                        } else {
-                                            Text("\(Int(settings.motionThreshold))min")
-                                                .font(.custom("Major Mono Display Regular", size: 17))
-                                                .foregroundColor(.primary)
-                                        }
-                                    }
-                                }
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .opacity(settings.motionDetectionEnabled ? 1.0 : 0.3)
-                            
-                            // Salary Setting
-                            HStack {
-                                Text("salary")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    salaryInputValue = String(format: "%.0f", settings.hourlyRate)
-                                    showingSalaryInput = true
-                                }) {
-                                    HStack(spacing: 0) {
-                                        Text(String(format: "%.0f", settings.hourlyRate))
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(.primary)
-                                        
-                                Text("/€")
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(.primary)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 40)
-            .padding(.bottom, 10)
+                    .padding(.bottom, 10)
                 }
                 
                 Spacer()
@@ -434,256 +292,15 @@ struct StatisticsOverviewView: View {
         showingResetConfirmation = false
     }
     
-    private func getNextNotificationTime() -> String {
-        let calendar = Calendar.current
-        let now = Date()
-        let intervalMinutes = settings.deadManSwitchInterval
-        
-        // Calculate next clock-aligned time (same logic as in TimeTracker)
-        let currentMinute = calendar.component(.minute, from: now)
-        let minutesSinceLastBoundary = currentMinute % Int(intervalMinutes)
-        
-        var nextMinute: Int
-        if minutesSinceLastBoundary == 0 {
-            nextMinute = currentMinute + Int(intervalMinutes)
-        } else {
-            nextMinute = currentMinute - minutesSinceLastBoundary + Int(intervalMinutes)
-        }
-        
-        var nextHour = calendar.component(.hour, from: now)
-        if nextMinute >= 60 {
-            nextHour += nextMinute / 60
-            nextMinute = nextMinute % 60
-        }
-        
-        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
-        dateComponents.hour = nextHour
-        dateComponents.minute = nextMinute
-        dateComponents.second = 0
-        
-        if let nextTime = calendar.date(from: dateComponents) {
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            return formatter.string(from: nextTime)
-        }
-        
-        return "unknown"
-    }
-    
-    private var weekdayName: String {
-        switch settings.weekStartsOn {
-        case 1: return "sunday"
-        case 2: return "monday"
-        case 3: return "tuesday"
-        case 4: return "wednesday"
-        case 5: return "thursday"
-        case 6: return "friday"
-        case 7: return "saturday"
-        default: return "monday"
-        }
-    }
     
     
     var body: some View {
         mainView
+            .blur(radius: (showingTodayDetail || showingWeekDetail || showingMonthDetail || showingSettings || showingEditSheet) ? 3 : 0)
+            .animation(.easeInOut(duration: 0.2), value: showingTodayDetail || showingWeekDetail || showingMonthDetail || showingSettings || showingEditSheet)
             .onDisappear {
                 settings.saveSettings()
                 TimeTracker.shared.restartDeadManSwitch()
-            }
-            .sheet(isPresented: $showingDeadManSwitchPicker) {
-                NavigationView {
-                    VStack(spacing: 20) {
-                        Text("check in every")
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.secondary)
-                            .padding(.top, 20)
-                        
-                        VStack(spacing: 8) {
-                            Picker("interval", selection: $selectedDeadManInterval) {
-                            Text("none").tag(0)
-                            Text("5min").tag(5)
-                            Text("10min").tag(10)
-                            Text("30min").tag(30)
-                            Text("custom").tag(-1)
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .frame(height: 200)
-                        .onChange(of: selectedDeadManInterval) { oldValue, newValue in
-                            if newValue == -1 {
-                                // Preload with current setting if it's a custom value (not 5, 10, or 30)
-                                let currentInterval = Int(settings.deadManSwitchInterval)
-                                if settings.deadManSwitchEnabled && ![5, 10, 30].contains(currentInterval) {
-                                    customDeadManValue = String(currentInterval)
-                                } else {
-                                    customDeadManValue = ""
-                                }
-                            }
-                        }
-                        
-                        if selectedDeadManInterval == -1 {
-                            FocusableTextField(
-                                text: $customDeadManValue,
-                                placeholder: "minutes",
-                                font: UIFont(name: "Major Mono Display Regular", size: 18) ?? UIFont.systemFont(ofSize: 18),
-                                shouldFocus: true
-                            )
-                            .frame(height: 40)
-                            .padding(.horizontal, 40)
-                        }
-                        }
-                        
-                        Spacer()
-                    }
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("cancel") {
-                                showingDeadManSwitchPicker = false
-                            }
-                        }
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("save") {
-                                if selectedDeadManInterval == 0 {
-                                    settings.deadManSwitchEnabled = false
-                                    TimeTracker.shared.restartDeadManSwitch()
-                                } else if selectedDeadManInterval == -1 {
-                                    if let value = Double(customDeadManValue) {
-                                        requestNotificationPermissionAndEnable(interval: value)
-                                    }
-                                } else {
-                                    requestNotificationPermissionAndEnable(interval: Double(selectedDeadManInterval))
-                                }
-                                showingDeadManSwitchPicker = false
-                            }
-                        }
-                    }
-                }
-                .presentationDetents([.fraction(0.45)])
-            }
-            .sheet(isPresented: $showingMotionThresholdPicker) {
-                NavigationView {
-                    VStack(spacing: 20) {
-                        Text("longer than")
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.secondary)
-                            .padding(.top, 20)
-                        
-                        VStack(spacing: 8) {
-                            Picker("Threshold", selection: $selectedMotionThreshold) {
-                            Text("5min").tag(5)
-                            Text("10min").tag(10)
-                            Text("30min").tag(30)
-                            Text("custom").tag(-1)
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .frame(height: 200)
-                        
-                        if selectedMotionThreshold == -1 {
-                            TextField("minutes", text: $customMotionValue)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .keyboardType(.numberPad)
-                                .padding(.horizontal, 40)
-                        }
-                        }
-                        
-                        Spacer()
-                    }
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("cancel") {
-                                showingMotionThresholdPicker = false
-                            }
-                        }
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("save") {
-                                if selectedMotionThreshold == -1 {
-                                    if let value = Double(customMotionValue) {
-                                        settings.motionThreshold = value
-                                        settings.motionDetectionEnabled = true
-                                    }
-                                } else {
-                                    settings.motionThreshold = Double(selectedMotionThreshold)
-                                    settings.motionDetectionEnabled = true
-                                }
-                                showingMotionThresholdPicker = false
-                            }
-                        }
-                    }
-                }
-                .presentationDetents([.fraction(0.45)])
-            }
-            .sheet(isPresented: $showingWeekStartsPicker) {
-                NavigationView {
-                    VStack(spacing: 20) {
-                        Text("weekday starts")
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.secondary)
-                            .padding(.top, 20)
-                        
-                        VStack(spacing: 8) {
-                            Picker("Weekday", selection: $selectedWeekStarts) {
-                            Text("monday").tag(2)
-                            Text("tuesday").tag(3)
-                            Text("wednesday").tag(4)
-                            Text("thursday").tag(5)
-                            Text("friday").tag(6)
-                            Text("saturday").tag(7)
-                            Text("sunday").tag(1)
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .frame(height: 200)
-                        }
-                        
-                        Spacer()
-                    }
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("cancel") {
-                                showingWeekStartsPicker = false
-                            }
-                        }
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("save") {
-                                settings.weekStartsOn = selectedWeekStarts
-                                showingWeekStartsPicker = false
-                            }
-                        }
-                    }
-                }
-                .presentationDetents([.fraction(0.45)])
-            }
-            .alert("salary", isPresented: $showingSalaryInput) {
-                TextField("hourly rate", text: $salaryInputValue)
-                    .keyboardType(.numberPad)
-                Button("cancel", role: .cancel) { }
-                Button("save") {
-                    if let value = Double(salaryInputValue) {
-                        settings.hourlyRate = value
-                    }
-                }
-            }
-            .alert("check in every", isPresented: $showingCustomDeadManInput) {
-                TextField("minutes", text: $customDeadManValue)
-                    .keyboardType(.numberPad)
-                Button("cancel", role: .cancel) { }
-                Button("save") {
-                    if let value = Double(customDeadManValue) {
-                        requestNotificationPermissionAndEnable(interval: value)
-                    }
-                }
-            }
-            .alert("longer than", isPresented: $showingCustomMotionInput) {
-                TextField("minutes", text: $customMotionValue)
-                    .keyboardType(.numberPad)
-                Button("cancel", role: .cancel) { }
-                Button("save") {
-                    if let value = Double(customMotionValue) {
-                        settings.motionThreshold = value
-                        settings.motionDetectionEnabled = true
-                    }
-                }
             }
         .sheet(isPresented: $showingTodayDetail) {
             TodayDetailView()
@@ -693,6 +310,11 @@ struct StatisticsOverviewView: View {
         }
         .sheet(isPresented: $showingMonthDetail) {
             MonthDetailView()
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+                .presentationDetents([.height(450), .large])
+                .presentationDragIndicator(.visible)
         }
         .confirmationDialog("reset \(resettingPeriod.displayName)", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
             Button("reset", role: .destructive) {

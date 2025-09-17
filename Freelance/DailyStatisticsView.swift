@@ -96,20 +96,18 @@ struct DailyStatisticsView: View {
 struct TimeSlotRow: View {
     let entry: TimeEntry
     
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter
+    private func formatTime(_ date: Date) -> String {
+        return AppSettings.shared.formatTime(date)
     }
     
     var body: some View {
         HStack {
             if let endDate = entry.endDate {
-                Text("\(timeFormatter.string(from: entry.startDate)) – \(timeFormatter.string(from: endDate))")
+                Text("\(formatTime(entry.startDate)) – \(formatTime(endDate))")
                                                 .font(.custom("Major Mono Display Regular", size: 17))
                     .foregroundColor(.primary)
             } else {
-                Text("\(timeFormatter.string(from: entry.startDate)) – active")
+                Text("\(formatTime(entry.startDate)) – active")
                                                 .font(.custom("Major Mono Display Regular", size: 17))
                     .foregroundColor(.primary)
             }
