@@ -248,41 +248,49 @@ struct StatisticsOverviewView: View {
                     }
                 }
     
+    
     // MARK: - View Modifiers
     private var mainView: some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
-                Spacer(minLength: 40)
-                
-                // Overview Page
+            ZStack {
+                // Main content
+                VStack(spacing: 0) {
+                    Spacer(minLength: 40)
+                    
+                    // Overview Page
                     VStack(spacing: 20) {
-                    todayCard
-                    
-                    weekCard
-                    
-                    monthCard
+                        todayCard
+                        
+                        weekCard
+                        
+                        monthCard
                     }
                     .padding(.horizontal, 40)
-                .padding(.bottom, 40)
-                
-                // Settings section
-                VStack(spacing: 20) {
-                    Divider()
-                        .padding(.horizontal, 40)
+                    .padding(.bottom, 40)
                     
-                    Button(action: {
-                        showingSettings = true
-                    }) {
-                        Text("settings")
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.bottom, 10)
+                    Spacer()
                 }
+                .background(Color(.systemBackground))
                 
-                Spacer()
+                // Settings button at bottom
+                VStack {
+                    Spacer()
+                    
+                    VStack(spacing: 20) {
+                        Divider()
+                            .padding(.horizontal, 40)
+                        
+                        Button(action: {
+                            showingSettings = true
+                        }) {
+                            Text("settings")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.primary)
+                        }
+                        .padding(.bottom, 10)
+                    }
+                }
             }
-            .background(Color(.systemBackground))
         }
         }
     

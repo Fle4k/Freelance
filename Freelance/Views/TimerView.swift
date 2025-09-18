@@ -35,8 +35,8 @@ struct TimerView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Starfield background effect
-                StarfieldView(isActive: timeTracker.isRunning)
+                // Timer particle background effect
+                TimerParticleView(isActive: timeTracker.isRunning)
                     .ignoresSafeArea()
                 
                 // Make background transparent when timer is running

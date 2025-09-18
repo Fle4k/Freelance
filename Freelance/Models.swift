@@ -121,6 +121,11 @@ class TimeTracker: ObservableObject {
         loadCurrentSession()
         loadAccumulatedTime()
         setupNotificationCategories()
+        
+        // Add test data on first run (remove this in production)
+        #if DEBUG
+        addTestCrossDaySession()
+        #endif
     }
     
     func setupNotificationCategories() {
@@ -329,7 +334,7 @@ class TimeTracker: ObservableObject {
     private func performMidnightRollover() {
         guard let sessionStart = currentSessionStart, isRunning else { return }
         
-        print("Midnight rollover detected - storing current day and starting new day")
+        print("Midnight rollover detected - splitting session across days")
         
         // Calculate the time worked until midnight
         let calendar = Calendar.current
@@ -352,11 +357,14 @@ class TimeTracker: ObservableObject {
         saveTimeEntries()
         saveAccumulatedTime()
         
-        // Start a new session for the new day
+        // Continue timer for the new day starting at midnight
         currentSessionStart = midnight
         elapsedTime = Date().timeIntervalSince(midnight)
+        totalAccumulatedTime = 0 // Reset accumulated time for new day
+        saveAccumulatedTime()
+        saveCurrentSession() // Save the new session start
         
-        print("Midnight rollover completed - new day started at \(midnight)")
+        print("Midnight rollover completed - session split, timer continues on new day")
     }
     
     // MARK: - Dead Man Switch
@@ -606,6 +614,38 @@ class TimeTracker: ObservableObject {
         startTimer()
     }
     
+    // MARK: - Test Data
+    
+    func addTestCrossDaySession() {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Get yesterday and today at midnight
+        let today = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        
+        // Create test session: yesterday 23:00 to today 00:30
+        let sessionStart = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: yesterday)!
+        let midnightSplit = today // midnight
+        let sessionEnd = calendar.date(bySettingHour: 0, minute: 30, second: 0, of: today)!
+        
+        // First part: yesterday 23:00 - 00:00 (1 hour)
+        let firstEntry = TimeEntry(startDate: sessionStart, endDate: midnightSplit, isActive: false)
+        
+        // Second part: today 00:00 - 00:30 (30 minutes)  
+        let secondEntry = TimeEntry(startDate: midnightSplit, endDate: sessionEnd, isActive: false)
+        
+        // Clear all existing entries for clean test
+        timeEntries.removeAll()
+        
+        // Add just these two entries for ONE simple rollover test
+        timeEntries.append(firstEntry)
+        timeEntries.append(secondEntry)
+        
+        saveTimeEntries()
+        print("✅ Added simple test rollover: \(sessionStart) to \(sessionEnd)")
+    }
+    
     // MARK: - Time Management Actions
     
     func copyTime(for period: StatisticsPeriod) {
@@ -650,6 +690,53 @@ class TimeTracker: ObservableObject {
         }
         
         print("Reset time for \(period.displayName)")
+    }
+    
+    func deleteDayData(for date: Date) {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
+        
+        // Remove all entries for this specific day
+        timeEntries = timeEntries.filter { entry in
+            !(entry.startDate >= dayStart && entry.startDate < dayEnd)
+        }
+        
+        // Stop current timer if it's running on this day
+        if let currentStart = currentSessionStart,
+           currentStart >= dayStart && currentStart < dayEnd {
+            pauseTimer()
+        }
+        
+        saveTimeEntries()
+        print("Deleted all data for date: \(date)")
+    }
+    
+    func editDayTime(for date: Date, newTime: TimeInterval) {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
+        
+        // Remove all entries for this specific day
+        timeEntries = timeEntries.filter { entry in
+            !(entry.startDate >= dayStart && entry.startDate < dayEnd)
+        }
+        
+        // Stop current timer if it's running on this day
+        if let currentStart = currentSessionStart,
+           currentStart >= dayStart && currentStart < dayEnd {
+            pauseTimer()
+        }
+        
+        // Add a single entry for this day with the new time
+        if newTime > 0 {
+            let endTime = dayStart.addingTimeInterval(newTime)
+            let newEntry = TimeEntry(startDate: dayStart, endDate: endTime, isActive: false)
+            timeEntries.append(newEntry)
+        }
+        
+        saveTimeEntries()
+        print("Edited day \(date) to \(newTime) seconds")
     }
     
     func editTime(for period: StatisticsPeriod, newTime: TimeInterval) {

@@ -430,6 +430,8 @@ struct DayDetailView: View {
     @ObservedObject private var settings = AppSettings.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showingEditSheet = false
+    @State private var showingRemoveConfirmation = false
+    @State private var showingDayEditSheet = false
     
     // Precomputed data for instant display
     @State private var dayEntries: [TimeEntry] = []
@@ -587,6 +589,22 @@ struct DayDetailView: View {
                 .padding(.horizontal, 40)
                 
                 Spacer()
+                
+                // Action buttons section
+                VStack(spacing: 8) {
+                    Button(action: editDayTime) {
+                        Text("edit")
+                            .font(.custom("Major Mono Display Regular", size: 18))
+                            .foregroundColor(.primary)
+                    }
+                    
+                    Button(action: removeDayData) {
+                        Text("remove")
+                            .font(.custom("Major Mono Display Regular", size: 18))
+                            .foregroundColor(.primary)
+                    }
+                }
+                .padding(.bottom, 8)
             }
             .background(Color(.systemBackground))
         }
@@ -601,6 +619,43 @@ struct DayDetailView: View {
                 customTitle: "edit \(dayTitle)"
             )
         }
+        .confirmationDialog("remove day", isPresented: $showingRemoveConfirmation, titleVisibility: .visible) {
+            Button("remove", role: .destructive) {
+                confirmRemove()
+            }
+            Button("cancel", role: .cancel) { }
+        } message: {
+            Text("are you sure you want to remove all data for \(dayTitle)? this will permanently delete all time entries for this day.")
+        }
+        .sheet(isPresented: $showingDayEditSheet) {
+            DayEditTimeSheet(
+                selectedDate: selectedDate,
+                currentTime: formatTime(dayTotalTime),
+                isPresented: $showingDayEditSheet,
+                customTitle: "edit \(dayTitle)"
+            )
+        }
+    }
+    
+    private func editDayTime() {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        showingDayEditSheet = true
+    }
+    
+    private func removeDayData() {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        showingRemoveConfirmation = true
+    }
+    
+    private func confirmRemove() {
+        timeTracker.deleteDayData(for: selectedDate)
+        dismiss()
     }
     
     private func formatTime(_ timeInterval: TimeInterval) -> String {
@@ -608,6 +663,149 @@ struct DayDetailView: View {
         let minutes = Int(timeInterval.truncatingRemainder(dividingBy: 3600)) / 60
         let seconds = Int(timeInterval) % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+}
+
+struct DayEditTimeSheet: View {
+    let selectedDate: Date
+    let currentTime: String
+    @Binding var isPresented: Bool
+    let customTitle: String?
+    @State private var hoursText: String = ""
+    @State private var minutesText: String = ""
+    @State private var isHoursFocused: Bool = true
+    @State private var originalHoursText: String = ""
+    @State private var originalMinutesText: String = ""
+    
+    private var periodTitle: String {
+        return customTitle ?? "edit day"
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                Spacer(minLength: 40)
+                
+                VStack(spacing: 30) {
+                    // Title matching overview style
+                    Text(periodTitle)
+                        .font(.custom("Major Mono Display Regular", size: 18))
+                        .foregroundColor(.primary)
+                        .padding(.top, 20)
+                    
+                    // Show current total time
+                    VStack(spacing: 10) {
+                        Text("current total")
+                            .font(.custom("Major Mono Display Regular", size: 16))
+                            .foregroundColor(.secondary)
+                        
+                        Text(currentTime)
+                            .font(.custom("Major Mono Display Regular", size: 20))
+                            .foregroundColor(.primary)
+                    }
+                    
+                    // Hours and minutes input
+                    VStack(spacing: 20) {
+                        Text("new total")
+                            .font(.custom("Major Mono Display Regular", size: 16))
+                            .foregroundColor(.secondary)
+                        
+                        HStack(spacing: 20) {
+                            // Hours input
+                            VStack(spacing: 5) {
+                                Text("hours")
+                                    .font(.custom("Major Mono Display Regular", size: 14))
+                                    .foregroundColor(.secondary)
+                                
+                                TextField("0", text: $hoursText)
+                                    .font(.custom("Major Mono Display Regular", size: 24))
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 80)
+                                    .background(
+                                        Rectangle()
+                                            .stroke(isHoursFocused ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
+                                            .background(Color(.systemBackground))
+                                    )
+                                    .onTapGesture {
+                                        isHoursFocused = true
+                                    }
+                            }
+                            
+                            // Minutes input
+                            VStack(spacing: 5) {
+                                Text("minutes")
+                                    .font(.custom("Major Mono Display Regular", size: 14))
+                                    .foregroundColor(.secondary)
+                                
+                                TextField("0", text: $minutesText)
+                                    .font(.custom("Major Mono Display Regular", size: 24))
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 80)
+                                    .background(
+                                        Rectangle()
+                                            .stroke(!isHoursFocused ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
+                                            .background(Color(.systemBackground))
+                                    )
+                                    .onTapGesture {
+                                        isHoursFocused = false
+                                    }
+                            }
+                        }
+                    }
+                    
+                    // Buttons
+                    VStack(spacing: 15) {
+                        Button(action: saveChanges) {
+                            Text("save")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Button(action: cancel) {
+                            Text("cancel")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.top, 20)
+                }
+                .padding(.horizontal, 40)
+                
+                Spacer()
+            }
+            .background(Color(.systemBackground))
+        }
+        .onAppear {
+            parseCurrentTime()
+            originalHoursText = hoursText
+            originalMinutesText = minutesText
+        }
+    }
+    
+    private func parseCurrentTime() {
+        // Parse time from HH:MM:SS format
+        let components = currentTime.split(separator: ":")
+        if components.count >= 2 {
+            hoursText = String(components[0])
+            minutesText = String(components[1])
+        }
+    }
+    
+    private func saveChanges() {
+        let hours = Int(hoursText) ?? 0
+        let minutes = Int(minutesText) ?? 0
+        let totalSeconds = TimeInterval(hours * 3600 + minutes * 60)
+        
+        TimeTracker.shared.editDayTime(for: selectedDate, newTime: totalSeconds)
+        isPresented = false
+    }
+    
+    private func cancel() {
+        hoursText = originalHoursText
+        minutesText = originalMinutesText
+        isPresented = false
     }
 }
 
