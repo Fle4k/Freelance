@@ -1,0 +1,48 @@
+{
+  "source": "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/TimerView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "reset timer",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 154
+        }
+      },
+      {
+        "comment": "",
+        "key": "cancel",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 155
+        }
+      },
+      {
+        "comment": "",
+        "key": "store and reset",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 156
+        }
+      },
+      {
+        "comment": "",
+        "key": "reset",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 160
+        }
+      },
+      {
+        "comment": "",
+        "key": "store time and start a new session or reset without storing?",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 164
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,424 @@
+{
+  "source": "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/SettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "salary",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 399
+        }
+      },
+      {
+        "comment": "",
+        "key": "settings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 235
+        }
+      },
+      {
+        "comment": "",
+        "key": "salary",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 93
+        }
+      },
+      {
+        "comment": "",
+        "key": "/€",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 108
+        }
+      },
+      {
+        "comment": "",
+        "key": "next: %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 135
+        }
+      },
+      {
+        "comment": "",
+        "key": "check in every",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lldmin",
+        "location": {
+          "startingColumn": 70,
+          "startingLine": 128
+        }
+      },
+      {
+        "comment": "",
+        "key": "none",
+        "location": {
+          "startingColumn": 116,
+          "startingLine": 128
+        }
+      },
+      {
+        "comment": "",
+        "key": "ask when i",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 147
+        }
+      },
+      {
+        "comment": "",
+        "key": "move",
+        "location": {
+          "startingColumn": 67,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "don't move",
+        "location": {
+          "startingColumn": 76,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "move",
+        "location": {
+          "startingColumn": 71,
+          "startingLine": 157
+        }
+      },
+      {
+        "comment": "",
+        "key": "don't move",
+        "location": {
+          "startingColumn": 80,
+          "startingLine": 157
+        }
+      },
+      {
+        "comment": "",
+        "key": "longer than",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 169
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lldmin",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 185
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lldmin",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 180
+        }
+      },
+      {
+        "comment": "",
+        "key": "time format",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 197
+        }
+      },
+      {
+        "comment": "",
+        "key": "24h",
+        "location": {
+          "startingColumn": 61,
+          "startingLine": 206
+        }
+      },
+      {
+        "comment": "",
+        "key": "am/pm",
+        "location": {
+          "startingColumn": 69,
+          "startingLine": 206
+        }
+      },
+      {
+        "comment": "",
+        "key": "weekday starts",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 214
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 239
+        }
+      },
+      {
+        "comment": "",
+        "key": "check in every",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 252
+        }
+      },
+      {
+        "comment": "",
+        "key": "interval",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 258
+        }
+      },
+      {
+        "comment": "",
+        "key": "none",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 259
+        }
+      },
+      {
+        "comment": "",
+        "key": "5min",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 260
+        }
+      },
+      {
+        "comment": "",
+        "key": "10min",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 261
+        }
+      },
+      {
+        "comment": "",
+        "key": "30min",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 262
+        }
+      },
+      {
+        "comment": "",
+        "key": "custom",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 263
+        }
+      },
+      {
+        "comment": "",
+        "key": "cancel",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 295
+        }
+      },
+      {
+        "comment": "",
+        "key": "save",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 300
+        }
+      },
+      {
+        "comment": "",
+        "key": "longer than",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 320
+        }
+      },
+      {
+        "comment": "",
+        "key": "Threshold",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 326
+        }
+      },
+      {
+        "comment": "",
+        "key": "5min",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 327
+        }
+      },
+      {
+        "comment": "",
+        "key": "10min",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 328
+        }
+      },
+      {
+        "comment": "",
+        "key": "30min",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 329
+        }
+      },
+      {
+        "comment": "",
+        "key": "custom",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 330
+        }
+      },
+      {
+        "comment": "",
+        "key": "cancel",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 341
+        }
+      },
+      {
+        "comment": "",
+        "key": "save",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 346
+        }
+      },
+      {
+        "comment": "",
+        "key": "weekday starts",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 362
+        }
+      },
+      {
+        "comment": "",
+        "key": "Weekday",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 368
+        }
+      },
+      {
+        "comment": "",
+        "key": "monday",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 369
+        }
+      },
+      {
+        "comment": "",
+        "key": "tuesday",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 370
+        }
+      },
+      {
+        "comment": "",
+        "key": "wednesday",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 371
+        }
+      },
+      {
+        "comment": "",
+        "key": "thursday",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 372
+        }
+      },
+      {
+        "comment": "",
+        "key": "friday",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 373
+        }
+      },
+      {
+        "comment": "",
+        "key": "saturday",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 374
+        }
+      },
+      {
+        "comment": "",
+        "key": "sunday",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 375
+        }
+      },
+      {
+        "comment": "",
+        "key": "cancel",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 386
+        }
+      },
+      {
+        "comment": "",
+        "key": "save",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 391
+        }
+      },
+      {
+        "comment": "",
+        "key": "Hourly rate",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 400
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 402
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 403
+        }
+      }
+    ]
+  },
+  "version": 1
+}

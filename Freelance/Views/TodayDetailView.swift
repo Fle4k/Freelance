@@ -89,39 +89,54 @@ struct TodayDetailView: View {
                     // Time entries with smaller font
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 15) {
-                            ForEach(todayEntries) { entry in
+                            if timeTracker.isDayManuallyEdited(for: Date()) {
+                                // Show single "changed by user" message for manually edited days
                                 HStack {
-                                    if let endDate = entry.endDate {
-                                        Text("\(formatTime(entry.startDate))-\(formatTime(endDate))")
-                                            .font(.custom("Major Mono Display Regular", size: 15))
-                                            .foregroundColor(.primary)
-                                    } else {
-                                        ActiveTimerView(startDate: entry.startDate)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    if entry.isActive {
-                                        Text(formatDuration(from: entry.startDate, to: Date()))
-                                            .font(.custom("Major Mono Display Regular", size: 15))
-                                            .foregroundColor(.primary)
-                                    } else {
-                                        Text(formatDuration(from: entry.duration))
-                                            .font(.custom("Major Mono Display Regular", size: 15))
-                                            .foregroundColor(.primary)
-                                    }
-                                }
-                            }
-                            
-                            if todayEntries.isEmpty {
-                                HStack {
-                                    Spacer()
-                                    
-                                    Text("-")
+                                    Text("changed by user")
                                         .font(.custom("Major Mono Display Regular", size: 15))
                                         .foregroundColor(.secondary)
                                     
                                     Spacer()
+                                    
+                                    Text(formatDuration(from: timeTracker.getTotalHours(for: .today) * 3600))
+                                        .font(.custom("Major Mono Display Regular", size: 15))
+                                        .foregroundColor(.primary)
+                                }
+                            } else {
+                                ForEach(todayEntries) { entry in
+                                    HStack {
+                                        if let endDate = entry.endDate {
+                                            Text("\(formatTime(entry.startDate))-\(formatTime(endDate))")
+                                                .font(.custom("Major Mono Display Regular", size: 15))
+                                                .foregroundColor(.primary)
+                                        } else {
+                                            ActiveTimerView(startDate: entry.startDate)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if entry.isActive {
+                                            Text(formatDuration(from: entry.startDate, to: Date()))
+                                                .font(.custom("Major Mono Display Regular", size: 15))
+                                                .foregroundColor(.primary)
+                                        } else {
+                                            Text(formatDuration(from: entry.duration))
+                                                .font(.custom("Major Mono Display Regular", size: 15))
+                                                .foregroundColor(.primary)
+                                        }
+                                    }
+                                }
+                                
+                                if todayEntries.isEmpty {
+                                    HStack {
+                                        Spacer()
+                                        
+                                        Text("-")
+                                            .font(.custom("Major Mono Display Regular", size: 15))
+                                            .foregroundColor(.secondary)
+                                        
+                                        Spacer()
+                                    }
                                 }
                             }
                         }

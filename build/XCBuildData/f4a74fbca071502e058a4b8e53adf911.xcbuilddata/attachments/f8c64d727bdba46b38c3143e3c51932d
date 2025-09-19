@@ -1,0 +1,168 @@
+{
+  "" : {
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Freelance-master.dia",
+    "emit-module-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Freelance-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Freelance-master-emit-module.dia",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Freelance-master.swiftdeps"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/ContentView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/DailyStatisticsView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/DailyStatisticsView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/DailyStatisticsView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/DailyStatisticsView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/DailyStatisticsView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/DailyStatisticsView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/DailyStatisticsView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/DailyStatisticsView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/DailyStatisticsView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/FreelanceApp.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/FreelanceApp.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/FreelanceApp.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/FreelanceApp.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/FreelanceApp.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/FreelanceApp.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/FreelanceApp.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/FreelanceApp.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/FreelanceApp~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Models.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Models.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Models.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Models.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Models.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Models.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Models.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Models.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/Models~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/StatisticsOverviewView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StatisticsOverviewView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StatisticsOverviewView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StatisticsOverviewView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StatisticsOverviewView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StatisticsOverviewView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StatisticsOverviewView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StatisticsOverviewView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StatisticsOverviewView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/CalendarView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/CalendarView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/CalendarView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/CalendarView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/CalendarView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/CalendarView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/CalendarView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/CalendarView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/CalendarView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/EditTimeSheet.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/EditTimeSheet.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/EditTimeSheet.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/EditTimeSheet.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/EditTimeSheet.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/EditTimeSheet.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/EditTimeSheet.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/EditTimeSheet.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/EditTimeSheet~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/MonthDetailView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/MonthDetailView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/MonthDetailView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/MonthDetailView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/MonthDetailView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/MonthDetailView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/MonthDetailView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/MonthDetailView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/MonthDetailView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/ProportionalTimeDisplay.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ProportionalTimeDisplay.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ProportionalTimeDisplay.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ProportionalTimeDisplay.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ProportionalTimeDisplay.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ProportionalTimeDisplay.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ProportionalTimeDisplay.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ProportionalTimeDisplay.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/ProportionalTimeDisplay~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/SettingsView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/SettingsView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/SettingsView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/SettingsView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/SettingsView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/SettingsView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/SettingsView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/StarfieldView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StarfieldView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StarfieldView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StarfieldView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StarfieldView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StarfieldView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StarfieldView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StarfieldView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/StarfieldView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/TimerParticleView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerParticleView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerParticleView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerParticleView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerParticleView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerParticleView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerParticleView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerParticleView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerParticleView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/TimerView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TimerView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/TodayDetailView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TodayDetailView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TodayDetailView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TodayDetailView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TodayDetailView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TodayDetailView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TodayDetailView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TodayDetailView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/TodayDetailView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/WeekDetailView.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/WeekDetailView.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/WeekDetailView.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/WeekDetailView.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/WeekDetailView.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/WeekDetailView.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/WeekDetailView.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/WeekDetailView.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/WeekDetailView~partial.swiftmodule"
+  },
+  "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/fle4k/Projekte/Freelance/Freelance/build/Freelance.build/Debug-iphoneos/Freelance.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

@@ -34,14 +34,13 @@ struct EditTimeSheet: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                Spacer(minLength: 40)
+                Spacer(minLength: 60)
                 
                 VStack(spacing: 30) {
                     // Title matching overview style
                     Text(periodTitle)
                         .font(.custom("Major Mono Display Regular", size: 18))
-                        .foregroundColor(.primary)
-                        .padding(.top, 20)
+                        .foregroundColor(.secondary)
                     
                     // Show current total time
                     VStack(spacing: 10) {
@@ -95,38 +94,29 @@ struct EditTimeSheet: View {
                     }
                     .padding(.horizontal, 40)
                     
+                    // Buttons
+                    VStack(spacing: 15) {
+                        Button(action: saveTime) {
+                            Text("save")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Button(action: { isPresented = false }) {
+                            Text("cancel")
+                                .font(.custom("Major Mono Display Regular", size: 18))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.top, 20)
+                    
                     Spacer()
                 }
                 .padding(.horizontal, 40)
-                
-                // Bottom button
-                VStack {
-                    Spacer()
-                    
-                    Button(action: {
-                        if hasChanges() {
-                            saveTime()
-                        } else {
-                            isPresented = false
-                        }
-                    }) {
-                        Text(hasChanges() ? "save" : "cancel")
-                            .font(.custom("Major Mono Display Regular", size: 17))
-                            .foregroundColor(.primary)
-                    }
-                    .padding(.bottom, 40)
-                }
             }
             .background(Color(.systemBackground))
         }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("cancel") {
-                    isPresented = false
-                }
-            }
-        }
         .onAppear {
             setupInitialValues()
         }
@@ -233,6 +223,12 @@ struct SelectAllTextField: UIViewRepresentable {
 
         func textFieldDidChangeSelection(_ textField: UITextField) {
             parent.text = textField.text ?? ""
+        }
+        
+        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            let newText = (textField.text as NSString?)?.replacingCharacters(in: range, with: string) ?? string
+            parent.text = newText
+            return true
         }
     }
 }

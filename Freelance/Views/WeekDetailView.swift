@@ -35,7 +35,7 @@ struct WeekDetailView: View {
                 }
                 
                 // Always include the day, even if it has no entries
-                entries.append((dayDate, dayEntries))
+                entries.append((dayStart, dayEntries))
             }
         }
         
@@ -140,6 +140,7 @@ struct WeekDetailView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     print("📱 Week list item tapped: \(dayEntry.0)")
+                                    print("📱 Using normalized date (should be 00:00:00): \(dayEntry.0)")
                                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                                     impactFeedback.impactOccurred()
                                     precomputeDayData(for: dayEntry.0)
@@ -267,7 +268,6 @@ struct WeekDetailView: View {
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
-        let previousDayStart = calendar.date(byAdding: .day, value: -1, to: dayStart) ?? dayStart
         
         // Check if this day has a rollover session (either starting or ending at midnight)
         return timeTracker.timeEntries.contains { entry in

@@ -1,0 +1,144 @@
+{
+  "source": "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/StatisticsOverviewView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "today",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 145
+        }
+      },
+      {
+        "comment": "",
+        "key": "copy",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 165
+        }
+      },
+      {
+        "comment": "",
+        "key": "edit",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 168
+        }
+      },
+      {
+        "comment": "",
+        "key": "reset",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 171
+        }
+      },
+      {
+        "comment": "",
+        "key": "this week",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 182
+        }
+      },
+      {
+        "comment": "",
+        "key": "copy",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 202
+        }
+      },
+      {
+        "comment": "",
+        "key": "edit",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 205
+        }
+      },
+      {
+        "comment": "",
+        "key": "reset",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 208
+        }
+      },
+      {
+        "comment": "",
+        "key": "this month",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 219
+        }
+      },
+      {
+        "comment": "",
+        "key": "copy",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 239
+        }
+      },
+      {
+        "comment": "",
+        "key": "edit",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 242
+        }
+      },
+      {
+        "comment": "",
+        "key": "reset",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 245
+        }
+      },
+      {
+        "comment": "",
+        "key": "settings",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 286
+        }
+      },
+      {
+        "comment": "",
+        "key": "reset %@",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 327
+        }
+      },
+      {
+        "comment": "",
+        "key": "reset",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 328
+        }
+      },
+      {
+        "comment": "",
+        "key": "cancel",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 331
+        }
+      },
+      {
+        "comment": "",
+        "key": "are you sure you want to reset %@? this will permanently delete all time data for this period.",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 333
+        }
+      }
+    ]
+  },
+  "version": 1
+}

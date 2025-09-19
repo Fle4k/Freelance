@@ -739,6 +739,27 @@ class TimeTracker: ObservableObject {
         print("Edited day \(date) to \(newTime) seconds")
     }
     
+    func isDayManuallyEdited(for date: Date) -> Bool {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
+        
+        // Get all entries for this day
+        let dayEntries = timeEntries.filter { entry in
+            entry.startDate >= dayStart && entry.startDate < dayEnd && entry.endDate != nil
+        }
+        
+        // A day is manually edited if:
+        // 1. It has exactly one entry
+        // 2. That entry starts exactly at the beginning of the day (00:00:00)
+        if dayEntries.count == 1,
+           let entry = dayEntries.first {
+            return entry.startDate == dayStart
+        }
+        
+        return false
+    }
+    
     func editTime(for period: StatisticsPeriod, newTime: TimeInterval) {
         switch period {
         case .today:

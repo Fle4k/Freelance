@@ -548,39 +548,56 @@ struct DayDetailView: View {
                     // Time entries with smaller font
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 15) {
-                            ForEach(dayEntries) { entry in
+                            if timeTracker.isDayManuallyEdited(for: selectedDate) {
+                                // Show single "changed by user" message for manually edited days
                                 HStack {
-                                    if let endDate = entry.endDate {
-                                        Text("\(formatTime(entry.startDate))-\(formatTime(endDate))")
-                                            .font(.custom("Major Mono Display Regular", size: 15))
-                                            .foregroundColor(.primary)
-                                    } else {
-                                        ActiveTimerView(startDate: entry.startDate)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    if entry.isActive {
-                                        Text(formatDuration(from: entry.startDate, to: Date()))
-                                            .font(.custom("Major Mono Display Regular", size: 15))
-                                            .foregroundColor(.primary)
-                                    } else {
-                                        Text(formatDuration(from: entry.duration))
-                                            .font(.custom("Major Mono Display Regular", size: 15))
-                                            .foregroundColor(.primary)
-                                    }
-                                }
-                            }
-                            
-                            if dayEntries.isEmpty {
-                                HStack {
-                                    Spacer()
-                                    
-                                    Text("-")
+                                    Text("changed by user")
                                         .font(.custom("Major Mono Display Regular", size: 15))
                                         .foregroundColor(.secondary)
                                     
                                     Spacer()
+                                    
+                                    Text(formatDuration(from: dayTotalTime))
+                                        .font(.custom("Major Mono Display Regular", size: 15))
+                                        .foregroundColor(.primary)
+                                }
+                            } else {
+                                ForEach(dayEntries) { entry in
+                                    HStack {
+                                        if let endDate = entry.endDate {
+                                            Text("\(formatTime(entry.startDate))-\(formatTime(endDate))")
+                                                .font(.custom("Major Mono Display Regular", size: 15))
+                                                .foregroundColor(.primary)
+                                        } else {
+                                            Text("\(formatTime(entry.startDate))-\(formatTime(Date()))")
+                                                .font(.custom("Major Mono Display Regular", size: 15))
+                                                .foregroundColor(.primary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if entry.isActive {
+                                            Text(formatDuration(from: entry.startDate, to: Date()))
+                                                .font(.custom("Major Mono Display Regular", size: 15))
+                                                .foregroundColor(.primary)
+                                        } else {
+                                            Text(formatDuration(from: entry.duration))
+                                                .font(.custom("Major Mono Display Regular", size: 15))
+                                                .foregroundColor(.primary)
+                                        }
+                                    }
+                                }
+                                
+                                if dayEntries.isEmpty {
+                                    HStack {
+                                        Spacer()
+                                        
+                                        Text("-")
+                                            .font(.custom("Major Mono Display Regular", size: 15))
+                                            .foregroundColor(.secondary)
+                                        
+                                        Spacer()
+                                    }
                                 }
                             }
                         }
@@ -591,7 +608,7 @@ struct DayDetailView: View {
                 Spacer()
                 
                 // Action buttons section
-                VStack(spacing: 8) {
+                VStack(spacing: 32) {
                     Button(action: editDayTime) {
                         Text("edit")
                             .font(.custom("Major Mono Display Regular", size: 18))
@@ -604,7 +621,7 @@ struct DayDetailView: View {
                             .foregroundColor(.primary)
                     }
                 }
-                .padding(.bottom, 8)
+                .padding(.bottom, 24)
             }
             .background(Color(.systemBackground))
         }
@@ -684,14 +701,13 @@ struct DayEditTimeSheet: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                Spacer(minLength: 40)
+                Spacer(minLength: 60)
                 
                 VStack(spacing: 30) {
                     // Title matching overview style
                     Text(periodTitle)
                         .font(.custom("Major Mono Display Regular", size: 18))
-                        .foregroundColor(.primary)
-                        .padding(.top, 20)
+                        .foregroundColor(.secondary)
                     
                     // Show current total time
                     VStack(spacing: 10) {
@@ -699,61 +715,51 @@ struct DayEditTimeSheet: View {
                             .font(.custom("Major Mono Display Regular", size: 16))
                             .foregroundColor(.secondary)
                         
-                        Text(currentTime)
-                            .font(.custom("Major Mono Display Regular", size: 20))
-                            .foregroundColor(.primary)
+                        ProportionalTimeDisplay(
+                            timeString: currentTime,
+                            digitFontSize: 20
+                        )
                     }
+                    .padding(.bottom, 10)
                     
-                    // Hours and minutes input
+                    // Time input section with proper spacing
                     VStack(spacing: 20) {
-                        Text("new total")
-                            .font(.custom("Major Mono Display Regular", size: 16))
-                            .foregroundColor(.secondary)
-                        
-                        HStack(spacing: 20) {
-                            // Hours input
-                            VStack(spacing: 5) {
-                                Text("hours")
-                                    .font(.custom("Major Mono Display Regular", size: 14))
-                                    .foregroundColor(.secondary)
-                                
-                                TextField("0", text: $hoursText)
-                                    .font(.custom("Major Mono Display Regular", size: 24))
-                                    .keyboardType(.numberPad)
-                                    .multilineTextAlignment(.center)
-                                    .frame(width: 80)
-                                    .background(
-                                        Rectangle()
-                                            .stroke(isHoursFocused ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
-                                            .background(Color(.systemBackground))
-                                    )
-                                    .onTapGesture {
-                                        isHoursFocused = true
-                                    }
-                            }
+                        Spacer()
+                        // Hours row
+                        HStack {
+                            Text("hours")
+                                .font(.custom("Major Mono Display Regular", size: 17))
+                                .foregroundColor(.primary)
                             
-                            // Minutes input
-                            VStack(spacing: 5) {
-                                Text("minutes")
-                                    .font(.custom("Major Mono Display Regular", size: 14))
-                                    .foregroundColor(.secondary)
-                                
-                                TextField("0", text: $minutesText)
-                                    .font(.custom("Major Mono Display Regular", size: 24))
-                                    .keyboardType(.numberPad)
-                                    .multilineTextAlignment(.center)
-                                    .frame(width: 80)
-                                    .background(
-                                        Rectangle()
-                                            .stroke(!isHoursFocused ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
-                                            .background(Color(.systemBackground))
-                                    )
-                                    .onTapGesture {
-                                        isHoursFocused = false
-                                    }
-                            }
+                            Spacer()
+                            
+                            SelectAllTextField(
+                                text: $hoursText,
+                                shouldBecomeFirstResponder: isHoursFocused
+                            )
+                            .keyboardType(.numberPad)
+                            .frame(width: 80)
+                            .padding(.horizontal, 8)
+                        }
+                        
+                        // Minutes row
+                        HStack {
+                            Text("minutes")
+                                .font(.custom("Major Mono Display Regular", size: 17))
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                            
+                            SelectAllTextField(
+                                text: $minutesText,
+                                shouldBecomeFirstResponder: false
+                            )
+                            .keyboardType(.numberPad)
+                            .frame(width: 80)
+                            .padding(.horizontal, 8)
                         }
                     }
+                    .padding(.horizontal, 40)
                     
                     // Buttons
                     VStack(spacing: 15) {
@@ -770,10 +776,10 @@ struct DayEditTimeSheet: View {
                         }
                     }
                     .padding(.top, 20)
+                    
+                    Spacer()
                 }
                 .padding(.horizontal, 40)
-                
-                Spacer()
             }
             .background(Color(.systemBackground))
         }

@@ -1,0 +1,48 @@
+{
+  "source": "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/TodayDetailView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "today",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 73
+        }
+      },
+      {
+        "comment": "",
+        "key": "changed by user",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 95
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@-%@",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 109
+        }
+      },
+      {
+        "comment": "",
+        "key": "-",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 134
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@-%@",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 189
+        }
+      }
+    ]
+  },
+  "version": 1
+}

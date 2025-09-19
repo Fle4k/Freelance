@@ -287,7 +287,7 @@ struct StatisticsOverviewView: View {
                                 .font(.custom("Major Mono Display Regular", size: 18))
                                 .foregroundColor(.primary)
                         }
-                        .padding(.bottom, 10)
+                        .padding(.bottom, 24)
                     }
                 }
             }

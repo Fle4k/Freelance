@@ -1,0 +1,144 @@
+{
+  "source": "/Users/fle4k/Projekte/Freelance/Freelance/Freelance/Views/MonthDetailView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "no time tracked this month",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 351
+        }
+      },
+      {
+        "comment": "",
+        "key": "No day selected",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 393
+        }
+      },
+      {
+        "comment": "",
+        "key": "remove day",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 639
+        }
+      },
+      {
+        "comment": "",
+        "key": "changed by user",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 554
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@-%@",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 572
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@-%@",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 568
+        }
+      },
+      {
+        "comment": "",
+        "key": "-",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 595
+        }
+      },
+      {
+        "comment": "",
+        "key": "edit",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 613
+        }
+      },
+      {
+        "comment": "",
+        "key": "remove",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 619
+        }
+      },
+      {
+        "comment": "",
+        "key": "remove",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 640
+        }
+      },
+      {
+        "comment": "",
+        "key": "cancel",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 643
+        }
+      },
+      {
+        "comment": "",
+        "key": "are you sure you want to remove all data for %@? this will permanently delete all time entries for this day.",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 645
+        }
+      },
+      {
+        "comment": "",
+        "key": "current total",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 714
+        }
+      },
+      {
+        "comment": "",
+        "key": "hours",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 730
+        }
+      },
+      {
+        "comment": "",
+        "key": "minutes",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 747
+        }
+      },
+      {
+        "comment": "",
+        "key": "save",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 767
+        }
+      },
+      {
+        "comment": "",
+        "key": "cancel",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 773
+        }
+      }
+    ]
+  },
+  "version": 1
+}
