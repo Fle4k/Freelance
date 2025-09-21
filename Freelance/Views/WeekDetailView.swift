@@ -17,7 +17,8 @@ struct WeekDetailView: View {
     @State private var precomputedDayData: (entries: [TimeEntry], totalTime: TimeInterval, earnings: Double, title: String)?
     
     private var weekEntries: [(Date, [TimeEntry])] {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current  // Ensure we use local timezone
         let now = Date()
         
         // Use the same week calculation logic as the TimeTracker
@@ -29,6 +30,8 @@ struct WeekDetailView: View {
             if let dayDate = calendar.date(byAdding: .day, value: i, to: startOfWeek) {
                 let dayStart = calendar.startOfDay(for: dayDate)
                 let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayDate
+                
+                print("🗓️ Day \(i): dayDate=\(dayDate), dayStart=\(dayStart)")
                 
                 let dayEntries = timeTracker.timeEntries.filter { entry in
                     entry.startDate >= dayStart && entry.startDate < dayEnd
@@ -196,6 +199,10 @@ struct WeekDetailView: View {
                 print("📋 Selected day: \(selectedDay?.description ?? "nil")")
             }
         }
+        .onChange(of: timeTracker.timeEntries) { oldValue, newValue in
+            print("🔄 WeekDetailView: TimeTracker entries changed, triggering view refresh")
+            // This will cause the view to recompute weekEntries
+        }
     }
     
     private func getCustomTitle(for period: StatisticsPeriod) -> String? {
@@ -261,7 +268,10 @@ struct WeekDetailView: View {
     private func getStartOfWeek(for date: Date, calendar: Calendar, weekStartsOn: Int) -> Date {
         let weekday = calendar.component(.weekday, from: date)
         let daysFromStartOfWeek = (weekday - weekStartsOn + 7) % 7
-        return calendar.date(byAdding: .day, value: -daysFromStartOfWeek, to: calendar.startOfDay(for: date)) ?? date
+        let startOfDay = calendar.startOfDay(for: date)
+        let startOfWeek = calendar.date(byAdding: .day, value: -daysFromStartOfWeek, to: startOfDay) ?? date
+        print("📅 StartOfWeek calculation: date=\(date), startOfDay=\(startOfDay), startOfWeek=\(startOfWeek)")
+        return startOfWeek
     }
     
     private func hasRolloverSession(for date: Date) -> Bool {
@@ -288,7 +298,8 @@ struct WeekDetailView: View {
     
     private func precomputeDayData(for date: Date) {
         print("🔍 Precomputing data for date: \(date)")
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current  // Ensure we use local timezone
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
         

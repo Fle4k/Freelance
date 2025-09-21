@@ -147,13 +147,17 @@ struct EditTimeSheet: View {
         let minutes = Int(minutesText) ?? 0
         let totalSeconds = TimeInterval(hours * 3600 + minutes * 60)
         
+        print("💾 SaveTime called - Hours: '\(hoursText)', Minutes: '\(minutesText)'")
+        print("💾 Converted - Hours: \(hours), Minutes: \(minutes), TotalSeconds: \(totalSeconds)")
+        print("💾 Period: \(period)")
+        
         switch period {
         case .today:
             TimeTracker.shared.editTime(for: .today, newTime: totalSeconds)
         case .thisWeek:
-            TimeTracker.shared.adjustTime(for: .thisWeek, newTime: totalSeconds)
+            TimeTracker.shared.editTime(for: .thisWeek, newTime: totalSeconds)
         case .thisMonth:
-            TimeTracker.shared.adjustTime(for: .thisMonth, newTime: totalSeconds)
+            TimeTracker.shared.editTime(for: .thisMonth, newTime: totalSeconds)
         default:
             break
         }
@@ -193,7 +197,10 @@ struct SelectAllTextField: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextField, context: Context) {
-        uiView.text = text
+        // Only update if text has actually changed to avoid cursor jumping
+        if uiView.text != text {
+            uiView.text = text
+        }
         
         // Auto-focus if this is the hours field
         if shouldBecomeFirstResponder && !uiView.isFirstResponder {
@@ -222,13 +229,31 @@ struct SelectAllTextField: UIViewRepresentable {
         }
 
         func textFieldDidChangeSelection(_ textField: UITextField) {
-            parent.text = textField.text ?? ""
+            // Only update when there's an actual text change, not just selection change
+            if textField.text != parent.text {
+                parent.text = textField.text ?? ""
+            }
         }
         
         func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
             let newText = (textField.text as NSString?)?.replacingCharacters(in: range, with: string) ?? string
-            parent.text = newText
+            
+            print("🔄 Text changing - Old: '\(textField.text ?? "")', New: '\(newText)'")
+            
+            // Update parent binding immediately
+            DispatchQueue.main.async {
+                self.parent.text = newText
+                print("🔄 Updated parent binding to: '\(newText)'")
+            }
+            
             return true
+        }
+        
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            // Ensure final value is captured when editing ends
+            let finalText = textField.text ?? ""
+            parent.text = finalText
+            print("✅ Text editing ended - Final value: '\(finalText)'")
         }
     }
 }

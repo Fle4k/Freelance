@@ -150,7 +150,8 @@ struct MonthDetailView: View {
     
     private func precomputeDayData(for date: Date) {
         print("🔍 Precomputing data for date: \(date)")
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current  // Ensure we use local timezone
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
         
@@ -447,51 +448,52 @@ struct DayDetailView: View {
         print("🎯 DayDetailView precomputeDayData called")
         print("📦 Precomputed data available: \(precomputedData != nil)")
         
-        if let data = precomputedData {
-            print("✅ Using precomputed data - Entries: \(data.entries.count), Time: \(data.totalTime), Earnings: \(data.earnings), Title: \(data.title)")
-            // Use precomputed data for instant display
-            dayEntries = data.entries
-            dayTotalTime = data.totalTime
-            dayEarnings = data.earnings
-            dayTitle = data.title
-        } else {
-            print("⚠️ No precomputed data, computing fallback")
-            // Fallback to computing data (shouldn't happen with our optimization)
-            let calendar = Calendar.current
-            let dayStart = calendar.startOfDay(for: selectedDate)
-            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
-            
-            // Compute day entries
-            var entries = timeTracker.timeEntries.filter { entry in
-                entry.startDate >= dayStart && entry.startDate < dayEnd && entry.endDate != nil
-            }
-            
-            // Include current session if it started on this day
-            if let currentStart = timeTracker.currentSessionStart,
-               currentStart >= dayStart && currentStart < dayEnd {
-                let currentEntry = TimeEntry(startDate: currentStart, endDate: nil, isActive: true)
-                entries.append(currentEntry)
-            }
-            
-            dayEntries = entries.sorted { $0.startDate > $1.startDate }
-            
-            // Compute total time
-            dayTotalTime = dayEntries.reduce(0) { total, entry in
-                if entry.isActive {
-                    return total + Date().timeIntervalSince(entry.startDate)
-                } else {
-                    return total + entry.duration
-                }
-            }
-            
-            // Compute earnings
-            dayEarnings = dayTotalTime / 3600 * settings.hourlyRate
-            
-            // Compute day title
-            let formatter = DateFormatter()
-            formatter.dateFormat = "E dd.MM.yyyy"
-            dayTitle = formatter.string(from: selectedDate).lowercased()
+        // Always compute fresh data to ensure we have the latest changes
+        print("🔄 Computing fresh data to reflect any recent changes")
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current  // Ensure we use local timezone
+        let dayStart = calendar.startOfDay(for: selectedDate)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
+        
+        print("📅 Computing data for range: \(dayStart) to \(dayEnd)")
+        
+        // Compute day entries
+        var entries = timeTracker.timeEntries.filter { entry in
+            entry.startDate >= dayStart && entry.startDate < dayEnd && entry.endDate != nil
         }
+        
+        print("📝 Found \(entries.count) entries for this day")
+        
+        // Include current session if it started on this day
+        if let currentStart = timeTracker.currentSessionStart,
+           currentStart >= dayStart && currentStart < dayEnd {
+            let currentEntry = TimeEntry(startDate: currentStart, endDate: nil, isActive: true)
+            entries.append(currentEntry)
+            print("⏰ Added current session entry")
+        }
+        
+        dayEntries = entries.sorted { $0.startDate > $1.startDate }
+        
+        // Compute total time
+        dayTotalTime = dayEntries.reduce(0) { total, entry in
+            if entry.isActive {
+                return total + Date().timeIntervalSince(entry.startDate)
+            } else {
+                return total + entry.duration
+            }
+        }
+        
+        print("⏱️ Computed total time: \(dayTotalTime) seconds (\(dayTotalTime/3600) hours)")
+        
+        // Compute earnings
+        dayEarnings = dayTotalTime / 3600 * settings.hourlyRate
+        
+        // Compute day title
+        let formatter = DateFormatter()
+        formatter.dateFormat = "E dd.MM.yyyy"
+        dayTitle = formatter.string(from: selectedDate).lowercased()
+        
+        print("✅ Day data updated - Entries: \(dayEntries.count), Time: \(dayTotalTime), Title: \(dayTitle)")
     }
     
     private func formatDuration(from start: Date, to end: Date) -> String {
@@ -626,6 +628,10 @@ struct DayDetailView: View {
             .background(Color(.systemBackground))
         }
         .onAppear {
+            precomputeDayData()
+        }
+        .onChange(of: timeTracker.timeEntries) { oldValue, newValue in
+            print("🔄 TimeTracker entries changed, refreshing day data")
             precomputeDayData()
         }
         .sheet(isPresented: $showingEditSheet) {
@@ -803,6 +809,10 @@ struct DayEditTimeSheet: View {
         let hours = Int(hoursText) ?? 0
         let minutes = Int(minutesText) ?? 0
         let totalSeconds = TimeInterval(hours * 3600 + minutes * 60)
+        
+        print("💾 DayEditTimeSheet SaveChanges - Hours: '\(hoursText)', Minutes: '\(minutesText)'")
+        print("💾 DayEditTimeSheet Converted - Hours: \(hours), Minutes: \(minutes), TotalSeconds: \(totalSeconds)")
+        print("💾 DayEditTimeSheet SelectedDate: \(selectedDate)")
         
         TimeTracker.shared.editDayTime(for: selectedDate, newTime: totalSeconds)
         isPresented = false

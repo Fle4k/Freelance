@@ -10,7 +10,7 @@ import SwiftUI
 import UserNotifications
 
 // Time tracking session
-struct TimeEntry: Identifiable, Codable {
+struct TimeEntry: Identifiable, Codable, Equatable {
     let id: UUID
     let startDate: Date
     let endDate: Date?
