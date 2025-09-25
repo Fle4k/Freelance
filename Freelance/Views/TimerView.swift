@@ -28,6 +28,7 @@ struct TimerView: View {
     @State private var longPressProgress: Double = 0.0
     @State private var isLongPressing = false
     @State private var longPressTimer: Timer?
+    @State private var showingDeadManAlert = false
     
     private let longPressDuration: Double = 0.8
     private let progressDelay: Double = 0.2
@@ -148,6 +149,9 @@ struct TimerView: View {
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             timeTracker.updateElapsedTime()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .deadManSwitchTriggered)) { _ in
+            showingDeadManAlert = true
+        }
         .sheet(isPresented: $showingStatistics) {
             StatisticsOverviewView()
         }
@@ -162,6 +166,17 @@ struct TimerView: View {
             }
         } message: {
             Text("store time and start a new session or reset without storing?")
+        }
+        .alert("⏰ are you still working?", isPresented: $showingDeadManAlert) {
+            Button("continue") {
+                timeTracker.handleDeadManResponse(continue: true)
+            }
+            Button("stop", role: .destructive) {
+                timeTracker.handleDeadManResponse(continue: false)
+            }
+        } message: {
+            let timeoutMinutes = Int(AppSettings.shared.deadManSwitchTimeout)
+            Text("timer will stop automatically in \(timeoutMinutes) minute\(timeoutMinutes == 1 ? "" : "s") if no response")
         }
         .onDisappear {
             longPressTimer?.invalidate()

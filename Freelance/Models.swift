@@ -9,6 +9,10 @@ import Foundation
 import SwiftUI
 import UserNotifications
 
+extension Notification.Name {
+    static let deadManSwitchTriggered = Notification.Name("deadManSwitchTriggered")
+}
+
 // Time tracking session
 struct TimeEntry: Identifiable, Codable, Equatable {
     let id: UUID
@@ -38,6 +42,7 @@ class AppSettings: ObservableObject {
     @Published var hourlyRate: Double = 80.0
     @Published var deadManSwitchEnabled: Bool = false
     @Published var deadManSwitchInterval: Double = 10.0
+    @Published var deadManSwitchTimeout: Double = 2.0 // Timeout in minutes
     @Published var motionDetectionEnabled: Bool = false
     @Published var motionThreshold: Double = 5.0
     @Published var askWhenMoving: Bool = true // true = ask when moving, false = ask when not moving
@@ -54,6 +59,7 @@ class AppSettings: ObservableObject {
         UserDefaults.standard.set(hourlyRate, forKey: "hourlyRate")
         UserDefaults.standard.set(deadManSwitchEnabled, forKey: "deadManSwitchEnabled")
         UserDefaults.standard.set(deadManSwitchInterval, forKey: "deadManSwitchInterval")
+        UserDefaults.standard.set(deadManSwitchTimeout, forKey: "deadManSwitchTimeout")
         UserDefaults.standard.set(motionDetectionEnabled, forKey: "motionDetectionEnabled")
         UserDefaults.standard.set(motionThreshold, forKey: "motionThreshold")
         UserDefaults.standard.set(askWhenMoving, forKey: "askWhenMoving")
@@ -82,6 +88,7 @@ class AppSettings: ObservableObject {
         hourlyRate = UserDefaults.standard.object(forKey: "hourlyRate") as? Double ?? 0.0
         deadManSwitchEnabled = UserDefaults.standard.object(forKey: "deadManSwitchEnabled") as? Bool ?? false
         deadManSwitchInterval = UserDefaults.standard.object(forKey: "deadManSwitchInterval") as? Double ?? 10.0
+        deadManSwitchTimeout = UserDefaults.standard.object(forKey: "deadManSwitchTimeout") as? Double ?? 2.0
         motionDetectionEnabled = UserDefaults.standard.object(forKey: "motionDetectionEnabled") as? Bool ?? false
         motionThreshold = UserDefaults.standard.object(forKey: "motionThreshold") as? Double ?? 5.0
         askWhenMoving = UserDefaults.standard.object(forKey: "askWhenMoving") as? Bool ?? true
@@ -114,6 +121,7 @@ class TimeTracker: ObservableObject {
     static let shared = TimeTracker()
     
     private var lastDeadManCheck: Date?
+    private var timeoutTimer: Timer?
     private let notificationCenter = UNUserNotificationCenter.current()
     
     private init() {
@@ -122,10 +130,8 @@ class TimeTracker: ObservableObject {
         loadAccumulatedTime()
         setupNotificationCategories()
         
-        // Add test data on first run (remove this in production)
-        #if DEBUG
-        addTestCrossDaySession()
-        #endif
+        // Check if it's a new day and reset accumulated time
+        checkForNewDayReset()
     }
     
     func setupNotificationCategories() {
@@ -148,7 +154,7 @@ class TimeTracker: ObservableObject {
             options: [.customDismissAction, .allowInCarPlay]
         )
         
-        // Timer stopped notification actions
+        // Timer stopped notification actions (for user-triggered stops)
         let continueWithTimeAction = UNNotificationAction(
             identifier: "CONTINUE_WITH_TIME",
             title: "continue & add time",
@@ -252,14 +258,18 @@ class TimeTracker: ObservableObject {
     }
     
     func startTimer() {
+        print("▶️ startTimer called")
         currentSessionStart = Date()
         elapsedTime = 0
         isRunning = true
         saveCurrentSession()
         startDeadManSwitch()
+        print("▶️ Timer started. isRunning: \(isRunning), start time: \(currentSessionStart?.description ?? "nil")")
     }
     
     func pauseTimer() {
+        print("⏸️ pauseTimer called. Current state: isRunning=\(isRunning), currentSessionStart=\(currentSessionStart?.description ?? "nil")")
+        
         if let startDate = currentSessionStart, isRunning {
             // Add current session time to accumulated time
             let sessionTime = Date().timeIntervalSince(startDate)
@@ -273,6 +283,7 @@ class TimeTracker: ObservableObject {
             )
             timeEntries.append(entry)
             saveTimeEntries()
+            print("⏸️ Session saved: \(sessionTime) seconds")
         }
         
         isRunning = false
@@ -281,6 +292,7 @@ class TimeTracker: ObservableObject {
         saveAccumulatedTime()
         clearCurrentSession()
         stopDeadManSwitch()
+        print("⏸️ Timer paused. Final state: isRunning=\(isRunning)")
     }
     
     func recordTimer() {
@@ -377,10 +389,13 @@ class TimeTracker: ObservableObject {
         
         lastDeadManCheck = Date()
         scheduleDeadManNotification()
+        startTimeoutTimer()
     }
     
     private func stopDeadManSwitch() {
         lastDeadManCheck = nil
+        timeoutTimer?.invalidate()
+        timeoutTimer = nil
         clearNotificationBadge()
         cancelScheduledNotifications()
     }
@@ -391,12 +406,17 @@ class TimeTracker: ObservableObject {
         
         
         let content = UNMutableNotificationContent()
-        content.title = "Are you still working?"
-        content.body = "Tap Continue to keep tracking time, or Stop to pause. You have 2 minutes to respond."
+        content.title = "⏰ Are you still working?"
+        let timeoutMinutes = Int(settings.deadManSwitchTimeout)
+        content.body = "Tap Continue to keep tracking time, or Stop to pause. Timer will stop automatically in \(timeoutMinutes) minute\(timeoutMinutes == 1 ? "" : "s")."
         content.sound = .default
         content.badge = 1
         content.categoryIdentifier = "DEAD_MAN_SWITCH"
         content.userInfo = ["type": "dead_man_switch"]
+        
+        // Try to make it more visible
+        content.threadIdentifier = "dead_man_switch"
+        content.interruptionLevel = .timeSensitive
         
         // Calculate the next clock-aligned time
         let nextNotificationTime = calculateNextClockAlignment(intervalMinutes: intervalMinutes)
@@ -419,9 +439,6 @@ class TimeTracker: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = AppSettings.shared.timeFormat()
         print("Scheduling dead man switch notification for \(formatter.string(from: nextNotificationTime)) (every \(Int(intervalMinutes)) minutes)")
-        
-        // Schedule automatic timeout notification for 2 minutes after the dead man switch
-        scheduleTimeoutNotification(for: nextNotificationTime)
         
         print("Date components: \(dateComponents)")
         
@@ -473,46 +490,45 @@ class TimeTracker: ObservableObject {
     }
     
     private func cancelScheduledNotifications() {
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_switch", "dead_man_timeout"])
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_switch"])
     }
     
-    private func scheduleTimeoutNotification(for deadManTime: Date) {
-        // Schedule a notification 2 minutes after the dead man switch notification
-        let timeoutTime = deadManTime.addingTimeInterval(120) // 2 minutes = 120 seconds
+    private func startTimeoutTimer() {
+        // Stop any existing timeout timer
+        timeoutTimer?.invalidate()
         
-        let content = UNMutableNotificationContent()
-        content.title = "Timer stopped"
-        content.body = "No response received within 2 minutes. Timer has been paused."
-        content.sound = .default
-        content.badge = 1
-        content.categoryIdentifier = "TIMER_STOPPED"
-        content.userInfo = ["type": "dead_man_timeout", "original_dead_man_time": deadManTime.timeIntervalSince1970]
+        let settings = AppSettings.shared
+        let timeoutSeconds = settings.deadManSwitchTimeout * 60 // Convert minutes to seconds
         
-        let calendar = Calendar.current
-        let dateComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: timeoutTime)
-        
-        let trigger = UNCalendarNotificationTrigger(
-            dateMatching: dateComponents,
-            repeats: false
-        )
-        
-        let request = UNNotificationRequest(
-            identifier: "dead_man_timeout",
-            content: content,
-            trigger: trigger
-        )
-        
-        let formatter = DateFormatter()
-        formatter.dateFormat = AppSettings.shared.timeFormat()
-        print("Scheduling timeout notification for \(formatter.string(from: timeoutTime)) (2 minutes after dead man switch)")
-        
-        notificationCenter.add(request) { error in
-            if let error = error {
-                print("Error scheduling timeout notification: \(error)")
-            } else {
-                print("Timeout notification scheduled successfully")
-            }
+        // Start a user-configurable timer that will automatically stop the timer
+        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeoutSeconds, repeats: false) { _ in
+            print("🚨 TIMEOUT TIMER FIRED - Stopping timer automatically")
+            self.handleAutomaticTimeout()
         }
+        
+        print("⏰ Started \(Int(settings.deadManSwitchTimeout))-minute timeout timer")
+    }
+    
+    private func handleAutomaticTimeout() {
+        let settings = AppSettings.shared
+        let timeoutMinutes = Int(settings.deadManSwitchTimeout)
+        let timeoutSeconds = timeoutMinutes * 60
+        
+        print("🚨 Automatic timeout - stopping timer and subtracting \(timeoutMinutes) minutes")
+        
+        if isRunning {
+            // Subtract timeout duration from accumulated time
+            totalAccumulatedTime = max(0, totalAccumulatedTime - TimeInterval(timeoutSeconds))
+            saveAccumulatedTime()
+            
+            // Stop the timer
+            pauseTimer()
+            print("🚨 Timer automatically stopped due to timeout")
+        }
+        
+        // Clean up
+        timeoutTimer = nil
+        clearNotificationBadge()
     }
     
     
@@ -523,25 +539,15 @@ class TimeTracker: ObservableObject {
     }
     
     
-    func handleTimeoutNotification() {
-        print("Timeout notification received - stopping timer and subtracting 2 minutes")
-        
-        // Subtract 2 minutes from accumulated time
-        totalAccumulatedTime = max(0, totalAccumulatedTime - 120) // 120 seconds = 2 minutes
-        saveAccumulatedTime()
-        
-        // Stop the timer
-        pauseTimer()
-        
-        // Clear any pending notifications
-        clearNotificationBadge()
-    }
     
     
     
     func handleDeadManResponse(continue: Bool) {
-        // Cancel timeout notification since user responded
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_timeout"])
+        print("🔔 User responded to dead man switch: \(`continue` ? "continue" : "stop")")
+        
+        // Cancel timeout timer since user responded
+        timeoutTimer?.invalidate()
+        timeoutTimer = nil
         
         clearNotificationBadge()
         
@@ -550,6 +556,7 @@ class TimeTracker: ObservableObject {
             lastDeadManCheck = Date()
             // Schedule the next notification at the next clock-aligned interval
             scheduleDeadManNotification()
+            startTimeoutTimer() // Start new timeout timer
         } else {
             // Stop the timer
             pauseTimer()
@@ -557,12 +564,18 @@ class TimeTracker: ObservableObject {
     }
     
     func restartDeadManSwitch() {
+        print("🔄 restartDeadManSwitch called. isRunning: \(isRunning)")
         if isRunning {
+            print("🔄 Timer is running - starting dead man switch")
             startDeadManSwitch()
+        } else {
+            print("🔄 Timer is not running - not starting dead man switch")
         }
     }
     
     func handleNotificationResponse(_ response: UNNotificationResponse) {
+        print("🔔 handleNotificationResponse called with action: \(response.actionIdentifier)")
+        
         switch response.actionIdentifier {
         case "CONTINUE":
             handleDeadManResponse(continue: true)
@@ -573,6 +586,7 @@ class TimeTracker: ObservableObject {
         case "NEW_TIMER":
             handleNewTimer()
         default:
+            print("🔔 Unknown notification action: \(response.actionIdentifier)")
             break
         }
     }
@@ -985,10 +999,31 @@ class TimeTracker: ObservableObject {
     
     private func saveAccumulatedTime() {
         UserDefaults.standard.set(totalAccumulatedTime, forKey: "totalAccumulatedTime")
+        UserDefaults.standard.set(Date(), forKey: "lastAccumulatedTimeUpdate")
     }
     
     private func loadAccumulatedTime() {
         totalAccumulatedTime = UserDefaults.standard.object(forKey: "totalAccumulatedTime") as? TimeInterval ?? 0
+    }
+    
+    private func checkForNewDayReset() {
+        let calendar = Calendar.current
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+        
+        // Get the last time we checked for new day (or when accumulated time was last saved)
+        let lastAccumulatedTimeUpdate = UserDefaults.standard.object(forKey: "lastAccumulatedTimeUpdate") as? Date ?? Date.distantPast
+        let lastUpdateDay = calendar.startOfDay(for: lastAccumulatedTimeUpdate)
+        
+        // If it's a new day since last update, reset accumulated time
+        if today > lastUpdateDay {
+            print("New day detected - resetting accumulated time from \(totalAccumulatedTime) to 0")
+            totalAccumulatedTime = 0
+            saveAccumulatedTime()
+            
+            // Update the last check date
+            UserDefaults.standard.set(now, forKey: "lastAccumulatedTimeUpdate")
+        }
     }
 }
 

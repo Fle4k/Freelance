@@ -103,17 +103,51 @@ final class TimerParticleSystem: ObservableObject {
     private func addParticle() {
         guard isRunning else { return }
         
+        secondsElapsed += 1
+        
+        // After 59 seconds, start fading out all particles
+        if secondsElapsed >= 60 {
+            // Reset the counter and fade out all particles
+            secondsElapsed = 0
+            fadeOutAllParticles()
+            return
+        }
+        
         // Add a new particle
         let newParticle = TimerParticle.random()
         particles.append(newParticle)
-        secondsElapsed += 1
-        
-        // If we have more than 60 particles, remove the oldest one
-        if particles.count > 60 {
-            particles.removeFirst()
-        }
         
         print("Added particle #\(secondsElapsed), total particles: \(particles.count)")
+    }
+    
+    private func fadeOutAllParticles() {
+        print("60 seconds reached - fading out all \(particles.count) particles")
+        
+        // Start fade out animation for all particles
+        for i in particles.indices {
+            particles[i].fadeOutProgress = 0.0
+        }
+        
+        // Continue animation until all particles fade out
+        Timer.scheduledTimer(withTimeInterval: 1.0/60.0, repeats: true) { fadeTimer in
+            var allFadedOut = true
+            
+            for i in self.particles.indices {
+                // Fade out particles faster (0.5 seconds total)
+                self.particles[i].fadeOutProgress += 0.033
+                self.particles[i].alpha = max(0, self.particles[i].alpha - 0.033)
+                
+                if self.particles[i].fadeOutProgress < 1.0 {
+                    allFadedOut = false
+                }
+            }
+            
+            if allFadedOut {
+                fadeTimer.invalidate()
+                self.particles.removeAll()
+                print("All particles faded out and removed")
+            }
+        }
     }
     
     private func updateParticles() {
@@ -122,10 +156,8 @@ final class TimerParticleSystem: ObservableObject {
             particles[i].x += particles[i].velocityX * 0.0016 // Slow horizontal drift
             particles[i].y += particles[i].velocityY * 0.0016 // Slow vertical drift
             
-            // Gentle pulsing effect
-            particles[i].pulseTime += 0.05
-            let pulseFactor = 0.8 + 0.2 * sin(particles[i].pulseTime)
-            particles[i].size = particles[i].baseSize * pulseFactor
+            // Keep constant size (no pulsing)
+            particles[i].size = particles[i].baseSize
             
             // Wrap around screen edges
             if particles[i].x < 0 { particles[i].x = 1.0 }

@@ -11,6 +11,7 @@ struct SettingsView: View {
     @ObservedObject private var settings = AppSettings.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showingDeadManSwitchPicker = false
+    @State private var showingTimeoutPicker = false
     @State private var showingMotionThresholdPicker = false
     @State private var showingSalaryInput = false
     @State private var showingWeekStartsPicker = false
@@ -18,6 +19,7 @@ struct SettingsView: View {
     @State private var customMotionValue = ""
     @State private var salaryInputValue = ""
     @State private var selectedDeadManInterval = 0
+    @State private var selectedTimeout = 2
     @State private var selectedMotionThreshold = 5
     @State private var selectedWeekStarts = 2
     @FocusState private var isCustomDeadManFocused: Bool
@@ -135,6 +137,26 @@ struct SettingsView: View {
                             Text("next: \(getNextNotificationTime())")
                                 .font(.custom("Major Mono Display Regular", size: 12))
                                 .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    // Timeout Setting (only show if dead man switch is enabled)
+                    if settings.deadManSwitchEnabled {
+                        HStack {
+                            Text("response timeout")
+                                .font(.custom("Major Mono Display Regular", size: 17))
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                selectedTimeout = Int(settings.deadManSwitchTimeout)
+                                showingTimeoutPicker = true
+                            }) {
+                                Text("\(Int(settings.deadManSwitchTimeout))min")
+                                    .font(.custom("Major Mono Display Regular", size: 17))
+                                    .foregroundColor(.primary)
+                            }
                         }
                     }
                     
@@ -309,6 +331,45 @@ struct SettingsView: View {
                                 requestNotificationPermissionAndEnable(interval: Double(selectedDeadManInterval))
                             }
                             showingDeadManSwitchPicker = false
+                        }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingTimeoutPicker) {
+            NavigationView {
+                VStack(spacing: 20) {
+                    Text("response timeout")
+                        .font(.custom("Major Mono Display Regular", size: 18))
+                        .foregroundColor(.secondary)
+                        .padding(.top, 20)
+                    
+                    VStack(spacing: 8) {
+                        Picker("Timeout", selection: $selectedTimeout) {
+                            Text("1min").tag(1)
+                            Text("2min").tag(2)
+                            Text("3min").tag(3)
+                            Text("5min").tag(5)
+                            Text("10min").tag(10)
+                        }
+                        .pickerStyle(WheelPickerStyle())
+                        .frame(height: 200)
+                    }
+                    
+                    Spacer()
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("cancel") {
+                            showingTimeoutPicker = false
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("save") {
+                            settings.deadManSwitchTimeout = Double(selectedTimeout)
+                            settings.saveSettings()
+                            showingTimeoutPicker = false
                         }
                     }
                 }

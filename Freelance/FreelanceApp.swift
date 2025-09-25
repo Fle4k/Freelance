@@ -44,15 +44,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        print("Received notification response: \(response.actionIdentifier)")
+        print("🔔 Received notification response: \(response.actionIdentifier)")
+        print("🔔 Notification content: \(response.notification.request.content.title)")
+        print("🔔 User info: \(response.notification.request.content.userInfo)")
         
-        // Check if this is a timeout notification being dismissed/opened
-        if let userInfo = response.notification.request.content.userInfo["type"] as? String,
-           userInfo == "dead_man_timeout" && response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-            // User opened the timeout notification - handle it as a timeout
-            TimeTracker.shared.handleTimeoutNotification()
-        } else {
-            // Handle other notification responses normally
+        // Ensure all notification handling happens on main thread
+        DispatchQueue.main.async {
+            // Handle notification responses
+            print("🔔 Handling notification response")
             TimeTracker.shared.handleNotificationResponse(response)
         }
         
@@ -60,18 +59,23 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        print("Will present notification: \(notification.request.content.title)")
-        print("App state: \(UIApplication.shared.applicationState.rawValue)")
+        print("📱 Will present notification: \(notification.request.content.title)")
+        print("📱 App state: \(UIApplication.shared.applicationState.rawValue) (0=active, 1=inactive, 2=background)")
+        print("📱 Notification category: \(notification.request.content.categoryIdentifier)")
+        print("📱 Thread ID: \(notification.request.content.threadIdentifier)")
         
-        // Check if this is a timeout notification
-        if let userInfo = notification.request.content.userInfo["type"] as? String,
-           userInfo == "dead_man_timeout" {
-            print("Timeout notification delivered - stopping timer")
-            TimeTracker.shared.handleTimeoutNotification()
+        // If this is a dead man switch notification and app is active, show in-app alert as backup
+        if notification.request.content.categoryIdentifier == "DEAD_MAN_SWITCH" && 
+           UIApplication.shared.applicationState == .active {
+            print("📱 Triggering in-app alert for dead man switch")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .deadManSwitchTriggered, object: nil)
+            }
         }
         
-        // Always show notifications even when app is in foreground
-        // Use .banner and .list for persistent notification display (replaces deprecated .alert)
-        completionHandler([.banner, .list, .sound, .badge])
+        // Always show notifications even when app is in foreground with maximum visibility
+        let options: UNNotificationPresentationOptions = [.banner, .list, .sound, .badge]
+        print("📱 Presenting with options: \(options)")
+        completionHandler(options)
     }
 }
