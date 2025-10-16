@@ -9,10 +9,6 @@ import Foundation
 import SwiftUI
 import UserNotifications
 
-extension Notification.Name {
-    static let deadManSwitchTriggered = Notification.Name("deadManSwitchTriggered")
-}
-
 // Time tracking session
 struct TimeEntry: Identifiable, Codable, Equatable {
     let id: UUID
@@ -40,9 +36,6 @@ struct TimeEntry: Identifiable, Codable, Equatable {
 // App settings
 class AppSettings: ObservableObject {
     @Published var hourlyRate: Double = 80.0
-    @Published var deadManSwitchEnabled: Bool = false
-    @Published var deadManSwitchInterval: Double = 10.0
-    @Published var deadManSwitchTimeout: Double = 2.0 // Timeout in minutes
     @Published var motionDetectionEnabled: Bool = false
     @Published var motionThreshold: Double = 5.0
     @Published var askWhenMoving: Bool = true // true = ask when moving, false = ask when not moving
@@ -57,9 +50,6 @@ class AppSettings: ObservableObject {
     
     func saveSettings() {
         UserDefaults.standard.set(hourlyRate, forKey: "hourlyRate")
-        UserDefaults.standard.set(deadManSwitchEnabled, forKey: "deadManSwitchEnabled")
-        UserDefaults.standard.set(deadManSwitchInterval, forKey: "deadManSwitchInterval")
-        UserDefaults.standard.set(deadManSwitchTimeout, forKey: "deadManSwitchTimeout")
         UserDefaults.standard.set(motionDetectionEnabled, forKey: "motionDetectionEnabled")
         UserDefaults.standard.set(motionThreshold, forKey: "motionThreshold")
         UserDefaults.standard.set(askWhenMoving, forKey: "askWhenMoving")
@@ -86,9 +76,6 @@ class AppSettings: ObservableObject {
     
     private func loadSettings() {
         hourlyRate = UserDefaults.standard.object(forKey: "hourlyRate") as? Double ?? 0.0
-        deadManSwitchEnabled = UserDefaults.standard.object(forKey: "deadManSwitchEnabled") as? Bool ?? false
-        deadManSwitchInterval = UserDefaults.standard.object(forKey: "deadManSwitchInterval") as? Double ?? 10.0
-        deadManSwitchTimeout = UserDefaults.standard.object(forKey: "deadManSwitchTimeout") as? Double ?? 2.0
         motionDetectionEnabled = UserDefaults.standard.object(forKey: "motionDetectionEnabled") as? Bool ?? false
         motionThreshold = UserDefaults.standard.object(forKey: "motionThreshold") as? Double ?? 5.0
         askWhenMoving = UserDefaults.standard.object(forKey: "askWhenMoving") as? Bool ?? true
@@ -120,8 +107,6 @@ class TimeTracker: ObservableObject {
     @Published var totalAccumulatedTime: TimeInterval = 0 // Total time across all sessions
     static let shared = TimeTracker()
     
-    private var lastDeadManCheck: Date?
-    private var timeoutTimer: Timer?
     private let notificationCenter = UNUserNotificationCenter.current()
     
     private init() {
@@ -132,28 +117,22 @@ class TimeTracker: ObservableObject {
         
         // Check if it's a new day and reset accumulated time
         checkForNewDayReset()
+        
+        // Set up notification observer for when app becomes active
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func appDidBecomeActive() {
+        // Just log that app became active - let the notification system handle timer stopping
+        print("🔔 App became active - timer state: isRunning=\(isRunning)")
     }
     
     func setupNotificationCategories() {
-        let continueAction = UNNotificationAction(
-            identifier: "CONTINUE",
-            title: "continue",
-            options: [.foreground]
-        )
-        
-        let stopAction = UNNotificationAction(
-            identifier: "STOP",
-            title: "stop",
-            options: [.destructive, .foreground]
-        )
-        
-        let deadManCategory = UNNotificationCategory(
-            identifier: "DEAD_MAN_SWITCH",
-            actions: [continueAction, stopAction],
-            intentIdentifiers: [],
-            options: [.customDismissAction, .allowInCarPlay]
-        )
-        
         // Timer stopped notification actions (for user-triggered stops)
         let continueWithTimeAction = UNNotificationAction(
             identifier: "CONTINUE_WITH_TIME",
@@ -174,7 +153,7 @@ class TimeTracker: ObservableObject {
             options: [.customDismissAction, .allowInCarPlay]
         )
         
-        notificationCenter.setNotificationCategories([deadManCategory, timerStoppedCategory])
+        notificationCenter.setNotificationCategories([timerStoppedCategory])
         
     }
     
@@ -263,7 +242,6 @@ class TimeTracker: ObservableObject {
         elapsedTime = 0
         isRunning = true
         saveCurrentSession()
-        startDeadManSwitch()
         print("▶️ Timer started. isRunning: \(isRunning), start time: \(currentSessionStart?.description ?? "nil")")
     }
     
@@ -291,7 +269,6 @@ class TimeTracker: ObservableObject {
         elapsedTime = 0
         saveAccumulatedTime()
         clearCurrentSession()
-        stopDeadManSwitch()
         print("⏸️ Timer paused. Final state: isRunning=\(isRunning)")
     }
     
@@ -317,7 +294,6 @@ class TimeTracker: ObservableObject {
         totalAccumulatedTime = 0
         saveAccumulatedTime()
         clearCurrentSession()
-        stopDeadManSwitch()
     }
     
     func updateElapsedTime() {
@@ -379,208 +355,15 @@ class TimeTracker: ObservableObject {
         print("Midnight rollover completed - session split, timer continues on new day")
     }
     
-    // MARK: - Dead Man Switch
-    
-    private func startDeadManSwitch() {
-        stopDeadManSwitch() // Stop any existing timer
-        
-        let settings = AppSettings.shared
-        guard settings.deadManSwitchEnabled else { return }
-        
-        lastDeadManCheck = Date()
-        scheduleDeadManNotification()
-        startTimeoutTimer()
-    }
-    
-    private func stopDeadManSwitch() {
-        lastDeadManCheck = nil
-        timeoutTimer?.invalidate()
-        timeoutTimer = nil
-        clearNotificationBadge()
-        cancelScheduledNotifications()
-    }
-    
-    private func scheduleDeadManNotification() {
-        let settings = AppSettings.shared
-        let intervalMinutes = settings.deadManSwitchInterval
-        
-        
-        let content = UNMutableNotificationContent()
-        content.title = "⏰ Are you still working?"
-        let timeoutMinutes = Int(settings.deadManSwitchTimeout)
-        content.body = "Tap Continue to keep tracking time, or Stop to pause. Timer will stop automatically in \(timeoutMinutes) minute\(timeoutMinutes == 1 ? "" : "s")."
-        content.sound = .default
-        content.badge = 1
-        content.categoryIdentifier = "DEAD_MAN_SWITCH"
-        content.userInfo = ["type": "dead_man_switch"]
-        
-        // Try to make it more visible
-        content.threadIdentifier = "dead_man_switch"
-        content.interruptionLevel = .timeSensitive
-        
-        // Calculate the next clock-aligned time
-        let nextNotificationTime = calculateNextClockAlignment(intervalMinutes: intervalMinutes)
-        
-        // Use UNCalendarNotificationTrigger for better background reliability
-        let calendar = Calendar.current
-        let dateComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: nextNotificationTime)
-        
-        let trigger = UNCalendarNotificationTrigger(
-            dateMatching: dateComponents,
-            repeats: false
-        )
-        
-        let request = UNNotificationRequest(
-            identifier: "dead_man_switch",
-            content: content,
-            trigger: trigger
-        )
-        
-        let formatter = DateFormatter()
-        formatter.dateFormat = AppSettings.shared.timeFormat()
-        print("Scheduling dead man switch notification for \(formatter.string(from: nextNotificationTime)) (every \(Int(intervalMinutes)) minutes)")
-        
-        print("Date components: \(dateComponents)")
-        
-        notificationCenter.add(request) { error in
-            if let error = error {
-                print("Error scheduling notification: \(error)")
-            } else {
-                print("Notification scheduled successfully")
-            }
-        }
-    }
-    
-    private func calculateNextClockAlignment(intervalMinutes: Double) -> Date {
-        let calendar = Calendar.current
-        let now = Date()
-        
-        // Get current time components
-        let currentHour = calendar.component(.hour, from: now)
-        let currentMinute = calendar.component(.minute, from: now)
-        let currentSecond = calendar.component(.second, from: now)
-        
-        // Calculate how many minutes have passed since the last interval boundary
-        let minutesSinceLastBoundary = currentMinute % Int(intervalMinutes)
-        
-        // Calculate the next boundary
-        var nextMinute: Int
-        if minutesSinceLastBoundary == 0 && currentSecond == 0 {
-            // We're exactly on a boundary, schedule for the next one
-            nextMinute = currentMinute + Int(intervalMinutes)
-        } else {
-            // Calculate next boundary
-            nextMinute = currentMinute - minutesSinceLastBoundary + Int(intervalMinutes)
-        }
-        
-        // Handle hour overflow
-        var nextHour = currentHour
-        if nextMinute >= 60 {
-            nextHour += nextMinute / 60
-            nextMinute = nextMinute % 60
-        }
-        
-        // Create the next notification time
-        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
-        dateComponents.hour = nextHour
-        dateComponents.minute = nextMinute
-        dateComponents.second = 0
-        
-        return calendar.date(from: dateComponents) ?? now
-    }
-    
-    private func cancelScheduledNotifications() {
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["dead_man_switch"])
-    }
-    
-    private func startTimeoutTimer() {
-        // Stop any existing timeout timer
-        timeoutTimer?.invalidate()
-        
-        let settings = AppSettings.shared
-        let timeoutSeconds = settings.deadManSwitchTimeout * 60 // Convert minutes to seconds
-        
-        // Start a user-configurable timer that will automatically stop the timer
-        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeoutSeconds, repeats: false) { _ in
-            print("🚨 TIMEOUT TIMER FIRED - Stopping timer automatically")
-            self.handleAutomaticTimeout()
-        }
-        
-        print("⏰ Started \(Int(settings.deadManSwitchTimeout))-minute timeout timer")
-    }
-    
-    private func handleAutomaticTimeout() {
-        let settings = AppSettings.shared
-        let timeoutMinutes = Int(settings.deadManSwitchTimeout)
-        let timeoutSeconds = timeoutMinutes * 60
-        
-        print("🚨 Automatic timeout - stopping timer and subtracting \(timeoutMinutes) minutes")
-        
-        if isRunning {
-            // Subtract timeout duration from accumulated time
-            totalAccumulatedTime = max(0, totalAccumulatedTime - TimeInterval(timeoutSeconds))
-            saveAccumulatedTime()
-            
-            // Stop the timer
-            pauseTimer()
-            print("🚨 Timer automatically stopped due to timeout")
-        }
-        
-        // Clean up
-        timeoutTimer = nil
-        clearNotificationBadge()
-    }
-    
-    
-    
-    
-    private func clearNotificationBadge() {
-        notificationCenter.setBadgeCount(0)
-    }
-    
-    
-    
-    
-    
-    func handleDeadManResponse(continue: Bool) {
-        print("🔔 User responded to dead man switch: \(`continue` ? "continue" : "stop")")
-        
-        // Cancel timeout timer since user responded
-        timeoutTimer?.invalidate()
-        timeoutTimer = nil
-        
-        clearNotificationBadge()
-        
-        if `continue` {
-            // Reset the timer for the next check
-            lastDeadManCheck = Date()
-            // Schedule the next notification at the next clock-aligned interval
-            scheduleDeadManNotification()
-            startTimeoutTimer() // Start new timeout timer
-        } else {
-            // Stop the timer
-            pauseTimer()
-        }
-    }
-    
-    func restartDeadManSwitch() {
-        print("🔄 restartDeadManSwitch called. isRunning: \(isRunning)")
-        if isRunning {
-            print("🔄 Timer is running - starting dead man switch")
-            startDeadManSwitch()
-        } else {
-            print("🔄 Timer is not running - not starting dead man switch")
-        }
-    }
+    // MARK: - Notification Handling
     
     func handleNotificationResponse(_ response: UNNotificationResponse) {
         print("🔔 handleNotificationResponse called with action: \(response.actionIdentifier)")
+        print("🔔 Notification identifier: \(response.notification.request.identifier)")
+        print("🔔 User info: \(response.notification.request.content.userInfo)")
         
+        // Handle notification types
         switch response.actionIdentifier {
-        case "CONTINUE":
-            handleDeadManResponse(continue: true)
-        case "STOP":
-            handleDeadManResponse(continue: false)
         case "CONTINUE_WITH_TIME":
             handleContinueWithTime()
         case "NEW_TIMER":
@@ -594,26 +377,12 @@ class TimeTracker: ObservableObject {
     private func handleContinueWithTime() {
         print("User chose to continue with time that passed")
         
-        // Clear notification badge
-        clearNotificationBadge()
-        
-        // Add the time that passed since the last dead man check to accumulated time
-        if let lastCheck = lastDeadManCheck {
-            let timePassed = Date().timeIntervalSince(lastCheck)
-            totalAccumulatedTime += timePassed
-            saveAccumulatedTime()
-            print("Added \(Int(timePassed)) seconds to accumulated time")
-        }
-        
         // Start a new timer session
         startTimer()
     }
     
     private func handleNewTimer() {
         print("User chose to start a new timer")
-        
-        // Clear notification badge
-        clearNotificationBadge()
         
         // Store current session and reset (same as recordTimer but without starting)
         if isRunning {

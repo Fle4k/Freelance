@@ -29,7 +29,10 @@ struct FocusableTextField: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UITextField, context: Context) {
-        uiView.text = text
+        // Only update text if it's different to avoid unnecessary updates
+        if uiView.text != text {
+            uiView.text = text
+        }
         
         if shouldFocus && !uiView.isFirstResponder {
             DispatchQueue.main.async {
@@ -138,36 +141,30 @@ struct StatisticsOverviewView: View {
         
         // Get time entries for the period
         var entries: [TimeEntry]
-        var dateRange: (start: Date, end: Date)
         
         switch period {
         case .today:
             let startOfDay = calendar.startOfDay(for: now)
             let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
             entries = timeTracker.timeEntries.filter { $0.startDate >= startOfDay && $0.startDate < endOfDay }
-            dateRange = (startOfDay, endOfDay)
             
         case .thisWeek:
             let startOfWeek = getStartOfWeek(for: now, calendar: calendar, weekStartsOn: settings.weekStartsOn)
             let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek)!
             entries = timeTracker.timeEntries.filter { $0.startDate >= startOfWeek && $0.startDate < endOfWeek }
-            dateRange = (startOfWeek, endOfWeek)
             
         case .thisMonth:
             let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
             let endOfMonth = calendar.date(byAdding: .month, value: 1, to: startOfMonth)!
             entries = timeTracker.timeEntries.filter { $0.startDate >= startOfMonth && $0.startDate < endOfMonth }
-            dateRange = (startOfMonth, endOfMonth)
             
         case .lastWeek:
             let startOfThisWeek = getStartOfWeek(for: now, calendar: calendar, weekStartsOn: settings.weekStartsOn)
             let startOfLastWeek = calendar.date(byAdding: .day, value: -7, to: startOfThisWeek)!
             entries = timeTracker.timeEntries.filter { $0.startDate >= startOfLastWeek && $0.startDate < startOfThisWeek }
-            dateRange = (startOfLastWeek, startOfThisWeek)
             
         case .total:
             entries = timeTracker.timeEntries
-            dateRange = (entries.first?.startDate ?? now, entries.last?.endDate ?? now)
         }
         
         // Include current session if it's running and falls within the period
@@ -538,7 +535,6 @@ struct StatisticsOverviewView: View {
             }
             .onDisappear {
                 settings.saveSettings()
-                TimeTracker.shared.restartDeadManSwitch()
             }
         .sheet(isPresented: $showingTodayDetail) {
             TodayDetailView()

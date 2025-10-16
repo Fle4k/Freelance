@@ -6,73 +6,19 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 struct SettingsView: View {
     @ObservedObject private var settings = AppSettings.shared
     @Environment(\.dismiss) private var dismiss
-    @State private var showingDeadManSwitchPicker = false
-    @State private var showingTimeoutPicker = false
     @State private var showingMotionThresholdPicker = false
     @State private var showingSalaryInput = false
     @State private var showingWeekStartsPicker = false
-    @State private var customDeadManValue = ""
     @State private var customMotionValue = ""
     @State private var salaryInputValue = ""
-    @State private var selectedDeadManInterval = 0
-    @State private var selectedTimeout = 2
     @State private var selectedMotionThreshold = 5
     @State private var selectedWeekStarts = 2
-    @FocusState private var isCustomDeadManFocused: Bool
-    
-    private func requestNotificationPermissionAndEnable(interval: Double) {
-        settings.requestNotificationPermission { granted in
-            if granted {
-                DispatchQueue.main.async {
-                    settings.deadManSwitchInterval = interval
-                    settings.deadManSwitchEnabled = true
-                    settings.saveSettings()
-                    TimeTracker.shared.restartDeadManSwitch()
-                }
-            }
-        }
-    }
-    
-    private func getNextNotificationTime() -> String {
-        // Calculate next clock-aligned time (same logic as in TimeTracker)
-        let calendar = Calendar.current
-        let now = Date()
-        let currentMinute = calendar.component(.minute, from: now)
-        let currentSecond = calendar.component(.second, from: now)
-        let intervalMinutes = Int(settings.deadManSwitchInterval)
-        
-        let minutesSinceLastBoundary = currentMinute % intervalMinutes
-        var nextMinute: Int
-        
-        if minutesSinceLastBoundary == 0 && currentSecond == 0 {
-            nextMinute = currentMinute + intervalMinutes
-        } else {
-            nextMinute = currentMinute - minutesSinceLastBoundary + intervalMinutes
-        }
-        
-        var nextHour = calendar.component(.hour, from: now)
-        if nextMinute >= 60 {
-            nextHour += nextMinute / 60
-            nextMinute = nextMinute % 60
-        }
-        
-        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
-        dateComponents.hour = nextHour
-        dateComponents.minute = nextMinute
-        dateComponents.second = 0
-        
-        if let nextTime = calendar.date(from: dateComponents) {
-            let formatter = DateFormatter()
-            formatter.dateFormat = settings.timeFormat()
-            return formatter.string(from: nextTime)
-        }
-        
-        return "unknown"
-    }
+    @FocusState private var isCustomMotionFocused: Bool
     
     private var weekdayName: String {
         switch settings.weekStartsOn {
@@ -108,52 +54,6 @@ struct SettingsView: View {
                                     .foregroundColor(.primary)
                                 
                                 Text("/€")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                    }
-                    
-                    // Dead Man Switch
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("check in every")
-                                .font(.custom("Major Mono Display Regular", size: 17))
-                                .foregroundColor(.primary)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                selectedDeadManInterval = settings.deadManSwitchEnabled ? Int(settings.deadManSwitchInterval) : 0
-                                showingDeadManSwitchPicker = true
-                            }) {
-                                Text(settings.deadManSwitchEnabled ? "\(Int(settings.deadManSwitchInterval))min" : "none")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                        
-                        if settings.deadManSwitchEnabled && TimeTracker.shared.isRunning {
-                            Text("next: \(getNextNotificationTime())")
-                                .font(.custom("Major Mono Display Regular", size: 12))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    // Timeout Setting (only show if dead man switch is enabled)
-                    if settings.deadManSwitchEnabled {
-                        HStack {
-                            Text("response timeout")
-                                .font(.custom("Major Mono Display Regular", size: 17))
-                                .foregroundColor(.primary)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                selectedTimeout = Int(settings.deadManSwitchTimeout)
-                                showingTimeoutPicker = true
-                            }) {
-                                Text("\(Int(settings.deadManSwitchTimeout))min")
                                     .font(.custom("Major Mono Display Regular", size: 17))
                                     .foregroundColor(.primary)
                             }
@@ -252,8 +152,8 @@ struct SettingsView: View {
             .padding(.horizontal, 40)
             .padding(.top, 40)
             .background(Color(.systemBackground))
-            .blur(radius: (showingDeadManSwitchPicker || showingMotionThresholdPicker || showingWeekStartsPicker || showingSalaryInput) ? 3 : 0)
-            .animation(.easeInOut(duration: 0.2), value: showingDeadManSwitchPicker || showingMotionThresholdPicker || showingWeekStartsPicker || showingSalaryInput)
+            .blur(radius: (showingMotionThresholdPicker || showingWeekStartsPicker || showingSalaryInput) ? 3 : 0)
+            .animation(.easeInOut(duration: 0.2), value: showingMotionThresholdPicker || showingWeekStartsPicker || showingSalaryInput)
             .navigationTitle("settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -266,114 +166,6 @@ struct SettingsView: View {
         }
         .onDisappear {
             settings.saveSettings()
-            TimeTracker.shared.restartDeadManSwitch()
-        }
-        .sheet(isPresented: $showingDeadManSwitchPicker) {
-            NavigationView {
-                VStack(spacing: 20) {
-                    Text("check in every")
-                        .font(.custom("Major Mono Display Regular", size: 18))
-                        .foregroundColor(.secondary)
-                        .padding(.top, 20)
-                    
-                    VStack(spacing: 8) {
-                        Picker("interval", selection: $selectedDeadManInterval) {
-                            Text("none").tag(0)
-                            Text("5min").tag(5)
-                            Text("10min").tag(10)
-                            Text("30min").tag(30)
-                            Text("custom").tag(-1)
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .frame(height: 200)
-                        .onChange(of: selectedDeadManInterval) { oldValue, newValue in
-                            if newValue == -1 {
-                                // Always preload with current setting when custom is selected
-                                if settings.deadManSwitchEnabled {
-                                    customDeadManValue = String(Int(settings.deadManSwitchInterval))
-                                } else {
-                                    customDeadManValue = ""
-                                }
-                            }
-                        }
-                        
-                        if selectedDeadManInterval == -1 {
-                            FocusableTextField(
-                                text: $customDeadManValue,
-                                placeholder: "minutes",
-                                font: UIFont(name: "Major Mono Display Regular", size: 18) ?? UIFont.systemFont(ofSize: 18),
-                                shouldFocus: true
-                            )
-                            .frame(height: 40)
-                            .padding(.horizontal, 40)
-                        }
-                    }
-                    
-                    Spacer()
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("cancel") {
-                            showingDeadManSwitchPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("save") {
-                            if selectedDeadManInterval == 0 {
-                                settings.deadManSwitchEnabled = false
-                                TimeTracker.shared.restartDeadManSwitch()
-                            } else if selectedDeadManInterval == -1 {
-                                if let value = Double(customDeadManValue) {
-                                    requestNotificationPermissionAndEnable(interval: value)
-                                }
-                            } else {
-                                requestNotificationPermissionAndEnable(interval: Double(selectedDeadManInterval))
-                            }
-                            showingDeadManSwitchPicker = false
-                        }
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingTimeoutPicker) {
-            NavigationView {
-                VStack(spacing: 20) {
-                    Text("response timeout")
-                        .font(.custom("Major Mono Display Regular", size: 18))
-                        .foregroundColor(.secondary)
-                        .padding(.top, 20)
-                    
-                    VStack(spacing: 8) {
-                        Picker("Timeout", selection: $selectedTimeout) {
-                            Text("1min").tag(1)
-                            Text("2min").tag(2)
-                            Text("3min").tag(3)
-                            Text("5min").tag(5)
-                            Text("10min").tag(10)
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .frame(height: 200)
-                    }
-                    
-                    Spacer()
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("cancel") {
-                            showingTimeoutPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("save") {
-                            settings.deadManSwitchTimeout = Double(selectedTimeout)
-                            settings.saveSettings()
-                            showingTimeoutPicker = false
-                        }
-                    }
-                }
-            }
         }
         .sheet(isPresented: $showingMotionThresholdPicker) {
             NavigationView {
@@ -392,6 +184,23 @@ struct SettingsView: View {
                         }
                         .pickerStyle(WheelPickerStyle())
                         .frame(height: 200)
+                        
+                        if selectedMotionThreshold == -1 {
+                            FocusableTextField(
+                                text: $customMotionValue,
+                                placeholder: "minutes",
+                                font: UIFont(name: "Major Mono Display Regular", size: 18) ?? UIFont.systemFont(ofSize: 18),
+                                shouldFocus: isCustomMotionFocused
+                            )
+                            .frame(height: 40)
+                            .padding(.horizontal, 40)
+                            .onAppear {
+                                // Preload with current setting when custom field appears
+                                customMotionValue = String(Int(settings.motionThreshold))
+                                // Set focus immediately
+                                isCustomMotionFocused = true
+                            }
+                        }
                     }
                     
                     Spacer()
@@ -400,6 +209,7 @@ struct SettingsView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button("cancel") {
+                            isCustomMotionFocused = false
                             showingMotionThresholdPicker = false
                         }
                     }
@@ -407,10 +217,15 @@ struct SettingsView: View {
                         Button("save") {
                             if selectedMotionThreshold == -1 {
                                 // Handle custom motion value
+                                if let value = Double(customMotionValue) {
+                                    settings.motionThreshold = value
+                                    settings.motionDetectionEnabled = true
+                                }
                             } else {
                                 settings.motionThreshold = Double(selectedMotionThreshold)
                                 settings.motionDetectionEnabled = true
                             }
+                            isCustomMotionFocused = false
                             showingMotionThresholdPicker = false
                         }
                     }

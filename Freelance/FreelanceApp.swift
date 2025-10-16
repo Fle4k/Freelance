@@ -25,10 +25,20 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         TimeTracker.shared.setupNotificationCategories()
         
         // Request notification permissions on app launch
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge, .provisional]) { granted, error in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge, .provisional, .criticalAlert]) { granted, error in
             print("Notification permission granted: \(granted)")
             if let error = error {
                 print("Notification permission error: \(error)")
+            }
+            
+            // Request critical alert permission for better lock screen visibility
+            if granted {
+                UNUserNotificationCenter.current().requestAuthorization(options: [.criticalAlert]) { criticalGranted, criticalError in
+                    print("Critical alert permission: \(criticalGranted)")
+                    if let criticalError = criticalError {
+                        print("Critical alert permission error: \(criticalError)")
+                    }
+                }
             }
         }
         
@@ -63,15 +73,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         print("📱 App state: \(UIApplication.shared.applicationState.rawValue) (0=active, 1=inactive, 2=background)")
         print("📱 Notification category: \(notification.request.content.categoryIdentifier)")
         print("📱 Thread ID: \(notification.request.content.threadIdentifier)")
-        
-        // If this is a dead man switch notification and app is active, show in-app alert as backup
-        if notification.request.content.categoryIdentifier == "DEAD_MAN_SWITCH" && 
-           UIApplication.shared.applicationState == .active {
-            print("📱 Triggering in-app alert for dead man switch")
-            DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .deadManSwitchTriggered, object: nil)
-            }
-        }
+        print("📱 User info: \(notification.request.content.userInfo)")
         
         // Always show notifications even when app is in foreground with maximum visibility
         let options: UNNotificationPresentationOptions = [.banner, .list, .sound, .badge]
