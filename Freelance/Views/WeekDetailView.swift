@@ -70,13 +70,7 @@ struct WeekDetailView: View {
         let minutes = Int(duration) % 3600 / 60
         let seconds = Int(duration) % 60
         
-        if hours > 0 {
-            return String(format: "%dh%02dm", hours, minutes)
-        } else if minutes > 0 {
-            return String(format: "%dm%02ds", minutes, seconds)
-        } else {
-            return String(format: "%ds", seconds)
-        }
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
     
     var body: some View {

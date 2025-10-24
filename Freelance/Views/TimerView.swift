@@ -49,24 +49,11 @@ struct TimerView: View {
                     
                     // Timer Display
                     let currentFontSize = min(geometry.size.width * 0.12, 64)
-                    let scaleRatio = currentFontSize / 250.0 // Scale ratio based on 250pt reference
-                    let unitFontSize = 200.0 * scaleRatio // Scale units from 200pt reference
                     
-                    HStack(alignment: .bottom, spacing: 0) {
-                        ForEach(Array(timeTracker.timerDisplayComponents.enumerated()), id: \.offset) { index, component in
-                            // Digits
-                            Text(component.digits)
-                                .font(.custom("Major Mono Display Regular", size: currentFontSize))
-                                .foregroundColor(.primary)
-                                .minimumScaleFactor(0.5)
-                            
-                            // Unit
-                            Text(component.unit)
-                                .font(.custom("Major Mono Display Regular", size: unitFontSize))
-                                .foregroundColor(.primary)
-                                .minimumScaleFactor(0.5)
-                        }
-                    }
+                    Text(timeTracker.formattedElapsedTime)
+                        .font(.custom("Major Mono Display Regular", size: currentFontSize))
+                        .foregroundColor(.primary)
+                        .minimumScaleFactor(0.5)
                     
                     Spacer()
                     

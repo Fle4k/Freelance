@@ -89,37 +89,11 @@ extension StatisticsPeriod {
 struct StatisticsOverviewView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
-    @State private var showingTodayDetail = false
-    @State private var showingWeekDetail = false
-    @State private var showingMonthDetail = false
+    @State private var showingUnifiedView = false
     @State private var showingSettings = false
-    // Unified edit state
-    @State private var showingEditSheet = false
-    @State private var editingPeriod: StatisticsPeriod = .today
-    @State private var showingResetConfirmation = false
-    @State private var resettingPeriod: StatisticsPeriod = .today
     @Environment(\.dismiss) private var dismiss
     
     
-    private func copyTime(for period: StatisticsPeriod) {
-        TimeTracker.shared.copyTime(for: period)
-    }
-    
-    private func editTime(for period: StatisticsPeriod) {
-        print("🔧 editTime called for period: \(period)")
-        
-        // Add haptic feedback
-        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-        impactFeedback.impactOccurred()
-        
-        editingPeriod = period
-        showingEditSheet = true
-    }
-    
-    private func resetTime(for period: StatisticsPeriod) {
-        resettingPeriod = period
-        showingResetConfirmation = true
-    }
     
     private func exportCSV(for period: StatisticsPeriod) {
         print("📊 Exporting CSV for \(period.displayName)")
@@ -314,144 +288,6 @@ struct StatisticsOverviewView: View {
         return calendar.date(byAdding: .day, value: -daysFromStartOfWeek, to: calendar.startOfDay(for: date)) ?? date
     }
     
-    private func getCustomTitle(for period: StatisticsPeriod) -> String? {
-        let formatter = DateFormatter()
-        
-        switch period {
-        case .today:
-            formatter.dateFormat = "EEEE"
-            return "edit \(formatter.string(from: Date()).lowercased())"
-        case .thisWeek:
-            formatter.dateFormat = "MMMM"
-            return "edit \(formatter.string(from: Date()).lowercased())"
-        case .thisMonth:
-            formatter.dateFormat = "MMMM"
-            return "edit \(formatter.string(from: Date()).lowercased())"
-        default:
-            return "edit time"
-        }
-    }
-    
-    // MARK: - Card Views
-    private var todayCard: some View {
-                    Button(action: {
-                        showingTodayDetail = true
-                    }) {
-                        VStack(spacing: 10) {
-                            Text("today")
-                                .font(.custom("Major Mono Display Regular", size: 18))
-                                .foregroundColor(.secondary)
-                            
-                ProportionalTimeDisplay(
-                    timeString: timeTracker.formattedTimeHMS(for: .today),
-                    digitFontSize: 20
-                )
-                            
-                            Text(String(format: "%.0f€", timeTracker.getEarnings(for: .today)))
-                                .font(.custom("Major Mono Display Regular", size: 20))
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.vertical, 20)
-                        .frame(maxWidth: .infinity)
-            .frame(minHeight: 80)
-            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .contextMenu {
-                        Button("copy") {
-                            copyTime(for: .today)
-                        }
-                        Button("edit") {
-                            editTime(for: .today)
-                        }
-                        Button("export csv") {
-                            exportCSV(for: .today)
-                        }
-                        Button("reset", role: .destructive) {
-                            resetTime(for: .today)
-            }
-                        }
-                    }
-                    
-    private var weekCard: some View {
-                    Button(action: {
-                        showingWeekDetail = true
-                    }) {
-                        VStack(spacing: 10) {
-                        Text("this week")
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.secondary)
-                        
-                ProportionalTimeDisplay(
-                    timeString: timeTracker.formattedTimeHMS(for: .thisWeek),
-                    digitFontSize: 20
-                )
-                            
-                            Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
-                                .font(.custom("Major Mono Display Regular", size: 20))
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.vertical, 20)
-                        .frame(maxWidth: .infinity)
-            .frame(minHeight: 80)
-            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .contextMenu {
-                        Button("copy") {
-                            copyTime(for: .thisWeek)
-                        }
-                        Button("edit") {
-                            editTime(for: .thisWeek)
-                        }
-                        Button("export csv") {
-                            exportCSV(for: .thisWeek)
-                        }
-                        Button("reset", role: .destructive) {
-                            resetTime(for: .thisWeek)
-            }
-                        }
-                    }
-                    
-    private var monthCard: some View {
-                    Button(action: {
-                        showingMonthDetail = true
-                    }) {
-                        VStack(spacing: 10) {
-                        Text("this month")
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.secondary)
-                        
-                ProportionalTimeDisplay(
-                    timeString: timeTracker.formattedTimeHMS(for: .thisMonth),
-                    digitFontSize: 20
-                )
-                            
-                            Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisMonth)))
-                                .font(.custom("Major Mono Display Regular", size: 20))
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.vertical, 20)
-                        .frame(maxWidth: .infinity)
-            .frame(minHeight: 80)
-            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .contextMenu {
-                        Button("copy") {
-                            copyTime(for: .thisMonth)
-                        }
-                        Button("edit") {
-                            editTime(for: .thisMonth)
-                        }
-                        Button("export csv") {
-                            exportCSV(for: .thisMonth)
-                        }
-                        Button("reset", role: .destructive) {
-                            resetTime(for: .thisMonth)
-                        }
-                    }
-                }
     
     
     // MARK: - View Modifiers
@@ -462,32 +298,8 @@ struct StatisticsOverviewView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 40)
                     
-                    // Current timer display (if running)
-                    if timeTracker.isRunning {
-                        VStack(spacing: 8) {
-                            Text("current session")
-                                .font(.custom("Major Mono Display Regular", size: 14))
-                                .foregroundColor(.secondary)
-                            
-                            ProportionalTimeDisplay(
-                                timeString: timeTracker.formattedElapsedTime,
-                                digitFontSize: 24
-                            )
-                        }
-                        .padding(.horizontal, 40)
-                        .padding(.bottom, 20)
-                    }
-                    
-                    // Overview Page
-                    VStack(spacing: 20) {
-                        todayCard
-                        
-                        weekCard
-                        
-                        monthCard
-                    }
-                    .padding(.horizontal, 40)
-                    .padding(.bottom, 40)
+                    // Unified view is now accessed directly from menu button
+                    // No cards needed here anymore
                     
                     Spacer()
                 }
@@ -515,18 +327,8 @@ struct StatisticsOverviewView: View {
         }
         }
     
-    
-    private func confirmReset() {
-        TimeTracker.shared.resetTime(for: resettingPeriod)
-        showingResetConfirmation = false
-    }
-    
-    
-    
     var body: some View {
-        mainView
-            .blur(radius: (showingTodayDetail || showingWeekDetail || showingMonthDetail || showingSettings || showingEditSheet) ? 3 : 0)
-            .animation(.easeInOut(duration: 0.2), value: showingTodayDetail || showingWeekDetail || showingMonthDetail || showingSettings || showingEditSheet)
+        UnifiedMonthView()
             .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
                 // Update timer display if running
                 if timeTracker.isRunning {
@@ -536,36 +338,6 @@ struct StatisticsOverviewView: View {
             .onDisappear {
                 settings.saveSettings()
             }
-        .sheet(isPresented: $showingTodayDetail) {
-            TodayDetailView()
-        }
-        .sheet(isPresented: $showingWeekDetail) {
-            WeekDetailView()
-        }
-        .sheet(isPresented: $showingMonthDetail) {
-            MonthDetailView()
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
-                .presentationDetents([.height(450), .large])
-                .presentationDragIndicator(.visible)
-        }
-        .confirmationDialog("reset \(resettingPeriod.displayName)", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
-            Button("reset", role: .destructive) {
-                confirmReset()
-            }
-            Button("cancel", role: .cancel) { }
-        } message: {
-            Text("are you sure you want to reset \(resettingPeriod.displayName)? this will permanently delete all time data for this period.")
-        }
-        .sheet(isPresented: $showingEditSheet) {
-            EditTimeSheet(
-                period: editingPeriod,
-                currentTime: timeTracker.formattedTimeHMS(for: editingPeriod),
-                isPresented: $showingEditSheet,
-                customTitle: getCustomTitle(for: editingPeriod)
-            )
-        }
     }
 }
 

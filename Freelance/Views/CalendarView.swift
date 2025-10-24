@@ -149,59 +149,40 @@ struct CalendarDayView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             if day > 0 {
-                Text("\(day)")
-                    .font(.custom("Major Mono Display Regular", size: 18))
-                    .foregroundColor(textColor)
-                    .frame(width: 35, height: 35)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(backgroundColor)
-                        .overlay(
+                VStack(spacing: 0) {
+                    Text("\(day)")
+                        .font(.custom("Major Mono Display Regular", size: 18))
+                        .foregroundColor(.primary)
+                        .frame(width: 35, height: 35)
+                        .background(
                             RoundedRectangle(cornerRadius: 4)
-                                .stroke(borderColor, lineWidth: 1)
+                                .fill(Color.clear)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(hasTimeEntry ? Color.secondary : Color.clear, lineWidth: 1)
+                                )
                         )
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if let date = getDateForDay(day) {
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                            impactFeedback.impactOccurred()
-                            onTap?(date)
-                        }
+                    
+                    // Underline for today
+                    Rectangle()
+                        .fill(isToday ? Color.primary : Color.clear)
+                        .frame(width: 35, height: 1)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if let date = getDateForDay(day) {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        onTap?(date)
                     }
+                }
             } else {
                 // Empty day
                 Text("")
-                    .frame(width: 35, height: 35)
+                    .frame(width: 35, height: 36)
             }
-        }
-    }
-    
-    private var backgroundColor: Color {
-        if isToday {
-            return colorScheme == .dark ? .white : .black
-        } else {
-            return .clear
-        }
-    }
-    
-    private var textColor: Color {
-        if isToday {
-            return colorScheme == .dark ? .black : .white
-        } else {
-            return .primary
-        }
-    }
-    
-    private var borderColor: Color {
-        if isToday {
-            return colorScheme == .dark ? .white : .black
-        } else if hasTimeEntry {
-            return .secondary
-        } else {
-            return .clear
         }
     }
 }
@@ -209,3 +190,6 @@ struct CalendarDayView: View {
 #Preview {
     CalendarView(period: .thisMonth, monthDate: Date())
 }
+
+
+

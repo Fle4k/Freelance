@@ -109,10 +109,17 @@ struct MonthDetailView: View {
     }
     
     private func formatTime(_ timeInterval: TimeInterval) -> String {
-        let hours = Int(timeInterval) / 3600
-        let minutes = Int(timeInterval.truncatingRemainder(dividingBy: 3600)) / 60
-        let seconds = Int(timeInterval) % 60
-        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        let totalSeconds = Int(timeInterval)
+        let days = totalSeconds / 86400
+        let hours = (totalSeconds % 86400) / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+        
+        if days > 0 {
+            return String(format: "%dd %02d:%02d:%02d", days, hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        }
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -506,13 +513,7 @@ struct DayDetailView: View {
         let minutes = Int(duration) % 3600 / 60
         let seconds = Int(duration) % 60
         
-        if hours > 0 {
-            return String(format: "%dh%02dm", hours, minutes)
-        } else if minutes > 0 {
-            return String(format: "%dm%02ds", minutes, seconds)
-        } else {
-            return String(format: "%ds", seconds)
-        }
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
     
     
@@ -682,10 +683,17 @@ struct DayDetailView: View {
     }
     
     private func formatTime(_ timeInterval: TimeInterval) -> String {
-        let hours = Int(timeInterval) / 3600
-        let minutes = Int(timeInterval.truncatingRemainder(dividingBy: 3600)) / 60
-        let seconds = Int(timeInterval) % 60
-        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        let totalSeconds = Int(timeInterval)
+        let days = totalSeconds / 86400
+        let hours = (totalSeconds % 86400) / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+        
+        if days > 0 {
+            return String(format: "%dd %02d:%02d:%02d", days, hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        }
     }
 }
 
