@@ -11,12 +11,14 @@ struct UnifiedMonthView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorScheme
     @State private var currentMonthIndex = 0
     @State private var months: [Date] = []
     @State private var selectedDay: Date?
     @State private var showingEditSheet = false
     @State private var showingDayEditSheet = false
     @State private var showingRemoveConfirmation = false
+    @State private var showingSettings = false
     
     private var monthEntries: [(Date, [TimeEntry])] {
         let calendar = Calendar.current
@@ -150,6 +152,14 @@ struct UnifiedMonthView: View {
         return formatTime(totalDuration)
     }
     
+    private func getTodayEntry() -> Date? {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Check if there's an entry for today in the current month
+        return monthEntries.first { calendar.isDateInToday($0.0) }?.0
+    }
+    
     private func getSelectedDayInfo() -> (title: String, time: String, earnings: String)? {
         guard let day = selectedDay else { return nil }
         
@@ -191,70 +201,44 @@ struct UnifiedMonthView: View {
                 Spacer(minLength: 60)
                 
                 VStack(spacing: 25) {
-                    // Selected day info at top
-                    if let dayInfo = getSelectedDayInfo() {
-                        VStack(spacing: 8) {
-                            Text(dayInfo.title)
-                                .font(.custom("Major Mono Display Regular", size: 16))
-                                .foregroundColor(.secondary)
-                            
-                            HStack(spacing: 8) {
-                                Text(dayInfo.time)
+                    // Month title and calendar
+                    if !months.isEmpty {
+                        VStack(spacing: 15) {
+                            // Month title with time and earnings
+                            VStack(spacing: 8) {
+                                Text(getMonthTitle(for: months[currentMonthIndex]))
                                     .font(.custom("Major Mono Display Regular", size: 18))
                                     .foregroundColor(.primary)
                                 
-                                Text("/")
-                                    .font(.custom("Major Mono Display Regular", size: 18))
-                                    .foregroundColor(.primary)
-                                
-                                Text(dayInfo.earnings)
-                                    .font(.custom("Major Mono Display Regular", size: 18))
-                                    .foregroundColor(.primary)
+                                HStack(spacing: 8) {
+                                    Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
+                                        .font(.custom("Major Mono Display Regular", size: 18))
+                                        .foregroundColor(.primary)
+                                    
+                                    Text("/")
+                                        .font(.custom("Major Mono Display Regular", size: 18))
+                                        .foregroundColor(.primary)
+                                    
+                                    Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
+                                        .font(.custom("Major Mono Display Regular", size: 18))
+                                        .foregroundColor(.primary)
+                                }
                             }
-                        }
-                        .padding(.bottom, 10)
-                    }
-                    
-                    // Month overview with calendar
-                    VStack(spacing: 15) {
-                        if !months.isEmpty {
+                            
+                            // Calendar
                             TabView(selection: $currentMonthIndex) {
                                 ForEach(0..<months.count, id: \.self) { index in
-                                    VStack(spacing: 12) {
-                                        // Month title and stats
-                                        VStack(spacing: 5) {
-                                            Text(getMonthTitle(for: months[index]))
-                                                .font(.custom("Major Mono Display Regular", size: 15))
-                                                .foregroundColor(.primary)
-                                            
-                                            HStack(spacing: 8) {
-                                                Text(formatTime(getMonthTime(for: months[index])))
-                                                    .font(.custom("Major Mono Display Regular", size: 14))
-                                                    .foregroundColor(.secondary)
-                                                
-                                                Text("/")
-                                                    .font(.custom("Major Mono Display Regular", size: 14))
-                                                    .foregroundColor(.secondary)
-                                                
-                                                Text(String(format: "%.0f€", getMonthEarnings(for: months[index])))
-                                                    .font(.custom("Major Mono Display Regular", size: 14))
-                                                    .foregroundColor(.secondary)
-                                            }
-                                        }
-                                        
-                                        // Calendar
-                                        CalendarView(period: .thisMonth, monthDate: months[index]) { selectedDate in
-                                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                            impactFeedback.impactOccurred()
-                                            selectedDay = selectedDate
-                                        }
-                                        .frame(height: 280)
+                                    CalendarView(period: .thisMonth, monthDate: months[index]) { selectedDate in
+                                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                        impactFeedback.impactOccurred()
+                                        selectedDay = selectedDate
                                     }
+                                    .frame(height: 280)
                                     .tag(index)
                                 }
                             }
                             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                            .frame(height: 360)
+                            .frame(height: 280)
                         }
                     }
                     
@@ -262,48 +246,35 @@ struct UnifiedMonthView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 10) {
                             ForEach(monthEntries, id: \.0) { dayEntry in
-                                GeometryReader { listGeometry in
-                                    VStack(spacing: 0) {
-                                        HStack(spacing: 4) {
-                                            // Date column
-                                            Text(formatDate(dayEntry.0))
-                                                .font(.custom("Major Mono Display Regular", size: 12))
-                                                .foregroundColor(.primary)
-                                                .frame(width: listGeometry.size.width * 0.42, alignment: .leading)
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.7)
-                                            
-                                            Spacer(minLength: 2)
-                                            
-                                            // Time column
-                                            Text(formatDayDuration(for: dayEntry.0))
-                                                .font(.custom("Major Mono Display Regular", size: 12))
-                                                .foregroundColor(.primary)
-                                                .frame(width: listGeometry.size.width * 0.28, alignment: .trailing)
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.7)
-                                            
-                                            Text("/")
-                                                .font(.custom("Major Mono Display Regular", size: 12))
-                                                .foregroundColor(.primary)
-                                            
-                                            // Earnings column (5 digits + €)
-                                            Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
-                                                .font(.custom("Major Mono Display Regular", size: 12))
-                                                .foregroundColor(.primary)
-                                                .frame(width: listGeometry.size.width * 0.22, alignment: .trailing)
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.7)
-                                        }
-                                        
-                                        // Underline for selected day
-                                        Rectangle()
-                                            .fill(selectedDay != nil && Calendar.current.isDate(dayEntry.0, inSameDayAs: selectedDay!) ? Color.primary : Color.clear)
-                                            .frame(height: 1)
-                                            .padding(.top, 2)
-                                    }
+                                let isSelected = selectedDay != nil && Calendar.current.isDate(dayEntry.0, inSameDayAs: selectedDay!)
+                                
+                                HStack(spacing: 8) {
+                                    // Date column
+                                    Text(formatDate(dayEntry.0))
+                                        .font(.custom("Major Mono Display Regular", size: 12))
+                                        .foregroundColor(.primary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .lineLimit(1)
+                                    
+                                    // Time column
+                                    Text(formatDayDuration(for: dayEntry.0))
+                                        .font(.custom("Major Mono Display Regular", size: 12))
+                                        .foregroundColor(.primary)
+                                        .lineLimit(1)
+                                    
+                                    // Earnings column
+                                    Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
+                                        .font(.custom("Major Mono Display Regular", size: 12))
+                                        .foregroundColor(.primary)
+                                        .lineLimit(1)
+                                        .frame(minWidth: 50, alignment: .trailing)
                                 }
-                                .frame(height: 20)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(isSelected ? Color.secondary.opacity(0.3) : Color.clear)
+                                )
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -325,20 +296,17 @@ struct UnifiedMonthView: View {
                 
                 Spacer()
                 
-                // Action buttons
-                if selectedDay != nil {
-                    VStack(spacing: 20) {
-                        Button(action: editDayTime) {
-                            Text("edit")
-                                .font(.custom("Major Mono Display Regular", size: 16))
-                                .foregroundColor(.primary)
-                        }
-                        
-                        Button(action: removeDayData) {
-                            Text("remove")
-                                .font(.custom("Major Mono Display Regular", size: 16))
-                                .foregroundColor(.primary)
-                        }
+                // Settings button at bottom
+                VStack(spacing: 20) {
+                    Divider()
+                        .padding(.horizontal, 40)
+                    
+                    Button(action: {
+                        showingSettings = true
+                    }) {
+                        Text("settings")
+                            .font(.custom("Major Mono Display Regular", size: 18))
+                            .foregroundColor(.primary)
                     }
                     .padding(.bottom, 24)
                 }
@@ -366,6 +334,9 @@ struct UnifiedMonthView: View {
                     customTitle: "edit \(formatDate(selectedDay).lowercased())"
                 )
             }
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
         }
         .confirmationDialog("remove day", isPresented: $showingRemoveConfirmation, titleVisibility: .visible) {
             Button("remove", role: .destructive) {

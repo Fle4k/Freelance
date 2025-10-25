@@ -151,25 +151,18 @@ struct CalendarDayView: View {
     var body: some View {
         VStack(spacing: 0) {
             if day > 0 {
-                VStack(spacing: 0) {
-                    Text("\(day)")
-                        .font(.custom("Major Mono Display Regular", size: 18))
-                        .foregroundColor(.primary)
-                        .frame(width: 35, height: 35)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .stroke(hasTimeEntry ? Color.secondary : Color.clear, lineWidth: 1)
-                                )
-                        )
-                    
-                    // Underline for today
-                    Rectangle()
-                        .fill(isToday ? Color.primary : Color.clear)
-                        .frame(width: 35, height: 1)
-                }
+                Text("\(day)")
+                    .font(.custom("Major Mono Display Regular", size: 18))
+                    .foregroundColor(.primary)
+                    .frame(width: 35, height: 35)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(isToday ? Color.secondary.opacity(0.3) : Color.clear)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(hasTimeEntry ? Color.secondary : Color.clear, lineWidth: 1)
+                            )
+                    )
                 .contentShape(Rectangle())
                 .onTapGesture {
                     if let date = getDateForDay(day) {

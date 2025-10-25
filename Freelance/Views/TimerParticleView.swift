@@ -28,6 +28,11 @@ struct TimerParticleView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(false)
+        .onAppear {
+            if isActive {
+                particleSystem.start()
+            }
+        }
         .onChange(of: isActive) { _, active in
             if active {
                 particleSystem.start()
