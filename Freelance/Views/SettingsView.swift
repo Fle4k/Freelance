@@ -13,11 +13,9 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingMotionThresholdPicker = false
     @State private var showingSalaryInput = false
-    @State private var showingWeekStartsPicker = false
     @State private var customMotionValue = ""
     @State private var salaryInputValue = ""
     @State private var selectedMotionThreshold = 5
-    @State private var selectedWeekStarts = 2
     @FocusState private var isCustomMotionFocused: Bool
     
     private var weekdayName: String {
@@ -34,136 +32,137 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 40) {
-                    // Salary Setting (first)
-                    HStack {
-                        Text("salary")
-                            .font(.custom("Major Mono Display Regular", size: 17))
-                            .foregroundColor(.primary)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            salaryInputValue = String(format: "%.0f", settings.hourlyRate)
-                            showingSalaryInput = true
-                        }) {
-                            HStack(spacing: 0) {
-                                Text(String(format: "%.0f", settings.hourlyRate))
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                                
-                                Text("/€")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                            }
+        VStack(spacing: 0) {
+            Spacer(minLength: 30)
+            
+            VStack(spacing: 30) {
+                // Salary Setting (first)
+                HStack {
+                    Text("salary")
+                        .font(.custom("Major Mono Display Regular", size: 17))
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        salaryInputValue = String(format: "%.0f", settings.hourlyRate)
+                        showingSalaryInput = true
+                    }) {
+                        HStack(spacing: 0) {
+                            Text(String(format: "%.0f", settings.hourlyRate))
+                                .font(.custom("Major Mono Display Regular", size: 17))
+                                .foregroundColor(.primary)
+                            
+                            Text("/€")
+                                .font(.custom("Major Mono Display Regular", size: 17))
+                                .foregroundColor(.primary)
                         }
                     }
-                    
-                    // Motion Detection
-                    Button(action: {
-                        settings.motionDetectionEnabled.toggle()
-                    }) {
-                        VStack(spacing: 8) {
-                            HStack {
-                                Text("ask when i")
-                                    .font(.custom("Major Mono Display Regular", size: 17))
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                if settings.motionDetectionEnabled {
-                                    Button(action: {
-                                        settings.askWhenMoving.toggle()
-                                    }) {
-                                        Text(settings.askWhenMoving ? "move" : "don't move")
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(.primary)
-                                    }
-                                } else {
+                }
+                
+                // Motion Detection
+                Button(action: {
+                    settings.motionDetectionEnabled.toggle()
+                }) {
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("ask when i")
+                                .font(.custom("Major Mono Display Regular", size: 17))
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                            
+                            if settings.motionDetectionEnabled {
+                                Button(action: {
+                                    settings.askWhenMoving.toggle()
+                                }) {
                                     Text(settings.askWhenMoving ? "move" : "don't move")
                                         .font(.custom("Major Mono Display Regular", size: 17))
                                         .foregroundColor(.primary)
                                 }
-                            }
-                            
-                            HStack {
-                                Text("longer than")
+                            } else {
+                                Text(settings.askWhenMoving ? "move" : "don't move")
                                     .font(.custom("Major Mono Display Regular", size: 17))
                                     .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                if settings.motionDetectionEnabled {
-                                    Button(action: {
-                                        selectedMotionThreshold = Int(settings.motionThreshold)
-                                        showingMotionThresholdPicker = true
-                                    }) {
-                                        Text("\(Int(settings.motionThreshold))min")
-                                            .font(.custom("Major Mono Display Regular", size: 17))
-                                            .foregroundColor(.primary)
-                                    }
-                                } else {
+                            }
+                        }
+                        
+                        HStack {
+                            Text("longer than")
+                                .font(.custom("Major Mono Display Regular", size: 17))
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                            
+                            if settings.motionDetectionEnabled {
+                                Button(action: {
+                                    selectedMotionThreshold = Int(settings.motionThreshold)
+                                    showingMotionThresholdPicker = true
+                                }) {
                                     Text("\(Int(settings.motionThreshold))min")
                                         .font(.custom("Major Mono Display Regular", size: 17))
                                         .foregroundColor(.primary)
                                 }
+                            } else {
+                                Text("\(Int(settings.motionThreshold))min")
+                                    .font(.custom("Major Mono Display Regular", size: 17))
+                                    .foregroundColor(.primary)
                             }
                         }
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .opacity(settings.motionDetectionEnabled ? 1.0 : 0.3)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .opacity(settings.motionDetectionEnabled ? 1.0 : 0.3)
+                
+                // Time format
+                HStack {
+                    Text("time format")
+                        .font(.custom("Major Mono Display Regular", size: 17))
+                        .foregroundColor(.primary)
                     
-                    // Time format
-                    HStack {
-                        Text("time format")
+                    Spacer()
+                    
+                    Button(action: {
+                        settings.use24HourFormat.toggle()
+                    }) {
+                        Text(settings.use24HourFormat ? "24h" : "am/pm")
                             .font(.custom("Major Mono Display Regular", size: 17))
                             .foregroundColor(.primary)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            settings.use24HourFormat.toggle()
-                        }) {
-                            Text(settings.use24HourFormat ? "24h" : "am/pm")
-                                .font(.custom("Major Mono Display Regular", size: 17))
-                                .foregroundColor(.primary)
-                        }
                     }
+                }
+                
+                // Week starts on - using Menu for dropdown
+                HStack {
+                    Text("weekday starts")
+                        .font(.custom("Major Mono Display Regular", size: 17))
+                        .foregroundColor(.primary)
                     
-                    // Week starts on
-                    HStack {
-                        Text("weekday starts")
+                    Spacer()
+                    
+                    Menu {
+                        Button("monday") { settings.weekStartsOn = 2; settings.saveSettings() }
+                        Button("tuesday") { settings.weekStartsOn = 3; settings.saveSettings() }
+                        Button("wednesday") { settings.weekStartsOn = 4; settings.saveSettings() }
+                        Button("thursday") { settings.weekStartsOn = 5; settings.saveSettings() }
+                        Button("friday") { settings.weekStartsOn = 6; settings.saveSettings() }
+                        Button("saturday") { settings.weekStartsOn = 7; settings.saveSettings() }
+                        Button("sunday") { settings.weekStartsOn = 1; settings.saveSettings() }
+                    } label: {
+                        Text(weekdayName)
                             .font(.custom("Major Mono Display Regular", size: 17))
                             .foregroundColor(.primary)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            selectedWeekStarts = settings.weekStartsOn
-                            showingWeekStartsPicker = true
-                        }) {
-                            Text(weekdayName)
-                                .font(.custom("Major Mono Display Regular", size: 17))
-                                .foregroundColor(.primary)
-                        }
-                    }
-            }
-            .padding(.horizontal, 40)
-            .padding(.top, 40)
-            .background(Color(.systemBackground))
-            .blur(radius: (showingMotionThresholdPicker || showingWeekStartsPicker || showingSalaryInput) ? 3 : 0)
-            .animation(.easeInOut(duration: 0.2), value: showingMotionThresholdPicker || showingWeekStartsPicker || showingSalaryInput)
-            .navigationTitle("settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
                     }
                 }
             }
+            .padding(.horizontal, 40)
+            
+            Spacer()
         }
+        .background(Color(.systemBackground))
+        .blur(radius: (showingMotionThresholdPicker || showingSalaryInput) ? 3 : 0)
+        .animation(.easeInOut(duration: 0.2), value: showingMotionThresholdPicker || showingSalaryInput)
+        .presentationDetents([.height(350)])
+        .presentationDragIndicator(.hidden)
         .onDisappear {
             settings.saveSettings()
         }
@@ -227,46 +226,6 @@ struct SettingsView: View {
                             }
                             isCustomMotionFocused = false
                             showingMotionThresholdPicker = false
-                        }
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingWeekStartsPicker) {
-            NavigationView {
-                VStack(spacing: 20) {
-                    Text("weekday starts")
-                        .font(.custom("Major Mono Display Regular", size: 18))
-                        .foregroundColor(.secondary)
-                        .padding(.top, 20)
-                    
-                    VStack(spacing: 8) {
-                        Picker("Weekday", selection: $selectedWeekStarts) {
-                            Text("monday").tag(2)
-                            Text("tuesday").tag(3)
-                            Text("wednesday").tag(4)
-                            Text("thursday").tag(5)
-                            Text("friday").tag(6)
-                            Text("saturday").tag(7)
-                            Text("sunday").tag(1)
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .frame(height: 200)
-                    }
-                    
-                    Spacer()
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("cancel") {
-                            showingWeekStartsPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("save") {
-                            settings.weekStartsOn = selectedWeekStarts
-                            showingWeekStartsPicker = false
                         }
                     }
                 }

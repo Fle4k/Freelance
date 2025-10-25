@@ -154,7 +154,6 @@ struct UnifiedMonthView: View {
     
     private func getTodayEntry() -> Date? {
         let calendar = Calendar.current
-        let today = Date()
         
         // Check if there's an entry for today in the current month
         return monthEntries.first { calendar.isDateInToday($0.0) }?.0
@@ -195,20 +194,74 @@ struct UnifiedMonthView: View {
         return (title, time, earnings)
     }
     
+    private func getFormattedMonth(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM"
+        return formatter.string(from: date).lowercased()
+    }
+    
+    private func getFormattedYear(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy"
+        return formatter.string(from: date)
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                Spacer(minLength: 60)
-                
-                VStack(spacing: 15) {
-                    // Month title only
+                // Top header with month, time, earnings
+                VStack(spacing: 0) {
+                    Spacer(minLength: 50)
+                    
                     if !months.isEmpty {
-                        Text(getMonthTitle(for: months[currentMonthIndex]))
-                            .font(.custom("Major Mono Display Regular", size: 18))
-                            .foregroundColor(.primary)
-                            .padding(.bottom, 5)
-                        
-                        // Calendar
+                        VStack(spacing: 15) {
+                            // october 2025
+                            HStack {
+                                Text(getFormattedMonth(for: months[currentMonthIndex]))
+                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text(getFormattedYear(for: months[currentMonthIndex]))
+                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                    .foregroundColor(.primary)
+                            }
+                            
+                            // time 04:37:39
+                            HStack {
+                                Text("time")
+                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
+                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                    .foregroundColor(.primary)
+                            }
+                            
+                            // earnings 185€
+                            HStack {
+                                Text("earnings")
+                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
+                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                        .padding(.horizontal, 40)
+                    }
+                }
+                .padding(.bottom, 50)
+                
+                // Calendar
+                VStack(spacing: 0) {
+                    if !months.isEmpty {
                         TabView(selection: $currentMonthIndex) {
                             ForEach(0..<months.count, id: \.self) { index in
                                 CalendarView(period: .thisMonth, monthDate: months[index]) { selectedDate in
@@ -216,94 +269,65 @@ struct UnifiedMonthView: View {
                                     impactFeedback.impactOccurred()
                                     selectedDay = selectedDate
                                 }
-                                .frame(height: 280)
                                 .tag(index)
                             }
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                         .frame(height: 280)
-                    }
-                    
-                    // Scrollable list of tracked days
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            ForEach(monthEntries, id: \.0) { dayEntry in
-                                let isSelected = selectedDay != nil && Calendar.current.isDate(dayEntry.0, inSameDayAs: selectedDay!)
-                                
-                                HStack(spacing: 12) {
-                                    // Date column
-                                    Text(formatDate(dayEntry.0))
-                                        .font(.custom("Major Mono Display Regular", size: 15))
-                                        .foregroundColor(.primary)
-                                        .frame(minWidth: 90, alignment: .leading)
-                                        .lineLimit(1)
-                                    
-                                    Spacer()
-                                    
-                                    // Time column
-                                    Text(formatDayDuration(for: dayEntry.0))
-                                        .font(.custom("Major Mono Display Regular", size: 15))
-                                        .foregroundColor(.primary)
-                                        .frame(minWidth: 80, alignment: .trailing)
-                                        .lineLimit(1)
-                                    
-                                    // Earnings column
-                                    Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
-                                        .font(.custom("Major Mono Display Regular", size: 15))
-                                        .foregroundColor(.primary)
-                                        .frame(minWidth: 60, alignment: .trailing)
-                                        .lineLimit(1)
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 12)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                    impactFeedback.impactOccurred()
-                                    selectedDay = dayEntry.0
-                                }
-                            }
-                            
-                            if monthEntries.isEmpty {
-                                Text("no time tracked this month")
-                                    .font(.custom("Major Mono Display Regular", size: 12))
-                                    .foregroundColor(.secondary)
-                            }
-                        }
+                        .padding(.horizontal, 40)
                     }
                 }
-                .padding(.horizontal, 40)
+                .padding(.bottom, 50)
                 
-                Spacer()
-                
-                // Total time and earnings at bottom
-                VStack(spacing: 15) {
-                    if !months.isEmpty {
-                        VStack(spacing: 8) {
-                            Text("total")
-                                .font(.custom("Major Mono Display Regular", size: 16))
-                                .foregroundColor(.secondary)
-                            
-                            HStack(spacing: 8) {
-                                Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
-                                    .font(.custom("Major Mono Display Regular", size: 18))
+                // Scrollable list of tracked days
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(monthEntries, id: \.0) { dayEntry in
+                            HStack(spacing: 12) {
+                                // Date column
+                                Text(formatDate(dayEntry.0))
+                                    .font(.custom("Major Mono Display Regular", size: 15))
                                     .foregroundColor(.primary)
+                                    .frame(minWidth: 90, alignment: .leading)
+                                    .lineLimit(1)
                                 
-                                Text("/")
-                                    .font(.custom("Major Mono Display Regular", size: 18))
-                                    .foregroundColor(.primary)
+                                Spacer()
                                 
-                                Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
-                                    .font(.custom("Major Mono Display Regular", size: 18))
+                                // Time column
+                                Text(formatDayDuration(for: dayEntry.0))
+                                    .font(.custom("Major Mono Display Regular", size: 15))
                                     .foregroundColor(.primary)
+                                    .frame(minWidth: 80, alignment: .trailing)
+                                    .lineLimit(1)
+                                
+                                // Earnings column
+                                Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
+                                    .font(.custom("Major Mono Display Regular", size: 15))
+                                    .foregroundColor(.primary)
+                                    .frame(minWidth: 60, alignment: .trailing)
+                                    .lineLimit(1)
+                            }
+                            .padding(.vertical, 12)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
+                                selectedDay = dayEntry.0
                             }
                         }
-                        .padding(.bottom, 20)
+                        
+                        if monthEntries.isEmpty {
+                            Text("no time tracked this month")
+                                .font(.custom("Major Mono Display Regular", size: 12))
+                                .foregroundColor(.secondary)
+                        }
                     }
-                    
-                    Divider()
-                        .padding(.horizontal, 40)
-                    
+                    .padding(.horizontal, 40)
+                }
+                .padding(.bottom, 50)
+                
+                // Settings button at bottom
+                VStack(spacing: 0) {
                     Button(action: {
                         showingSettings = true
                     }) {
@@ -315,6 +339,8 @@ struct UnifiedMonthView: View {
                 }
             }
             .background(Color(.systemBackground))
+            .blur(radius: (showingSettings || showingDayEditSheet) ? 3 : 0)
+            .animation(.easeInOut(duration: 0.2), value: showingSettings || showingDayEditSheet)
             .gesture(
                 DragGesture(minimumDistance: 50)
                     .onEnded { value in

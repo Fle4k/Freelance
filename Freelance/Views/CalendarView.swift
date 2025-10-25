@@ -21,32 +21,39 @@ struct CalendarView: View {
     }
     
     var body: some View {
-        VStack(spacing: 13) {
-            // Days of week header
-            HStack {
-                ForEach(getWeekdayHeaders(), id: \.self) { day in
-                    Text(day)
-                        .font(.custom("Major Mono Display Regular", size: 15))
-                        .foregroundColor(.primary)
-                        .frame(maxWidth: .infinity)
+        GeometryReader { geometry in
+            VStack(spacing: 20) {
+                // Days of week header
+                HStack(spacing: 0) {
+                    ForEach(getWeekdayHeaders(), id: \.self) { day in
+                        Text(day)
+                            .font(.custom("Major Mono Display Regular", size: 15))
+                            .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                
+                // Calculate cell size based on available width
+                let spacing: CGFloat = 8
+                let totalSpacing = spacing * 6 // 6 gaps between 7 columns
+                let cellSize = (geometry.size.width - totalSpacing) / 7
+                
+                // Calendar grid
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: 7), spacing: spacing) {
+                    ForEach(Array(getCalendarDays().enumerated()), id: \.offset) { index, day in
+                        CalendarDayView(
+                            day: day,
+                            hasTimeEntry: hasTimeEntry(for: day),
+                            isToday: isToday(day),
+                            cellSize: cellSize,
+                            onTap: { selectedDay in
+                                onDaySelected?(selectedDay)
+                            },
+                            getDateForDay: getDateForDay
+                        )
+                    }
                 }
             }
-            
-            // Calendar grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 9) {
-                ForEach(Array(getCalendarDays().enumerated()), id: \.offset) { index, day in
-                    CalendarDayView(
-                        day: day,
-                        hasTimeEntry: hasTimeEntry(for: day),
-                        isToday: isToday(day),
-                        onTap: { selectedDay in
-                            onDaySelected?(selectedDay)
-                        },
-                        getDateForDay: getDateForDay
-                    )
-                }
-            }
-            .padding(.bottom, 10)
         }
     }
     
@@ -144,6 +151,7 @@ struct CalendarDayView: View {
     let day: Int
     let hasTimeEntry: Bool
     let isToday: Bool
+    let cellSize: CGFloat
     let onTap: ((Date) -> Void)?
     let getDateForDay: (Int) -> Date?
     @Environment(\.colorScheme) var colorScheme
@@ -152,9 +160,9 @@ struct CalendarDayView: View {
         VStack(spacing: 0) {
             if day > 0 {
                 Text("\(day)")
-                    .font(.custom("Major Mono Display Regular", size: 18))
+                    .font(.custom("Major Mono Display Regular", size: 16))
                     .foregroundColor(isToday ? (colorScheme == .dark ? .black : .white) : .primary)
-                    .frame(width: 35, height: 35)
+                    .frame(width: cellSize, height: cellSize)
                     .background(
                         RoundedRectangle(cornerRadius: 4)
                             .fill(isToday ? (colorScheme == .dark ? .white : .black) : Color.clear)
@@ -174,7 +182,7 @@ struct CalendarDayView: View {
             } else {
                 // Empty day
                 Text("")
-                    .frame(width: 35, height: 36)
+                    .frame(width: cellSize, height: cellSize)
             }
         }
     }
