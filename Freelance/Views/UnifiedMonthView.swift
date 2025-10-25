@@ -122,7 +122,7 @@ struct UnifiedMonthView: View {
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "E dd.MM.yy"
+        formatter.dateFormat = "E dd.MM"
         return formatter.string(from: date).lowercased()
     }
     
@@ -200,81 +200,62 @@ struct UnifiedMonthView: View {
             VStack(spacing: 0) {
                 Spacer(minLength: 60)
                 
-                VStack(spacing: 25) {
-                    // Month title and calendar
+                VStack(spacing: 15) {
+                    // Month title only
                     if !months.isEmpty {
-                        VStack(spacing: 15) {
-                            // Month title with time and earnings
-                            VStack(spacing: 8) {
-                                Text(getMonthTitle(for: months[currentMonthIndex]))
-                                    .font(.custom("Major Mono Display Regular", size: 18))
-                                    .foregroundColor(.primary)
-                                
-                                HStack(spacing: 8) {
-                                    Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
-                                        .font(.custom("Major Mono Display Regular", size: 18))
-                                        .foregroundColor(.primary)
-                                    
-                                    Text("/")
-                                        .font(.custom("Major Mono Display Regular", size: 18))
-                                        .foregroundColor(.primary)
-                                    
-                                    Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
-                                        .font(.custom("Major Mono Display Regular", size: 18))
-                                        .foregroundColor(.primary)
+                        Text(getMonthTitle(for: months[currentMonthIndex]))
+                            .font(.custom("Major Mono Display Regular", size: 18))
+                            .foregroundColor(.primary)
+                            .padding(.bottom, 5)
+                        
+                        // Calendar
+                        TabView(selection: $currentMonthIndex) {
+                            ForEach(0..<months.count, id: \.self) { index in
+                                CalendarView(period: .thisMonth, monthDate: months[index]) { selectedDate in
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                    impactFeedback.impactOccurred()
+                                    selectedDay = selectedDate
                                 }
+                                .frame(height: 280)
+                                .tag(index)
                             }
-                            
-                            // Calendar
-                            TabView(selection: $currentMonthIndex) {
-                                ForEach(0..<months.count, id: \.self) { index in
-                                    CalendarView(period: .thisMonth, monthDate: months[index]) { selectedDate in
-                                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                        impactFeedback.impactOccurred()
-                                        selectedDay = selectedDate
-                                    }
-                                    .frame(height: 280)
-                                    .tag(index)
-                                }
-                            }
-                            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                            .frame(height: 280)
                         }
+                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                        .frame(height: 280)
                     }
                     
                     // Scrollable list of tracked days
                     ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 10) {
+                        VStack(spacing: 0) {
                             ForEach(monthEntries, id: \.0) { dayEntry in
                                 let isSelected = selectedDay != nil && Calendar.current.isDate(dayEntry.0, inSameDayAs: selectedDay!)
                                 
-                                HStack(spacing: 8) {
+                                HStack(spacing: 12) {
                                     // Date column
                                     Text(formatDate(dayEntry.0))
-                                        .font(.custom("Major Mono Display Regular", size: 12))
+                                        .font(.custom("Major Mono Display Regular", size: 15))
                                         .foregroundColor(.primary)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .frame(minWidth: 90, alignment: .leading)
                                         .lineLimit(1)
+                                    
+                                    Spacer()
                                     
                                     // Time column
                                     Text(formatDayDuration(for: dayEntry.0))
-                                        .font(.custom("Major Mono Display Regular", size: 12))
+                                        .font(.custom("Major Mono Display Regular", size: 15))
                                         .foregroundColor(.primary)
+                                        .frame(minWidth: 80, alignment: .trailing)
                                         .lineLimit(1)
                                     
                                     // Earnings column
                                     Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
-                                        .font(.custom("Major Mono Display Regular", size: 12))
+                                        .font(.custom("Major Mono Display Regular", size: 15))
                                         .foregroundColor(.primary)
+                                        .frame(minWidth: 60, alignment: .trailing)
                                         .lineLimit(1)
-                                        .frame(minWidth: 50, alignment: .trailing)
                                 }
                                 .padding(.horizontal, 8)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(isSelected ? Color.secondary.opacity(0.3) : Color.clear)
-                                )
+                                .padding(.vertical, 12)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -290,14 +271,36 @@ struct UnifiedMonthView: View {
                             }
                         }
                     }
-                    .frame(maxHeight: 200)
                 }
                 .padding(.horizontal, 40)
                 
                 Spacer()
                 
-                // Settings button at bottom
-                VStack(spacing: 20) {
+                // Total time and earnings at bottom
+                VStack(spacing: 15) {
+                    if !months.isEmpty {
+                        VStack(spacing: 8) {
+                            Text("total")
+                                .font(.custom("Major Mono Display Regular", size: 16))
+                                .foregroundColor(.secondary)
+                            
+                            HStack(spacing: 8) {
+                                Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
+                                    .font(.custom("Major Mono Display Regular", size: 18))
+                                    .foregroundColor(.primary)
+                                
+                                Text("/")
+                                    .font(.custom("Major Mono Display Regular", size: 18))
+                                    .foregroundColor(.primary)
+                                
+                                Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
+                                    .font(.custom("Major Mono Display Regular", size: 18))
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                        .padding(.bottom, 20)
+                    }
+                    
                     Divider()
                         .padding(.horizontal, 40)
                     

@@ -153,24 +153,24 @@ struct CalendarDayView: View {
             if day > 0 {
                 Text("\(day)")
                     .font(.custom("Major Mono Display Regular", size: 18))
-                    .foregroundColor(.primary)
+                    .foregroundColor(isToday ? (colorScheme == .dark ? .black : .white) : .primary)
                     .frame(width: 35, height: 35)
                     .background(
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(isToday ? Color.secondary.opacity(0.3) : Color.clear)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(hasTimeEntry ? Color.secondary : Color.clear, lineWidth: 1)
-                            )
+                            .fill(isToday ? (colorScheme == .dark ? .white : .black) : Color.clear)
                     )
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    if let date = getDateForDay(day) {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        onTap?(date)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(hasTimeEntry && !isToday ? Color.primary : Color.clear, lineWidth: 1)
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if let date = getDateForDay(day) {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                            impactFeedback.impactOccurred()
+                            onTap?(date)
+                        }
                     }
-                }
             } else {
                 // Empty day
                 Text("")
