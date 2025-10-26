@@ -12,6 +12,7 @@ struct EditTimeSheet: View {
     let currentTime: String
     @Binding var isPresented: Bool
     let customTitle: String?
+    @ObservedObject private var themeManager = ThemeManager.shared
     @State private var hoursText: String = ""
     @State private var minutesText: String = ""
     @State private var isHoursFocused: Bool = true
@@ -114,7 +115,7 @@ struct EditTimeSheet: View {
                 }
                 .padding(.horizontal, 40)
             }
-            .background(Color(.systemBackground))
+            .themedBackground()
         }
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

@@ -10,6 +10,7 @@ import UserNotifications
 
 struct SettingsView: View {
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showingMotionThresholdPicker = false
     @State private var showingSalaryInput = false
@@ -131,6 +132,28 @@ struct SettingsView: View {
                     }
                 }
                 
+                // Theme selection - using Menu for dropdown
+                HStack {
+                    Text("theme")
+                        .font(.custom("Major Mono Display Regular", size: 17))
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Menu {
+                        Button("default") { 
+                            themeManager.setTheme(.default)
+                        }
+                        Button("liquid glass") { 
+                            themeManager.setTheme(.liquidGlass)
+                        }
+                    } label: {
+                        Text(themeManager.currentTheme.displayName)
+                            .font(.custom("Major Mono Display Regular", size: 17))
+                            .foregroundColor(.primary)
+                    }
+                }
+                
                 // Week starts on - using Menu for dropdown
                 HStack {
                     Text("weekday starts")
@@ -158,10 +181,10 @@ struct SettingsView: View {
             
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .themedBackground()
         .blur(radius: (showingMotionThresholdPicker || showingSalaryInput) ? 3 : 0)
         .animation(.easeInOut(duration: 0.2), value: showingMotionThresholdPicker || showingSalaryInput)
-        .presentationDetents([.height(350)])
+        .presentationDetents([.height(420)])
         .presentationDragIndicator(.hidden)
         .onDisappear {
             settings.saveSettings()

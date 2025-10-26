@@ -13,6 +13,7 @@ struct CalendarView: View {
     let onDaySelected: ((Date) -> Void)?
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     init(period: StatisticsPeriod, monthDate: Date = Date(), onDaySelected: ((Date) -> Void)? = nil) {
         self.period = period
@@ -22,7 +23,7 @@ struct CalendarView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 20) {
+            VStack(spacing: themeManager.spacing.contentVertical) {
                 // Days of week header
                 HStack(spacing: 0) {
                     ForEach(getWeekdayHeaders(), id: \.self) { day in
@@ -34,7 +35,7 @@ struct CalendarView: View {
                 }
                 
                 // Calculate cell size based on available width
-                let spacing: CGFloat = 8
+                let spacing: CGFloat = themeManager.currentTheme == .liquidGlass ? 12 : 8
                 let totalSpacing = spacing * 6 // 6 gaps between 7 columns
                 let cellSize = (geometry.size.width - totalSpacing) / 7
                 
@@ -155,21 +156,56 @@ struct CalendarDayView: View {
     let onTap: ((Date) -> Void)?
     let getDateForDay: (Int) -> Date?
     @Environment(\.colorScheme) var colorScheme
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack(spacing: 0) {
             if day > 0 {
+                let cornerRadius = themeManager.currentTheme == .liquidGlass ? 
+                    themeManager.cornerRadius.medium : themeManager.cornerRadius.small
+                
                 Text("\(day)")
                     .font(.custom("Major Mono Display Regular", size: 16))
                     .foregroundColor(isToday ? (colorScheme == .dark ? .black : .white) : .primary)
                     .frame(width: cellSize, height: cellSize)
                     .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(isToday ? (colorScheme == .dark ? .white : .black) : Color.clear)
+                        Group {
+                            if isToday {
+                                if themeManager.currentTheme == .liquidGlass {
+                                    RoundedRectangle(cornerRadius: cornerRadius)
+                                        .fill(colorScheme == .dark ? Color.white : Color.black)
+                                        .shadow(
+                                            color: (colorScheme == .dark ? Color.white : Color.black).opacity(0.3),
+                                            radius: 8,
+                                            x: 0,
+                                            y: 4
+                                        )
+                                } else {
+                                    RoundedRectangle(cornerRadius: cornerRadius)
+                                        .fill(colorScheme == .dark ? Color.white : Color.black)
+                                }
+                            } else if hasTimeEntry && themeManager.currentTheme == .liquidGlass {
+                                RoundedRectangle(cornerRadius: cornerRadius)
+                                    .fill(themeManager.ultraThinMaterial)
+                                    .shadow(
+                                        color: Color.primary.opacity(0.05),
+                                        radius: 4,
+                                        x: 0,
+                                        y: 2
+                                    )
+                            } else {
+                                RoundedRectangle(cornerRadius: cornerRadius)
+                                    .fill(Color.clear)
+                            }
+                        }
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(hasTimeEntry && !isToday ? Color.primary : Color.clear, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .stroke(
+                                hasTimeEntry && !isToday && themeManager.currentTheme == .default ? 
+                                    Color.primary : Color.clear, 
+                                lineWidth: 1
+                            )
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {

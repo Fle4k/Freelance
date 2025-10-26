@@ -11,10 +11,12 @@ import UserNotifications
 @main
 struct FreelanceApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var themeManager = ThemeManager.shared
     
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(themeManager)
         }
     }
 }

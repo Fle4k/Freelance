@@ -23,6 +23,7 @@ struct ProgressCircle: View {
 
 struct TimerView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @State private var showingStatistics = false
     @State private var showingResetAlert = false
     @State private var longPressProgress: Double = 0.0
@@ -39,10 +40,18 @@ struct TimerView: View {
                 TimerParticleView(isActive: timeTracker.isRunning)
                     .ignoresSafeArea()
                 
-                // Make background transparent when timer is running
-                Color(.systemBackground)
-                    .opacity(timeTracker.isRunning ? 0.0 : 1.0)
-                    .ignoresSafeArea(.all)
+                // Themed background
+                Group {
+                    if themeManager.useMaterialBackground {
+                        Rectangle()
+                            .fill(themeManager.backgroundMaterial)
+                            .opacity(timeTracker.isRunning ? 0.0 : 1.0)
+                    } else {
+                        Color(.systemBackground)
+                            .opacity(timeTracker.isRunning ? 0.0 : 1.0)
+                    }
+                }
+                .ignoresSafeArea(.all)
                 
                 VStack(spacing: 0) {
                     Spacer()
@@ -54,22 +63,41 @@ struct TimerView: View {
                         .font(.custom("Major Mono Display Regular", size: currentFontSize))
                         .foregroundColor(.primary)
                         .minimumScaleFactor(0.5)
+                        .shadow(
+                            color: themeManager.currentTheme == .liquidGlass ? Color.primary.opacity(0.1) : Color.clear,
+                            radius: 8,
+                            x: 0,
+                            y: 4
+                        )
                     
                     Spacer()
                     
                     // Record/Pause Button
-                    Circle()
-                        .fill(Color.clear)
-                        .frame(width: 120, height: 120)
-                        .overlay(
-                            Image(systemName: timeTracker.isRunning ? "square" : "play")
-                                .font(.system(size: 20, weight: .regular))
-                                .foregroundColor(.primary)
-                                .contentTransition(.symbolEffect(.replace.downUp))
-                                .animation(.easeInOut(duration: 0.3), value: timeTracker.isRunning)
-                        )
-                        .scaleEffect(timeTracker.isRunning ? 1.05 : 1.0)
-                        .animation(.easeInOut(duration: 0.2), value: timeTracker.isRunning)
+                    ZStack {
+                        if themeManager.currentTheme == .liquidGlass {
+                            Circle()
+                                .fill(themeManager.ultraThinMaterial)
+                                .frame(width: 120, height: 120)
+                                .shadow(
+                                    color: Color.primary.opacity(0.1),
+                                    radius: 12,
+                                    x: 0,
+                                    y: 6
+                                )
+                        } else {
+                            Circle()
+                                .fill(Color.clear)
+                                .frame(width: 120, height: 120)
+                        }
+                        
+                        Image(systemName: timeTracker.isRunning ? "square" : "play")
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundColor(.primary)
+                            .contentTransition(.symbolEffect(.replace.downUp))
+                            .animation(.easeInOut(duration: 0.3), value: timeTracker.isRunning)
+                    }
+                    .scaleEffect(timeTracker.isRunning ? 1.05 : 1.0)
+                    .animation(.easeInOut(duration: 0.2), value: timeTracker.isRunning)
                         .overlay(
                             // Progress circle overlay - doesn't affect layout
                             Group {
@@ -108,26 +136,40 @@ struct TimerView: View {
                                 endLongPress()
                             }
                     )
-                    .padding(.bottom, 80)
+                    .padding(.bottom, themeManager.spacing.huge + 20)
                     
                     // Menu Button (centered below record button)
                     Button(action: {
                         showingStatistics = true
                     }) {
-                        Image(systemName: "line.3.horizontal")
-                            .font(.system(size: 18, weight: .regular))
-                            .foregroundColor(.primary)
-                            .symbolEffect(.disappear, isActive: showingStatistics)
-                            .frame(width: 100, height: 100)
-                            .overlay(
-                                // Invisible expanded touch area - doesn't affect layout
+                        ZStack {
+                            if themeManager.currentTheme == .liquidGlass {
                                 Circle()
-                                    .fill(Color.clear)
-                                    .frame(width: 160, height: 160)
-                            )
+                                    .fill(themeManager.ultraThinMaterial)
+                                    .frame(width: 100, height: 100)
+                                    .shadow(
+                                        color: Color.primary.opacity(0.08),
+                                        radius: 8,
+                                        x: 0,
+                                        y: 4
+                                    )
+                            }
+                            
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundColor(.primary)
+                                .symbolEffect(.disappear, isActive: showingStatistics)
+                                .frame(width: 100, height: 100)
+                        }
+                        .overlay(
+                            // Invisible expanded touch area - doesn't affect layout
+                            Circle()
+                                .fill(Color.clear)
+                                .frame(width: 160, height: 160)
+                        )
                     }
                     .contentShape(Circle())
-                    .padding(.bottom, geometry.safeAreaInsets.bottom + 60)
+                    .padding(.bottom, geometry.safeAreaInsets.bottom + themeManager.spacing.huge)
                     
                 }
             }

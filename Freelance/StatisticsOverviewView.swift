@@ -89,6 +89,7 @@ extension StatisticsPeriod {
 struct StatisticsOverviewView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @State private var showingUnifiedView = false
     @State private var showingSettings = false
     @Environment(\.dismiss) private var dismiss
@@ -303,7 +304,7 @@ struct StatisticsOverviewView: View {
                     
                     Spacer()
                 }
-                .background(Color(.systemBackground))
+                .themedBackground()
                 
                 // Settings button at bottom
                 VStack {

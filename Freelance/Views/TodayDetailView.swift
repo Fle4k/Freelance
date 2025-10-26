@@ -10,6 +10,7 @@ import SwiftUI
 struct TodayDetailView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showingEditSheet = false
     
@@ -140,7 +141,7 @@ struct TodayDetailView: View {
                 
                 Spacer()
             }
-            .background(Color(.systemBackground))
+            .themedBackground()
         }
         .sheet(isPresented: $showingEditSheet) {
             EditTimeSheet(

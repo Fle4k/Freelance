@@ -10,6 +10,7 @@ import SwiftUI
 struct MonthDetailView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var currentMonthIndex = 0
     @State private var months: [Date] = []
@@ -408,7 +409,7 @@ struct MonthDetailView: View {
                 
                 Spacer()
             }
-            .background(Color(.systemBackground))
+            .themedBackground()
             .gesture(
                 DragGesture(minimumDistance: 50)
                     .onEnded { value in
@@ -477,6 +478,7 @@ struct DayDetailView: View {
     let precomputedData: (entries: [TimeEntry], totalTime: TimeInterval, earnings: Double, title: String)?
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showingEditSheet = false
     @State private var showingRemoveConfirmation = false
@@ -667,7 +669,7 @@ struct DayDetailView: View {
                 }
                 .padding(.bottom, 24)
             }
-            .background(Color(.systemBackground))
+            .themedBackground()
         }
         .onAppear {
             precomputeDayData()
@@ -743,6 +745,7 @@ struct DayEditTimeSheet: View {
     let currentTime: String
     @Binding var isPresented: Bool
     let customTitle: String?
+    @ObservedObject private var themeManager = ThemeManager.shared
     @State private var hoursText: String = ""
     @State private var minutesText: String = ""
     @State private var isHoursFocused: Bool = true
@@ -836,7 +839,7 @@ struct DayEditTimeSheet: View {
                 }
                 .padding(.horizontal, 40)
             }
-            .background(Color(.systemBackground))
+            .themedBackground()
         }
         .onAppear {
             parseCurrentTime()

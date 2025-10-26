@@ -10,6 +10,7 @@ import SwiftUI
 struct WeekDetailView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showingEditSheet = false
     @State private var selectedDay: Date?
@@ -170,7 +171,7 @@ struct WeekDetailView: View {
                 
                 Spacer()
             }
-            .background(Color(.systemBackground))
+            .themedBackground()
         }
         .sheet(isPresented: $showingEditSheet) {
             EditTimeSheet(

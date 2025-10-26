@@ -10,6 +10,7 @@ import SwiftUI
 struct DailyStatisticsView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     
     var todayEntries: [TimeEntry] {
@@ -88,7 +89,7 @@ struct DailyStatisticsView: View {
                 
                 Spacer()
             }
-            .background(Color(.systemBackground))
+            .themedBackground()
         }
     }
 }

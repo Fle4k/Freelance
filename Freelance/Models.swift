@@ -41,6 +41,7 @@ class AppSettings: ObservableObject {
     @Published var askWhenMoving: Bool = true // true = ask when moving, false = ask when not moving
     @Published var weekStartsOn: Int = 2 // 1 = Sunday, 2 = Monday, 3 = Tuesday, etc.
     @Published var use24HourFormat: Bool = true // true = 24h, false = AM/PM
+    @Published var selectedTheme: String = "default" // Theme selection
     
     static let shared = AppSettings()
     
@@ -55,6 +56,7 @@ class AppSettings: ObservableObject {
         UserDefaults.standard.set(askWhenMoving, forKey: "askWhenMoving")
         UserDefaults.standard.set(weekStartsOn, forKey: "weekStartsOn")
         UserDefaults.standard.set(use24HourFormat, forKey: "use24HourFormat")
+        UserDefaults.standard.set(selectedTheme, forKey: "selectedTheme")
     }
     
     func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
@@ -81,6 +83,7 @@ class AppSettings: ObservableObject {
         askWhenMoving = UserDefaults.standard.object(forKey: "askWhenMoving") as? Bool ?? true
         weekStartsOn = UserDefaults.standard.object(forKey: "weekStartsOn") as? Int ?? 2
         use24HourFormat = UserDefaults.standard.object(forKey: "use24HourFormat") as? Bool ?? true
+        selectedTheme = UserDefaults.standard.object(forKey: "selectedTheme") as? String ?? "default"
     }
     
     // Helper for time formatting

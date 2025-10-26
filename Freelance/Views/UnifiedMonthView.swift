@@ -10,6 +10,7 @@ import SwiftUI
 struct UnifiedMonthView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) var colorScheme
     @State private var currentMonthIndex = 0
@@ -211,10 +212,10 @@ struct UnifiedMonthView: View {
             VStack(spacing: 0) {
                 // Top header with month, time, earnings
                 VStack(spacing: 0) {
-                    Spacer(minLength: 50)
+                    Spacer(minLength: themeManager.spacing.safeAreaTop)
                     
                     if !months.isEmpty {
-                        VStack(spacing: 15) {
+                        VStack(spacing: themeManager.spacing.medium) {
                             // october 2025
                             HStack {
                                 Text(getFormattedMonth(for: months[currentMonthIndex]))
@@ -254,10 +255,20 @@ struct UnifiedMonthView: View {
                                     .foregroundColor(.primary)
                             }
                         }
-                        .padding(.horizontal, 40)
+                        .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                        .padding(.vertical, themeManager.spacing.medium)
+                        .themedSectionBackground()
+                        .cornerRadius(themeManager.cornerRadius.large)
+                        .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                        .shadow(
+                            color: themeManager.currentTheme == .liquidGlass ? Color.primary.opacity(0.05) : Color.clear,
+                            radius: themeManager.shadow.radius,
+                            x: 0,
+                            y: 4
+                        )
                     }
                 }
-                .padding(.bottom, 50)
+                .padding(.bottom, themeManager.spacing.xLarge)
                 
                 // Calendar
                 VStack(spacing: 0) {
@@ -274,16 +285,16 @@ struct UnifiedMonthView: View {
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                         .frame(height: 280)
-                        .padding(.horizontal, 40)
+                        .padding(.horizontal, themeManager.spacing.contentHorizontal)
                     }
                 }
-                .padding(.bottom, 50)
+                .padding(.bottom, themeManager.spacing.xLarge)
                 
                 // Scrollable list of tracked days
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 0) {
+                    VStack(spacing: themeManager.spacing.small) {
                         ForEach(monthEntries, id: \.0) { dayEntry in
-                            HStack(spacing: 12) {
+                            HStack(spacing: themeManager.spacing.itemSpacing) {
                                 // Date column
                                 Text(formatDate(dayEntry.0))
                                     .font(.custom("Major Mono Display Regular", size: 15))
@@ -307,7 +318,20 @@ struct UnifiedMonthView: View {
                                     .frame(minWidth: 60, alignment: .trailing)
                                     .lineLimit(1)
                             }
-                            .padding(.vertical, 12)
+                            .padding(.vertical, themeManager.spacing.itemSpacing)
+                            .padding(.horizontal, themeManager.spacing.medium)
+                            .background(
+                                themeManager.currentTheme == .liquidGlass ?
+                                    AnyView(RoundedRectangle(cornerRadius: themeManager.cornerRadius.medium)
+                                        .fill(themeManager.ultraThinMaterial)
+                                        .shadow(
+                                            color: Color.primary.opacity(0.03),
+                                            radius: 4,
+                                            x: 0,
+                                            y: 2
+                                        )) :
+                                    AnyView(Color.clear)
+                            )
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -320,11 +344,12 @@ struct UnifiedMonthView: View {
                             Text("no time tracked this month")
                                 .font(.custom("Major Mono Display Regular", size: 12))
                                 .foregroundColor(.secondary)
+                                .padding(.top, themeManager.spacing.large)
                         }
                     }
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, themeManager.spacing.contentHorizontal)
                 }
-                .padding(.bottom, 50)
+                .padding(.bottom, themeManager.spacing.xLarge)
                 
                 // Settings button at bottom
                 VStack(spacing: 0) {
@@ -334,11 +359,12 @@ struct UnifiedMonthView: View {
                         Text("settings")
                             .font(.custom("Major Mono Display Regular", size: 18))
                             .foregroundColor(.primary)
+                            .frame(minHeight: themeManager.spacing.minTouchTarget)
                     }
-                    .padding(.bottom, 24)
+                    .padding(.bottom, themeManager.spacing.safeAreaBottom)
                 }
             }
-            .background(Color(.systemBackground))
+            .themedBackground()
             .blur(radius: (showingSettings || showingDayEditSheet) ? 3 : 0)
             .animation(.easeInOut(duration: 0.2), value: showingSettings || showingDayEditSheet)
             .gesture(
