@@ -23,7 +23,7 @@ struct TimerParticleView: View {
                 let alpha = CGFloat(particle.alpha)
                 
                 let rect = CGRect(x: x - scale/2, y: y - scale/2, width: scale, height: scale)
-                context.fill(Path(ellipseIn: rect), with: .color(.primary.opacity(alpha)))
+                context.fill(Path(ellipseIn: rect), with: .color(.white.opacity(alpha)))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -200,12 +200,27 @@ struct CalendarDayView: View {
                         }
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius)
-                            .stroke(
-                                hasTimeEntry && !isToday && themeManager.currentTheme == .default ? 
-                                    Color.primary : Color.clear, 
-                                lineWidth: 1
-                            )
+                        Group {
+                            if hasTimeEntry && !isToday {
+                                if themeManager.currentTheme == .liquidGlass {
+                                    RoundedRectangle(cornerRadius: cornerRadius)
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    Color.white.opacity(0.3),
+                                                    Color.white.opacity(0.1)
+                                                ]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                } else {
+                                    RoundedRectangle(cornerRadius: cornerRadius)
+                                        .stroke(Color.primary, lineWidth: 1)
+                                }
+                            }
+                        }
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {

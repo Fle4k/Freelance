@@ -11,11 +11,29 @@ import SwiftUI
 
 struct ThemedBackgroundModifier: ViewModifier {
     @ObservedObject var themeManager = ThemeManager.shared
+    @Environment(\.colorScheme) var colorScheme
     
     func body(content: Content) -> some View {
         if themeManager.useMaterialBackground {
             content
-                .background(themeManager.backgroundMaterial)
+                .background(
+                    ZStack {
+                        // Anthracite to black gradient
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.2, green: 0.2, blue: 0.2), // Anthracite
+                                Color.black
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        
+                        // Material overlay for depth
+                        Color.clear
+                            .background(themeManager.backgroundMaterial)
+                    }
+                    .ignoresSafeArea()
+                )
         } else {
             content
                 .background(Color(.systemBackground))
@@ -37,14 +55,7 @@ struct ThemedCardModifier: ViewModifier {
         if themeManager.currentTheme == .liquidGlass {
             content
                 .padding(padding)
-                .background(themeManager.ultraThinMaterial)
-                .cornerRadius(themeManager.cornerRadius.large)
-                .shadow(
-                    color: Color.primary.opacity(themeManager.shadow.opacity),
-                    radius: themeManager.shadow.radius,
-                    x: 0,
-                    y: 4
-                )
+                .glassEffect(.regular.tint(.white.opacity(0.1)))
         } else {
             content
                 .padding(padding)
@@ -62,7 +73,7 @@ struct ThemedSectionBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         if themeManager.currentTheme == .liquidGlass {
             content
-                .background(themeManager.thinMaterial)
+                .glassEffect(.regular.tint(.primary.opacity(0.02)))
         } else {
             content
                 .background(Color(.systemBackground))
@@ -86,14 +97,7 @@ struct ThemedButtonModifier: ViewModifier {
             content
                 .padding(.horizontal, themeManager.spacing.medium)
                 .padding(.vertical, themeManager.spacing.itemSpacing)
-                .background(themeManager.ultraThinMaterial)
-                .cornerRadius(themeManager.cornerRadius.medium)
-                .shadow(
-                    color: Color.primary.opacity(0.05),
-                    radius: 4,
-                    x: 0,
-                    y: 2
-                )
+                .glassEffect(.regular.tint(.primary.opacity(0.03)).interactive())
         } else {
             content
                 .padding(.horizontal, themeManager.spacing.medium)
@@ -111,19 +115,25 @@ struct ThemedListRowModifier: ViewModifier {
         if themeManager.currentTheme == .liquidGlass {
             content
                 .padding(.vertical, themeManager.spacing.itemSpacing)
-                .background(
-                    RoundedRectangle(cornerRadius: themeManager.cornerRadius.medium)
-                        .fill(themeManager.ultraThinMaterial)
-                        .shadow(
-                            color: Color.primary.opacity(0.03),
-                            radius: 2,
-                            x: 0,
-                            y: 1
-                        )
-                )
+                .glassEffect(.regular.tint(.white.opacity(0.05)))
         } else {
             content
                 .padding(.vertical, themeManager.spacing.itemSpacing)
+        }
+    }
+}
+
+// MARK: - Glass List Row Modifier (for custom glass effect application)
+
+struct GlassListRowModifier: ViewModifier {
+    let isLiquidGlass: Bool
+    
+    func body(content: Content) -> some View {
+        if isLiquidGlass {
+            content
+                .glassEffect(.regular.tint(.white.opacity(0.05)))
+        } else {
+            content
         }
     }
 }

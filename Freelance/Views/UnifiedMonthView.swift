@@ -210,65 +210,64 @@ struct UnifiedMonthView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                // Top header with month, time, earnings
+                // Top header with earnings and time in pill
                 VStack(spacing: 0) {
-                    Spacer(minLength: themeManager.spacing.safeAreaTop)
+                    Spacer(minLength: themeManager.spacing.medium)
                     
                     if !months.isEmpty {
                         VStack(spacing: themeManager.spacing.medium) {
-                            // october 2025
+                            // earnings 185€
                             HStack {
-                                Text(getFormattedMonth(for: months[currentMonthIndex]))
-                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                Text("earnings")
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
                                     .foregroundColor(.primary)
                                 
                                 Spacer()
                                 
-                                Text(getFormattedYear(for: months[currentMonthIndex]))
-                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
                                     .foregroundColor(.primary)
                             }
                             
                             // time 04:37:39
                             HStack {
                                 Text("time")
-                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
                                     .foregroundColor(.primary)
                                 
                                 Spacer()
                                 
                                 Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
-                                    .font(.custom("Major Mono Display Regular", size: 16))
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            // earnings 185€
-                            HStack {
-                                Text("earnings")
-                                    .font(.custom("Major Mono Display Regular", size: 16))
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
-                                    .font(.custom("Major Mono Display Regular", size: 16))
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
                                     .foregroundColor(.primary)
                             }
                         }
-                        .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                        .padding(.horizontal, themeManager.spacing.xLarge)
                         .padding(.vertical, themeManager.spacing.medium)
                         .themedSectionBackground()
-                        .cornerRadius(themeManager.cornerRadius.large)
                         .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                        .shadow(
-                            color: themeManager.currentTheme == .liquidGlass ? Color.primary.opacity(0.05) : Color.clear,
-                            radius: themeManager.shadow.radius,
-                            x: 0,
-                            y: 4
-                        )
                     }
                 }
-                .padding(.bottom, themeManager.spacing.xLarge)
+                .padding(.bottom, themeManager.spacing.medium)
+                
+                // Month and Year - part of calendar
+                if !months.isEmpty {
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text(getFormattedMonth(for: months[currentMonthIndex]))
+                                .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                            
+                            Text(getFormattedYear(for: months[currentMonthIndex]))
+                                .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
+                                .foregroundColor(.primary)
+                        }
+                        .padding(.bottom, themeManager.spacing.medium)
+                    }
+                    .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                }
                 
                 // Calendar
                 VStack(spacing: 0) {
@@ -292,7 +291,7 @@ struct UnifiedMonthView: View {
                 
                 // Scrollable list of tracked days
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: themeManager.spacing.small) {
+                    VStack(spacing: themeManager.currentTheme == .liquidGlass ? themeManager.spacing.small : 0) {
                         ForEach(monthEntries, id: \.0) { dayEntry in
                             HStack(spacing: themeManager.spacing.itemSpacing) {
                                 // Date column
@@ -318,19 +317,12 @@ struct UnifiedMonthView: View {
                                     .frame(minWidth: 60, alignment: .trailing)
                                     .lineLimit(1)
                             }
-                            .padding(.vertical, themeManager.spacing.itemSpacing)
-                            .padding(.horizontal, themeManager.spacing.medium)
-                            .background(
-                                themeManager.currentTheme == .liquidGlass ?
-                                    AnyView(RoundedRectangle(cornerRadius: themeManager.cornerRadius.medium)
-                                        .fill(themeManager.ultraThinMaterial)
-                                        .shadow(
-                                            color: Color.primary.opacity(0.03),
-                                            radius: 4,
-                                            x: 0,
-                                            y: 2
-                                        )) :
-                                    AnyView(Color.clear)
+                            .padding(.vertical, themeManager.currentTheme == .liquidGlass ? themeManager.spacing.itemSpacing : 8)
+                            .padding(.horizontal, themeManager.spacing.xLarge)
+                            .modifier(
+                                GlassListRowModifier(
+                                    isLiquidGlass: themeManager.currentTheme == .liquidGlass
+                                )
                             )
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -339,6 +331,7 @@ struct UnifiedMonthView: View {
                                 selectedDay = dayEntry.0
                             }
                         }
+                        .padding(.horizontal, themeManager.spacing.contentHorizontal)
                         
                         if monthEntries.isEmpty {
                             Text("no time tracked this month")
@@ -347,9 +340,10 @@ struct UnifiedMonthView: View {
                                 .padding(.top, themeManager.spacing.large)
                         }
                     }
-                    .padding(.horizontal, themeManager.spacing.contentHorizontal)
                 }
-                .padding(.bottom, themeManager.spacing.xLarge)
+                .padding(.bottom, themeManager.spacing.medium)
+                
+                Spacer()
                 
                 // Settings button at bottom
                 VStack(spacing: 0) {
@@ -359,8 +353,11 @@ struct UnifiedMonthView: View {
                         Text("settings")
                             .font(.custom("Major Mono Display Regular", size: 18))
                             .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity)
                             .frame(minHeight: themeManager.spacing.minTouchTarget)
                     }
+                    .themedButton()
+                    .padding(.horizontal, themeManager.spacing.contentHorizontal)
                     .padding(.bottom, themeManager.spacing.safeAreaBottom)
                 }
             }
