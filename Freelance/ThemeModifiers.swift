@@ -138,6 +138,27 @@ struct GlassListRowModifier: ViewModifier {
     }
 }
 
+// MARK: - Glass Button Modifier (for circular glass buttons like in TimerView)
+
+struct GlassButtonModifier: ViewModifier {
+    let isLiquidGlass: Bool
+    let size: CGFloat
+    
+    func body(content: Content) -> some View {
+        if isLiquidGlass {
+            content
+                .glassEffect(
+                    .regular
+                        .tint(.white.opacity(0.01))
+                        .interactive(),
+                    in: Circle()
+                )
+        } else {
+            content
+        }
+    }
+}
+
 // MARK: - SwiftUI View Extensions
 
 extension View {

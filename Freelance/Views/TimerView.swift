@@ -253,27 +253,6 @@ struct TimerView: View {
     }
 }
 
-// MARK: - Glass Button Modifier
-
-struct GlassButtonModifier: ViewModifier {
-    let isLiquidGlass: Bool
-    let size: CGFloat
-    
-    func body(content: Content) -> some View {
-        if isLiquidGlass {
-            content
-                .glassEffect(
-                    .regular
-                        .tint(.white.opacity(0.01))
-                        .interactive(),
-                    in: Circle()
-                )
-        } else {
-            content
-        }
-    }
-}
-
 #Preview {
     TimerView()
 }

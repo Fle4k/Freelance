@@ -54,7 +54,10 @@ struct CalendarView: View {
                         )
                     }
                 }
+                
+                Spacer(minLength: 0)
             }
+            .padding(.bottom, 8)
         }
     }
     
@@ -242,6 +245,3 @@ struct CalendarDayView: View {
 #Preview {
     CalendarView(period: .thisMonth, monthDate: Date())
 }
-
-
-
