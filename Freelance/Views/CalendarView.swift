@@ -22,12 +22,12 @@ struct CalendarView: View {
     }
     
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             // Days of week header
             HStack(spacing: 0) {
                 ForEach(getWeekdayHeaders(), id: \.self) { day in
                     Text(day)
-                        .font(.custom("Major Mono Display Regular", size: 13))
+                        .font(.custom("Major Mono Display Regular", size: 14))
                         .foregroundColor(.primary)
                         .frame(maxWidth: .infinity)
                 }
@@ -35,7 +35,7 @@ struct CalendarView: View {
             
             // Calculate cell size based on available width
             GeometryReader { geometry in
-                let spacing: CGFloat = themeManager.currentTheme == .liquidGlass ? 10 : 6
+                let spacing: CGFloat = themeManager.currentTheme == .liquidGlass ? 12 : 8
                 let totalSpacing = spacing * 6 // 6 gaps between 7 columns
                 let cellSize = (geometry.size.width - totalSpacing) / 7
                 
@@ -164,18 +164,18 @@ struct CalendarDayView: View {
     var body: some View {
         VStack(spacing: 0) {
             if day > 0 {
-                let cornerRadius = themeManager.currentTheme == .liquidGlass ? 
-                    themeManager.cornerRadius.medium : themeManager.cornerRadius.small
+                // Use smaller circle size to add padding
+                let circleSize = cellSize * 0.85
                 
                 Text("\(day)")
                     .font(.custom("Major Mono Display Regular", size: 14))
                     .foregroundColor(isToday ? (colorScheme == .dark ? .black : .white) : .primary)
-                    .frame(width: cellSize, height: cellSize)
+                    .frame(width: circleSize, height: circleSize)
                     .background(
                         Group {
                             if isToday {
                                 if themeManager.currentTheme == .liquidGlass {
-                                    RoundedRectangle(cornerRadius: cornerRadius)
+                                    Circle()
                                         .fill(colorScheme == .dark ? Color.white : Color.black)
                                         .shadow(
                                             color: (colorScheme == .dark ? Color.white : Color.black).opacity(0.3),
@@ -184,11 +184,11 @@ struct CalendarDayView: View {
                                             y: 4
                                         )
                                 } else {
-                                    RoundedRectangle(cornerRadius: cornerRadius)
+                                    Circle()
                                         .fill(colorScheme == .dark ? Color.white : Color.black)
                                 }
                             } else if hasTimeEntry && themeManager.currentTheme == .liquidGlass {
-                                RoundedRectangle(cornerRadius: cornerRadius)
+                                Circle()
                                     .fill(themeManager.ultraThinMaterial)
                                     .shadow(
                                         color: Color.primary.opacity(0.05),
@@ -197,7 +197,7 @@ struct CalendarDayView: View {
                                         y: 2
                                     )
                             } else {
-                                RoundedRectangle(cornerRadius: cornerRadius)
+                                Circle()
                                     .fill(Color.clear)
                             }
                         }
@@ -206,7 +206,7 @@ struct CalendarDayView: View {
                         Group {
                             if hasTimeEntry && !isToday {
                                 if themeManager.currentTheme == .liquidGlass {
-                                    RoundedRectangle(cornerRadius: cornerRadius)
+                                    Circle()
                                         .strokeBorder(
                                             LinearGradient(
                                                 gradient: Gradient(colors: [
@@ -219,13 +219,14 @@ struct CalendarDayView: View {
                                             lineWidth: 1
                                         )
                                 } else {
-                                    RoundedRectangle(cornerRadius: cornerRadius)
+                                    Circle()
                                         .stroke(Color.primary, lineWidth: 1)
                                 }
                             }
                         }
                     )
-                    .contentShape(Rectangle())
+                    .frame(width: cellSize, height: cellSize)
+                    .contentShape(Circle())
                     .onTapGesture {
                         if let date = getDateForDay(day) {
                             let impactFeedback = UIImpactFeedbackGenerator(style: .light)

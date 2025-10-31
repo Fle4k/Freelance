@@ -266,7 +266,7 @@ struct UnifiedMonthView: View {
                         .padding(.bottom, 12)
                     }
                     
-                    // Calendar - smaller with peeking adjacent months
+                    // Calendar - with peeking adjacent months
                     if !months.isEmpty {
                         TabView(selection: $currentMonthIndex) {
                             ForEach(0..<months.count, id: \.self) { index in
@@ -275,16 +275,13 @@ struct UnifiedMonthView: View {
                                     impactFeedback.impactOccurred()
                                     selectedDay = selectedDate
                                 }
-                                .padding(.horizontal, themeManager.spacing.xLarge)
+                                .padding(.horizontal, themeManager.spacing.large)
                                 .padding(.vertical, themeManager.spacing.medium)
-                                .themedSectionBackground()
-                                .padding(.horizontal, themeManager.spacing.contentHorizontal)
                                 .tag(index)
                             }
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                        .frame(height: 270)
-                        .padding(.horizontal, 30)
+                        .frame(height: 300)
                         .padding(.bottom, themeManager.spacing.small)
                     }
                     

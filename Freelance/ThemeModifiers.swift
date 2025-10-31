@@ -73,7 +73,7 @@ struct ThemedSectionBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         if themeManager.currentTheme == .liquidGlass {
             content
-                .glassEffect(.regular.tint(.primary.opacity(0.0)))
+                .glassEffect(.regular.tint(Color.primary.opacity(0.0)))
         } else {
             content
                 .background(Color(.systemBackground))
@@ -149,7 +149,7 @@ struct GlassButtonModifier: ViewModifier {
             content
                 .glassEffect(
                     .regular
-                        .tint(.white.opacity(0.0))
+                        .tint(Color.white.opacity(0.0))
                         .interactive(),
                     in: Circle()
                 )
