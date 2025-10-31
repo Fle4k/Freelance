@@ -211,84 +211,81 @@ struct UnifiedMonthView: View {
         GeometryReader { geometry in
             ZStack {
                 VStack(spacing: 0) {
-                    // Top header with earnings and time in pill - now 64pt from top
-                    VStack(spacing: 0) {
-                        Spacer(minLength: 64)
-                        
-                        if !months.isEmpty {
-                            VStack(spacing: themeManager.spacing.medium) {
-                                // earnings 185€
-                                HStack {
-                                    Text("earnings")
-                                        .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
-                                    Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
-                                        .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
-                                        .foregroundColor(.primary)
-                                }
-                                
-                                // time 04:37:39
-                                HStack {
-                                    Text("time")
-                                        .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
-                                    Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
-                                        .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
-                                        .foregroundColor(.primary)
-                                }
-                            }
-                            .padding(.horizontal, themeManager.spacing.xLarge)
-                            .padding(.vertical, themeManager.spacing.medium)
-                            .themedSectionBackground()
-                            .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                        }
-                    }
-                    .padding(.bottom, themeManager.spacing.medium)
-                    
-                    // Month and Year - part of calendar
+                    Spacer(minLength: 20)
+                    // Top header with earnings and time - each in separate pill
                     if !months.isEmpty {
-                        VStack(spacing: 0) {
+                        VStack(spacing: themeManager.spacing.small) {
+                            // Earnings pill
                             HStack {
-                                Text(getFormattedMonth(for: months[currentMonthIndex]))
-                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
+                                Text("earnings")
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
                                     .foregroundColor(.primary)
                                 
                                 Spacer()
                                 
-                                Text(getFormattedYear(for: months[currentMonthIndex]))
-                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 16 : 18))
+                                Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
                                     .foregroundColor(.primary)
                             }
-                            .padding(.bottom, themeManager.spacing.medium)
+                            .padding(.horizontal, themeManager.spacing.xLarge)
+                            .padding(.vertical, themeManager.spacing.xLarge)
+                            .themedSectionBackground()
+                            
+                            // Time pill
+                            HStack {
+                                Text("time")
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                    .foregroundColor(.primary)
+                            }
+                            .padding(.horizontal, themeManager.spacing.xLarge)
+                            .padding(.vertical, themeManager.spacing.xLarge)
+                            .themedSectionBackground()
                         }
                         .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                        .padding(.top, 64)
+                        .padding(.bottom, themeManager.spacing.medium)
                     }
+                    Spacer(minLength: 20)
+                    
+                    // Month and Year - centered and closer together
+                    if !months.isEmpty {
+                        HStack(spacing: 8) {
+                            Text(getFormattedMonth(for: months[currentMonthIndex]))
+                                .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                .foregroundColor(.primary)
+                            
+                            Text(getFormattedYear(for: months[currentMonthIndex]))
+                                .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                .foregroundColor(.primary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 16)
+                    }
+                    Spacer(minLength: 12)
                     
                     // Calendar
-                    VStack(spacing: 0) {
-                        if !months.isEmpty {
-                            TabView(selection: $currentMonthIndex) {
-                                ForEach(0..<months.count, id: \.self) { index in
-                                    CalendarView(period: .thisMonth, monthDate: months[index]) { selectedDate in
-                                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                        impactFeedback.impactOccurred()
-                                        selectedDay = selectedDate
-                                    }
-                                    .tag(index)
+                    if !months.isEmpty {
+                        TabView(selection: $currentMonthIndex) {
+                            ForEach(0..<months.count, id: \.self) { index in
+                                CalendarView(period: .thisMonth, monthDate: months[index]) { selectedDate in
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                    impactFeedback.impactOccurred()
+                                    selectedDay = selectedDate
                                 }
+                                .tag(index)
                             }
-                            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                            .frame(height: 280)
-                            .padding(.horizontal, themeManager.spacing.contentHorizontal)
                         }
+                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                        .frame(height: 300)
+                        .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                        .padding(.bottom, themeManager.spacing.xLarge)
                     }
-                    .padding(.bottom, themeManager.spacing.xLarge)
                     
                     // Scrollable list of tracked days - now with responsive layout
                     ScrollView(.vertical, showsIndicators: false) {
@@ -386,6 +383,7 @@ struct UnifiedMonthView: View {
                 }
             }
         }
+        .ignoresSafeArea(edges: .top)
         .onAppear {
             setupMonths()
         }

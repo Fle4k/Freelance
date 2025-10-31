@@ -22,19 +22,19 @@ struct CalendarView: View {
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: themeManager.spacing.contentVertical) {
-                // Days of week header
-                HStack(spacing: 0) {
-                    ForEach(getWeekdayHeaders(), id: \.self) { day in
-                        Text(day)
-                            .font(.custom("Major Mono Display Regular", size: 15))
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity)
-                    }
+        VStack(spacing: themeManager.spacing.contentVertical) {
+            // Days of week header
+            HStack(spacing: 0) {
+                ForEach(getWeekdayHeaders(), id: \.self) { day in
+                    Text(day)
+                        .font(.custom("Major Mono Display Regular", size: 15))
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity)
                 }
-                
-                // Calculate cell size based on available width
+            }
+            
+            // Calculate cell size based on available width
+            GeometryReader { geometry in
                 let spacing: CGFloat = themeManager.currentTheme == .liquidGlass ? 12 : 8
                 let totalSpacing = spacing * 6 // 6 gaps between 7 columns
                 let cellSize = (geometry.size.width - totalSpacing) / 7
@@ -54,10 +54,7 @@ struct CalendarView: View {
                         )
                     }
                 }
-                
-                Spacer(minLength: 0)
             }
-            .padding(.bottom, 8)
         }
     }
     
