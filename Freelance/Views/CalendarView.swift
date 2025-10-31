@@ -22,12 +22,12 @@ struct CalendarView: View {
     }
     
     var body: some View {
-        VStack(spacing: themeManager.spacing.contentVertical) {
+        VStack(spacing: 6) {
             // Days of week header
             HStack(spacing: 0) {
                 ForEach(getWeekdayHeaders(), id: \.self) { day in
                     Text(day)
-                        .font(.custom("Major Mono Display Regular", size: 15))
+                        .font(.custom("Major Mono Display Regular", size: 13))
                         .foregroundColor(.primary)
                         .frame(maxWidth: .infinity)
                 }
@@ -35,24 +35,27 @@ struct CalendarView: View {
             
             // Calculate cell size based on available width
             GeometryReader { geometry in
-                let spacing: CGFloat = themeManager.currentTheme == .liquidGlass ? 12 : 8
+                let spacing: CGFloat = themeManager.currentTheme == .liquidGlass ? 10 : 6
                 let totalSpacing = spacing * 6 // 6 gaps between 7 columns
                 let cellSize = (geometry.size.width - totalSpacing) / 7
                 
-                // Calendar grid
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: 7), spacing: spacing) {
-                    ForEach(Array(getCalendarDays().enumerated()), id: \.offset) { index, day in
-                        CalendarDayView(
-                            day: day,
-                            hasTimeEntry: hasTimeEntry(for: day),
-                            isToday: isToday(day),
-                            cellSize: cellSize,
-                            onTap: { selectedDay in
-                                onDaySelected?(selectedDay)
-                            },
-                            getDateForDay: getDateForDay
-                        )
+                // Calendar grid - aligned to top
+                VStack(spacing: 0) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: 7), spacing: spacing) {
+                        ForEach(Array(getCalendarDays().enumerated()), id: \.offset) { index, day in
+                            CalendarDayView(
+                                day: day,
+                                hasTimeEntry: hasTimeEntry(for: day),
+                                isToday: isToday(day),
+                                cellSize: cellSize,
+                                onTap: { selectedDay in
+                                    onDaySelected?(selectedDay)
+                                },
+                                getDateForDay: getDateForDay
+                            )
+                        }
                     }
+                    Spacer(minLength: 0)
                 }
             }
         }
@@ -165,7 +168,7 @@ struct CalendarDayView: View {
                     themeManager.cornerRadius.medium : themeManager.cornerRadius.small
                 
                 Text("\(day)")
-                    .font(.custom("Major Mono Display Regular", size: 16))
+                    .font(.custom("Major Mono Display Regular", size: 14))
                     .foregroundColor(isToday ? (colorScheme == .dark ? .black : .white) : .primary)
                     .frame(width: cellSize, height: cellSize)
                     .background(

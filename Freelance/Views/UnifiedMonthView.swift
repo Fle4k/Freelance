@@ -210,8 +210,7 @@ struct UnifiedMonthView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                VStack(spacing: 0) {
-                    Spacer(minLength: 20)
+                VStack(spacing: 10) {
                     // Top header with earnings and time - each in separate pill
                     if !months.isEmpty {
                         VStack(spacing: themeManager.spacing.small) {
@@ -251,7 +250,6 @@ struct UnifiedMonthView: View {
                         .padding(.top, 64)
                         .padding(.bottom, themeManager.spacing.medium)
                     }
-                    Spacer(minLength: 20)
                     
                     // Month and Year - centered and closer together
                     if !months.isEmpty {
@@ -265,11 +263,10 @@ struct UnifiedMonthView: View {
                                 .foregroundColor(.primary)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 12)
                     }
-                    Spacer(minLength: 12)
                     
-                    // Calendar
+                    // Calendar - smaller with peeking adjacent months
                     if !months.isEmpty {
                         TabView(selection: $currentMonthIndex) {
                             ForEach(0..<months.count, id: \.self) { index in
@@ -278,13 +275,17 @@ struct UnifiedMonthView: View {
                                     impactFeedback.impactOccurred()
                                     selectedDay = selectedDate
                                 }
+                                .padding(.horizontal, themeManager.spacing.xLarge)
+                                .padding(.vertical, themeManager.spacing.medium)
+                                .themedSectionBackground()
+                                .padding(.horizontal, themeManager.spacing.contentHorizontal)
                                 .tag(index)
                             }
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                        .frame(height: 300)
-                        .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                        .padding(.bottom, themeManager.spacing.xLarge)
+                        .frame(height: 270)
+                        .padding(.horizontal, 30)
+                        .padding(.bottom, themeManager.spacing.small)
                     }
                     
                     // Scrollable list of tracked days - now with responsive layout

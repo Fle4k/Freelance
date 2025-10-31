@@ -55,7 +55,7 @@ struct ThemedCardModifier: ViewModifier {
         if themeManager.currentTheme == .liquidGlass {
             content
                 .padding(padding)
-                .glassEffect(.regular.tint(.white.opacity(0.1)))
+                .glassEffect(.regular.tint(.white.opacity(0.0)))
         } else {
             content
                 .padding(padding)
@@ -73,7 +73,7 @@ struct ThemedSectionBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         if themeManager.currentTheme == .liquidGlass {
             content
-                .glassEffect(.regular.tint(.primary.opacity(0.02)))
+                .glassEffect(.regular.tint(.primary.opacity(0.0)))
         } else {
             content
                 .background(Color(.systemBackground))
@@ -97,7 +97,7 @@ struct ThemedButtonModifier: ViewModifier {
             content
                 .padding(.horizontal, themeManager.spacing.medium)
                 .padding(.vertical, themeManager.spacing.itemSpacing)
-                .glassEffect(.regular.tint(.primary.opacity(0.03)).interactive())
+                .glassEffect(.regular.tint(.primary.opacity(0.0)).interactive())
         } else {
             content
                 .padding(.horizontal, themeManager.spacing.medium)
@@ -115,7 +115,7 @@ struct ThemedListRowModifier: ViewModifier {
         if themeManager.currentTheme == .liquidGlass {
             content
                 .padding(.vertical, themeManager.spacing.itemSpacing)
-                .glassEffect(.regular.tint(.white.opacity(0.05)))
+                .glassEffect(.regular.tint(.white.opacity(0.0)))
         } else {
             content
                 .padding(.vertical, themeManager.spacing.itemSpacing)
@@ -131,7 +131,7 @@ struct GlassListRowModifier: ViewModifier {
     func body(content: Content) -> some View {
         if isLiquidGlass {
             content
-                .glassEffect(.regular.tint(.white.opacity(0.05)))
+                .glassEffect(.regular.tint(.white.opacity(0.0)))
         } else {
             content
         }
@@ -149,7 +149,7 @@ struct GlassButtonModifier: ViewModifier {
             content
                 .glassEffect(
                     .regular
-                        .tint(.white.opacity(0.01))
+                        .tint(.white.opacity(0.0))
                         .interactive(),
                     in: Circle()
                 )

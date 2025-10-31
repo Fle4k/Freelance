@@ -35,131 +35,111 @@ struct TimerView: View {
     private let progressDelay: Double = 0.2
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Full screen background - always visible
-                if themeManager.useMaterialBackground {
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(red: 0.2, green: 0.2, blue: 0.2), // Anthracite
-                            Color.black
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+        ZStack {
+            // Background matching statistics view
+            Color.clear
+                .themedBackground()
+                .ignoresSafeArea()
+            
+            // White particles appear when timer is running (on top of background)
+            if timeTracker.isRunning {
+                TimerParticleView(isActive: true)
                     .ignoresSafeArea()
-                } else {
-                    Color(.systemBackground)
-                        .ignoresSafeArea()
-                }
-                
-                // White particles appear when timer is running (on top of background)
-                if timeTracker.isRunning {
-                    TimerParticleView(isActive: true)
-                        .ignoresSafeArea()
-                }
-                
+            }
+            
+            GeometryReader { geometry in
                 VStack(spacing: 0) {
                     Spacer()
                     
-                    // Timer Display
-                    HStack {
-                        Spacer()
+                    // Timer Display - pill style centered
+                    VStack(spacing: 8) {                        
                         Text(timeTracker.formattedElapsedTime)
-                            .font(.custom("Major Mono Display Regular", size: min(geometry.size.width * 0.15, 64)))
-                            .foregroundColor(themeManager.currentTheme == .liquidGlass ? .white : .primary)
-                            .shadow(
-                                color: themeManager.currentTheme == .liquidGlass ? Color.black.opacity(0.3) : Color.clear,
-                                radius: 8,
-                                x: 0,
-                                y: 4
-                            )
-                        Spacer()
+                            .font(.custom("Major Mono Display Regular", size: 48))
+                            .foregroundColor(.primary)
+                            .monospacedDigit()
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, themeManager.spacing.xLarge)
+                    .padding(.vertical, 32)
+                    .themedSectionBackground()
+                    .padding(.horizontal, themeManager.spacing.contentHorizontal)
                     
                     Spacer()
                     
-                    // Glass Effect Container for both buttons
+                    // Buttons Container
                     HStack {
                         Spacer()
-                        GlassEffectContainer {
-                            VStack(spacing: 40) {
-                                // Record/Pause Button
-                                Button(action: {
-                                    if !isLongPressing {
-                                        if timeTracker.isRunning {
-                                            timeTracker.pauseTimer()
-                                        } else {
-                                            timeTracker.startTimer()
-                                        }
-                                    }
-                                }) {
-                                    ZStack {
-                                        Color.clear
-                                            .frame(width: 64, height: 64)
-                                        
-                                        if timeTracker.isRunning {
-                                            Image(systemName: "stop.fill")
-                                                .font(.system(size: 22, weight: .regular))
-                                                .foregroundColor(.primary)
-                                                .contentTransition(.symbolEffect(.replace.downUp))
-                                                .animation(.easeInOut(duration: 0.3), value: timeTracker.isRunning)
-                                        } else {
-                                            Image(systemName: "play.fill")
-                                                .font(.system(size: 24, weight: .regular))
-                                                .foregroundColor(.primary)
-                                                .contentTransition(.symbolEffect(.replace.downUp))
-                                                .animation(.easeInOut(duration: 0.3), value: timeTracker.isRunning)
-                                                .offset(x: 1.5) // Optical centering for play triangle
-                                        }
+                        VStack(spacing: 40) {
+                            // Record/Pause Button
+                            Button(action: {
+                                if !isLongPressing {
+                                    if timeTracker.isRunning {
+                                        timeTracker.pauseTimer()
+                                    } else {
+                                        timeTracker.startTimer()
                                     }
                                 }
-                                .modifier(GlassButtonModifier(
-                                    isLiquidGlass: themeManager.currentTheme == .liquidGlass,
-                                    size: 64
-                                ))
-                                .scaleEffect(timeTracker.isRunning ? 1.05 : 1.0)
-                                .animation(.easeInOut(duration: 0.2), value: timeTracker.isRunning)
-                                .overlay(
-                                    Group {
-                                        if isLongPressing && longPressProgress > 0 {
-                                            ProgressCircle(progress: longPressProgress, size: 100)
-                                        }
-                                    }
-                                )
-                                .contentShape(Circle())
-                                .simultaneousGesture(
-                                    DragGesture(minimumDistance: 0)
-                                        .onChanged { _ in
-                                            if longPressTimer == nil {
-                                                startLongPress()
-                                            }
-                                        }
-                                        .onEnded { _ in
-                                            endLongPress()
-                                        }
-                                )
-                                
-                                // Menu Button
-                                Button(action: {
-                                    showingStatistics = true
-                                }) {
-                                    ZStack {
-                                        Color.clear
-                                            .frame(width: 64, height: 64)
-                                        
-                                        Image(systemName: "line.3.horizontal")
-                                            .font(.system(size: 20, weight: .regular))
+                            }) {
+                                ZStack {
+                                    Color.clear
+                                        .frame(width: 64, height: 64)
+                                    
+                                    if timeTracker.isRunning {
+                                        Image(systemName: "stop.fill")
+                                            .font(.system(size: 22, weight: .regular))
                                             .foregroundColor(.primary)
-                                            .symbolEffect(.disappear, isActive: showingStatistics)
+                                            .offset(x: 0, y: -0.5)
+                                    } else {
+                                        Image(systemName: "play.fill")
+                                            .font(.system(size: 24, weight: .regular))
+                                            .foregroundColor(.primary)
+                                            .offset(x: 1.5, y: 0)
                                     }
                                 }
-                                .modifier(GlassButtonModifier(
-                                    isLiquidGlass: themeManager.currentTheme == .liquidGlass,
-                                    size: 64
-                                ))
-                                .contentShape(Circle())
                             }
+                            .modifier(GlassButtonModifier(
+                                isLiquidGlass: themeManager.currentTheme == .liquidGlass,
+                                size: 64
+                            ))
+                            .overlay(
+                                Group {
+                                    if isLongPressing && longPressProgress > 0 {
+                                        ProgressCircle(progress: longPressProgress, size: 100)
+                                    }
+                                }
+                            )
+                            .contentShape(Circle())
+                            .simultaneousGesture(
+                                DragGesture(minimumDistance: 0)
+                                    .onChanged { _ in
+                                        if longPressTimer == nil {
+                                            startLongPress()
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        endLongPress()
+                                    }
+                            )
+                                
+                            // Menu Button
+                            Button(action: {
+                                showingStatistics = true
+                            }) {
+                                ZStack {
+                                    Color.clear
+                                        .frame(width: 64, height: 64)
+                                    
+                                    Image(systemName: "line.3.horizontal")
+                                        .font(.system(size: 20, weight: .regular))
+                                        .foregroundColor(.primary)
+                                        .offset(x: 0, y: -0.5)
+                                }
+                            }
+                            .modifier(GlassButtonModifier(
+                                isLiquidGlass: themeManager.currentTheme == .liquidGlass,
+                                size: 64
+                            ))
+                            .contentShape(Circle())
                         }
                         Spacer()
                     }
@@ -167,7 +147,6 @@ struct TimerView: View {
                 }
             }
         }
-        .ignoresSafeArea()
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             timeTracker.updateElapsedTime()
         }
