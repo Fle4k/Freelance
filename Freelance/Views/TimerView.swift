@@ -7,17 +7,18 @@
 
 import SwiftUI
 
-struct ProgressCircle: View {
+struct ProgressCapsule: View {
     let progress: Double
-    let size: CGFloat
+    let width: CGFloat
+    let height: CGFloat
     
     var body: some View {
-        Circle()
+        Capsule()
             .trim(from: 0, to: progress)
-            .stroke(Color.primary, lineWidth: 1)
-            .rotationEffect(.degrees(-90)) // Start from top and go counter-clockwise
-            .scaleEffect(x: -1, y: 1) // Flip horizontally for true counter-clockwise
-            .frame(width: size, height: size)
+            .stroke(Color.primary, lineWidth: 2)
+            .rotationEffect(.degrees(-90))
+            .scaleEffect(x: -1, y: 1)
+            .frame(width: width, height: height)
     }
 }
 
@@ -29,6 +30,7 @@ struct TimerView: View {
     @State private var longPressProgress: Double = 0.0
     @State private var isLongPressing = false
     @State private var longPressTimer: Timer?
+    @State private var isTapped = false
     @Environment(\.colorScheme) var colorScheme
     
     private let longPressDuration: Double = 0.8
@@ -41,111 +43,98 @@ struct TimerView: View {
                 .themedBackground()
                 .ignoresSafeArea()
             
-            // White particles appear when timer is running (on top of background)
-            if timeTracker.isRunning {
-                TimerParticleView(isActive: true)
-                    .ignoresSafeArea()
+            // White particles (always visible, behavior changes based on running state)
+            TimerParticleView(isActive: timeTracker.isRunning)
+                .ignoresSafeArea()
+            
+            VStack {
+                Spacer()
+                
+                // Timer Display - pill style centered with tap and long press
+                VStack(spacing: 8) {                        
+                    Text(timeTracker.formattedElapsedTime)
+                        .font(.custom("Major Mono Display Regular", size: 48))
+                        .foregroundColor(timeTracker.isRunning ? .primary : .secondary)
+                        .monospacedDigit()
+                        .animation(.easeInOut(duration: 0.2), value: timeTracker.isRunning)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, themeManager.spacing.xLarge)
+                .padding(.vertical, 32)
+                .themedSectionBackground()
+                .overlay(
+                    Group {
+                        if isLongPressing && longPressProgress > 0 {
+                            ProgressCapsule(
+                                progress: longPressProgress,
+                                width: UIScreen.main.bounds.width - (themeManager.spacing.contentHorizontal * 2),
+                                height: 112
+                            )
+                        }
+                    }
+                )
+                .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                .scaleEffect(isTapped ? 0.95 : 1.0)
+                .opacity(isTapped ? 0.8 : 1.0)
+                .animation(.easeInOut(duration: 0.1), value: isTapped)
+                .contentShape(Capsule())
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            if longPressTimer == nil {
+                                isTapped = true
+                                startLongPress()
+                            }
+                        }
+                        .onEnded { _ in
+                            // Delay the tap animation reset slightly
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isTapped = false
+                            }
+                            
+                            // Check if it was a tap (not long press)
+                            if !isLongPressing && longPressProgress < 0.1 {
+                                if timeTracker.isRunning {
+                                    timeTracker.pauseTimer()
+                                } else {
+                                    timeTracker.startTimer()
+                                }
+                            }
+                            
+                            endLongPress()
+                        }
+                )
+                
+                Spacer()
             }
             
-            GeometryReader { geometry in
-                VStack(spacing: 0) {
+            // Floating menu button in bottom right corner
+            VStack {
+                Spacer()
+                HStack {
                     Spacer()
-                    
-                    // Timer Display - pill style centered
-                    VStack(spacing: 8) {                        
-                        Text(timeTracker.formattedElapsedTime)
-                            .font(.custom("Major Mono Display Regular", size: 48))
-                            .foregroundColor(.primary)
-                            .monospacedDigit()
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, themeManager.spacing.xLarge)
-                    .padding(.vertical, 32)
-                    .themedSectionBackground()
-                    .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                    
-                    Spacer()
-                    
-                    // Buttons Container
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 40) {
-                            // Record/Pause Button
-                            Button(action: {
-                                if !isLongPressing {
-                                    if timeTracker.isRunning {
-                                        timeTracker.pauseTimer()
-                                    } else {
-                                        timeTracker.startTimer()
-                                    }
-                                }
-                            }) {
-                                ZStack {
-                                    Color.clear
-                                        .frame(width: 64, height: 64)
-                                    
-                                    if timeTracker.isRunning {
-                                        Image(systemName: "stop.fill")
-                                            .font(.system(size: 22, weight: .regular))
-                                            .foregroundColor(.primary)
-                                            .offset(x: 0, y: -0.5)
-                                    } else {
-                                        Image(systemName: "play.fill")
-                                            .font(.system(size: 24, weight: .regular))
-                                            .foregroundColor(.primary)
-                                            .offset(x: 1.5, y: 0)
-                                    }
-                                }
-                            }
-                            .modifier(GlassButtonModifier(
-                                isLiquidGlass: themeManager.currentTheme == .liquidGlass,
-                                size: 64
-                            ))
-                            .overlay(
-                                Group {
-                                    if isLongPressing && longPressProgress > 0 {
-                                        ProgressCircle(progress: longPressProgress, size: 100)
-                                    }
-                                }
-                            )
-                            .contentShape(Circle())
-                            .simultaneousGesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { _ in
-                                        if longPressTimer == nil {
-                                            startLongPress()
-                                        }
-                                    }
-                                    .onEnded { _ in
-                                        endLongPress()
-                                    }
-                            )
-                                
-                            // Menu Button
-                            Button(action: {
-                                showingStatistics = true
-                            }) {
-                                ZStack {
-                                    Color.clear
-                                        .frame(width: 64, height: 64)
-                                    
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.system(size: 20, weight: .regular))
-                                        .foregroundColor(.primary)
-                                        .offset(x: 0, y: -0.5)
-                                }
-                            }
-                            .modifier(GlassButtonModifier(
-                                isLiquidGlass: themeManager.currentTheme == .liquidGlass,
-                                size: 64
-                            ))
-                            .contentShape(Circle())
+                    Button(action: {
+                        showingStatistics = true
+                    }) {
+                        ZStack {
+                            Color.clear
+                                .frame(width: 64, height: 64)
+                            
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 20, weight: .regular))
+                                .foregroundColor(.primary)
                         }
-                        Spacer()
                     }
-                    .padding(.bottom, 80)
+                    .modifier(GlassButtonModifier(
+                        isLiquidGlass: themeManager.currentTheme == .liquidGlass,
+                        size: 64
+                    ))
+                    .contentShape(Circle())
+                    .padding(.trailing, themeManager.spacing.medium)
+                    .padding(.bottom, themeManager.spacing.medium)
                 }
             }
+            .ignoresSafeArea(edges: .bottom)
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             timeTracker.updateElapsedTime()

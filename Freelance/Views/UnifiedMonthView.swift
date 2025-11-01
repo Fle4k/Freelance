@@ -533,6 +533,7 @@ struct UnifiedMonthView: View {
                     .padding(.bottom, themeManager.spacing.medium)
                 }
             }
+            .ignoresSafeArea(edges: .bottom)
             
             // Custom edit alert
             if showEditAlert {
