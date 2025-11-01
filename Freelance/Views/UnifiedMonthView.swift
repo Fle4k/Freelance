@@ -20,6 +20,14 @@ struct UnifiedMonthView: View {
     @State private var showingDayEditSheet = false
     @State private var showingRemoveConfirmation = false
     @State private var showingSettings = false
+    @State private var expandedDay: Date?
+    @State private var editingDay: Date?
+    @State private var showEditAlert = false
+    @State private var editTimeHours = 0
+    @State private var editTimeMinutes = 0
+    @State private var editEarnings = 0.0
+    @State private var showConfirmation = false
+    @State private var previousEntries: [Date: [TimeEntry]] = [:]
     
     private var monthEntries: [(Date, [TimeEntry])] {
         let calendar = Calendar.current
@@ -127,6 +135,47 @@ struct UnifiedMonthView: View {
         return formatter.string(from: date).lowercased()
     }
     
+    private func formatTimeRange(_ entry: TimeEntry) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = settings.use24HourFormat ? "HH:mm" : "h:mm a"
+        
+        let startTime = formatter.string(from: entry.startDate)
+        let endTime: String
+        
+        if let endDate = entry.endDate {
+            endTime = formatter.string(from: endDate)
+        } else if entry.isActive {
+            endTime = "now"
+        } else {
+            endTime = "---"
+        }
+        
+        return "\(startTime) - \(endTime)".lowercased()
+    }
+    
+    private func formatSessionDuration(_ entry: TimeEntry) -> String {
+        let duration: TimeInterval
+        if entry.isActive {
+            duration = Date().timeIntervalSince(entry.startDate)
+        } else {
+            duration = entry.duration
+        }
+        
+        let hours = Int(duration) / 3600
+        let minutes = (Int(duration) % 3600) / 60
+        return String(format: "%d:%02d", hours, minutes)
+    }
+    
+    private func calculateSessionEarnings(_ entry: TimeEntry) -> Double {
+        let duration: TimeInterval
+        if entry.isActive {
+            duration = Date().timeIntervalSince(entry.startDate)
+        } else {
+            duration = entry.duration
+        }
+        return duration / 3600 * settings.hourlyRate
+    }
+    
     private func formatDayDuration(for date: Date) -> String {
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
@@ -208,13 +257,15 @@ struct UnifiedMonthView: View {
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
+        ZStack {
+            GeometryReader { geometry in
                 VStack(spacing: 10) {
                     // Top header with earnings and time - each in separate pill
                     if !months.isEmpty {
-                        VStack(spacing: themeManager.spacing.small) {
-                            // Earnings pill
+                        Spacer()
+                        VStack(spacing: 20) {
+                            // Earnings
+
                             HStack {
                                 Text("earnings")
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 :
@@ -227,11 +278,8 @@ struct UnifiedMonthView: View {
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
                                     .foregroundColor(.primary)
                             }
-                            .padding(.horizontal, themeManager.spacing.xLarge)
-                            .padding(.vertical, themeManager.spacing.xLarge)
-                            .themedSectionBackground()
-                            
-                            // Time pill
+
+                            // Time
                             HStack {
                                 Text("time")
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
@@ -243,14 +291,12 @@ struct UnifiedMonthView: View {
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
                                     .foregroundColor(.primary)
                             }
-                            .padding(.horizontal, themeManager.spacing.xLarge)
-                            .padding(.vertical, themeManager.spacing.xLarge)
-                            .themedSectionBackground()
                         }
                         .padding(.horizontal, themeManager.spacing.contentHorizontal)
                         .padding(.top, themeManager.spacing.contentHorizontal)
                         .padding(.bottom, themeManager.spacing.xxLarge)
                     }
+                    Spacer()
                     
                     // Month and Year - centered and closer together
                     if !months.isEmpty {
@@ -282,7 +328,7 @@ struct UnifiedMonthView: View {
                             }
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                        .frame(height: 300)
+                        .frame(height: 290)
                         .padding(.bottom, themeManager.spacing.tiny)
                     }
                     
@@ -290,44 +336,149 @@ struct UnifiedMonthView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: themeManager.currentTheme == .liquidGlass ? themeManager.spacing.small : 0) {
                             ForEach(monthEntries, id: \.0) { dayEntry in
-                                HStack(spacing: 8) {
-                                    // Date column - flexible
-                                    Text(formatDate(dayEntry.0))
-                                        .font(.custom("Major Mono Display Regular", size: 14))
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
-                                    
-                                    Spacer()
-                                    
-                                    // Time column - fixed minimum width
-                                    Text(formatDayDuration(for: dayEntry.0))
-                                        .font(.custom("Major Mono Display Regular", size: 14))
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
-                                        .frame(minWidth: 70, alignment: .trailing)
-                                    
-                                    // Earnings column - fixed minimum width
-                                    Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
-                                        .font(.custom("Major Mono Display Regular", size: 14))
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
-                                        .frame(minWidth: 50, alignment: .trailing)
-                                }
-                                .padding(.vertical, themeManager.currentTheme == .liquidGlass ? themeManager.spacing.itemSpacing : 8)
-                                .padding(.horizontal, 16)
-                                .modifier(
-                                    GlassListRowModifier(
-                                        isLiquidGlass: themeManager.currentTheme == .liquidGlass
+                                VStack(spacing: 0) {
+                                    // Main day row
+                                    HStack(spacing: 8) {
+                                        // Date column - flexible
+                                        Text(formatDate(dayEntry.0))
+                                            .font(.custom("Major Mono Display Regular", size: 14))
+                                            .foregroundColor(.primary)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
+                                        
+                                        Spacer()
+                                        
+                                        // Time column - fixed minimum width
+                                        Text(formatDayDuration(for: dayEntry.0))
+                                            .font(.custom("Major Mono Display Regular", size: 14))
+                                            .foregroundColor(.primary)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
+                                            .frame(minWidth: 70, alignment: .trailing)
+                                        
+                                        // Earnings column - fixed minimum width
+                                        Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
+                                            .font(.custom("Major Mono Display Regular", size: 14))
+                                            .foregroundColor(.primary)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
+                                            .frame(minWidth: 50, alignment: .trailing)
+                                    }
+                                    .padding(.vertical, themeManager.currentTheme == .liquidGlass ? themeManager.spacing.itemSpacing : 8)
+                                    .padding(.horizontal, 16)
+                                    .modifier(
+                                        GlassListRowModifier(
+                                            isLiquidGlass: themeManager.currentTheme == .liquidGlass
+                                        )
                                     )
-                                )
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                    impactFeedback.impactOccurred()
-                                    selectedDay = dayEntry.0
+                                    .contentShape(Rectangle())
+                                    .simultaneousGesture(
+                                        TapGesture()
+                                            .onEnded {
+                                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                                impactFeedback.impactOccurred()
+                                                withAnimation(.easeInOut(duration: 0.2)) {
+                                                    if expandedDay == dayEntry.0 {
+                                                        expandedDay = nil
+                                                    } else {
+                                                        expandedDay = dayEntry.0
+                                                    }
+                                                }
+                                            }
+                                    )
+                                    .simultaneousGesture(
+                                        LongPressGesture(minimumDuration: 0.5)
+                                            .onEnded { _ in
+                                                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                                impactFeedback.impactOccurred()
+                                                openEditAlert(for: dayEntry.0)
+                                            }
+                                    )
+                                    
+                                    // Expanded session details
+                                    if expandedDay == dayEntry.0 {
+                                        VStack(spacing: themeManager.currentTheme == .liquidGlass ? 4 : 2) {
+                                            if timeTracker.isDayManuallyEdited(for: dayEntry.0) {
+                                                // Show "data changed by user" centered
+                                                Text("data changed by user")
+                                                    .font(.custom("Major Mono Display Regular", size: 14))
+                                                    .foregroundColor(.secondary)
+                                                    .frame(maxWidth: .infinity, alignment: .center)
+                                                    .padding(.vertical, 4)
+                                                    .padding(.horizontal, 16)
+                                                
+                                                // Show previous entries with strikethrough if available
+                                                if let prevEntries = previousEntries[dayEntry.0] {
+                                                    ForEach(prevEntries) { entry in
+                                                        HStack(spacing: 8) {
+                                                            // Time range column
+                                                            Text(formatTimeRange(entry))
+                                                                .font(.custom("Major Mono Display Regular", size: 14))
+                                                                .foregroundColor(.secondary)
+                                                                .lineLimit(1)
+                                                                .minimumScaleFactor(0.8)
+                                                                .strikethrough()
+                                                            
+                                                            Spacer()
+                                                            
+                                                            // Session duration
+                                                            Text(formatSessionDuration(entry))
+                                                                .font(.custom("Major Mono Display Regular", size: 14))
+                                                                .foregroundColor(.secondary)
+                                                                .lineLimit(1)
+                                                                .minimumScaleFactor(0.8)
+                                                                .strikethrough()
+                                                            
+                                                            // Session earnings
+                                                            Text(String(format: "%.0f€", calculateSessionEarnings(entry)))
+                                                                .font(.custom("Major Mono Display Regular", size: 14))
+                                                                .foregroundColor(.secondary)
+                                                                .lineLimit(1)
+                                                                .minimumScaleFactor(0.8)
+                                                                .frame(minWidth: 50, alignment: .trailing)
+                                                                .strikethrough()
+                                                        }
+                                                        .padding(.vertical, 4)
+                                                        .padding(.horizontal, 16)
+                                                    }
+                                                }
+                                            } else {
+                                                // Show individual time entries for normal tracked days
+                                                ForEach(dayEntry.1) { entry in
+                                                    HStack(spacing: 8) {
+                                                        // Time range column
+                                                        Text(formatTimeRange(entry))
+                                                            .font(.custom("Major Mono Display Regular", size: 14))
+                                                            .foregroundColor(.secondary)
+                                                            .lineLimit(1)
+                                                            .minimumScaleFactor(0.8)
+                                                        
+                                                        Spacer()
+                                                        
+                                                        // Session duration
+                                                        Text(formatSessionDuration(entry))
+                                                            .font(.custom("Major Mono Display Regular", size: 14))
+                                                            .foregroundColor(.secondary)
+                                                            .lineLimit(1)
+                                                            .minimumScaleFactor(0.8)
+                                                        
+                                                        // Session earnings
+                                                        Text(String(format: "%.0f€", calculateSessionEarnings(entry)))
+                                                            .font(.custom("Major Mono Display Regular", size: 14))
+                                                            .foregroundColor(.secondary)
+                                                            .lineLimit(1)
+                                                            .minimumScaleFactor(0.8)
+                                                            .frame(minWidth: 50, alignment: .trailing)
+                                                    }
+                                                    .padding(.vertical, 4)
+                                                    .padding(.horizontal, 16)
+                                                }
+                                            }
+                                        }
+                                        .padding(.top, 4)
+                                        .padding(.bottom, 4)
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                    }
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -343,8 +494,8 @@ struct UnifiedMonthView: View {
                     }
                 }
                 .themedBackground()
-                .blur(radius: (showingSettings || showingDayEditSheet) ? 3 : 0)
-                .animation(.easeInOut(duration: 0.2), value: showingSettings || showingDayEditSheet)
+                .blur(radius: (showingSettings || showingDayEditSheet || showEditAlert) ? 3 : 0)
+                .animation(.easeInOut(duration: 0.2), value: showingSettings || showingDayEditSheet || showEditAlert)
                 .gesture(
                     DragGesture(minimumDistance: 50)
                         .onEnded { value in
@@ -353,36 +504,118 @@ struct UnifiedMonthView: View {
                             }
                         }
                 )
-                
-                // Floating settings button in bottom right corner
-                VStack {
+                .ignoresSafeArea(edges: .top)
+            }
+            
+            // Floating settings button in bottom right corner
+            VStack {
+                Spacer()
+                HStack {
                     Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            showingSettings = true
-                        }) {
-                            ZStack {
-                                Color.clear
-                                    .frame(width: 64, height: 64)
-                                
-                                Image(systemName: "gearshape.fill")
-                                    .font(.system(size: 24, weight: .regular))
-                                    .foregroundColor(.primary)
-                            }
+                    Button(action: {
+                        showingSettings = true
+                    }) {
+                        ZStack {
+                            Color.clear
+                                .frame(width: 64, height: 64)
+                            
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 24, weight: .regular))
+                                .foregroundColor(.primary)
                         }
-                        .modifier(GlassButtonModifier(
-                            isLiquidGlass: themeManager.currentTheme == .liquidGlass,
-                            size: 64
-                        ))
-                        .contentShape(Circle())
-                        .padding(.trailing, themeManager.spacing.medium)
-                        .padding(.bottom, themeManager.spacing.medium)
                     }
+                    .modifier(GlassButtonModifier(
+                        isLiquidGlass: themeManager.currentTheme == .liquidGlass,
+                        size: 64
+                    ))
+                    .contentShape(Circle())
+                    .padding(.trailing, themeManager.spacing.medium)
+                    .padding(.bottom, themeManager.spacing.medium)
                 }
             }
+            
+            // Custom edit alert
+            if showEditAlert {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showEditAlert = false
+                    }
+                
+                VStack(spacing: 20) {
+                    // Earnings display (read-only)
+                    Text(String(format: "%.0f€", editEarnings))
+                        .font(.custom("Major Mono Display Regular", size: 24))
+                        .foregroundColor(.primary)
+                    
+                    // Time picker section
+                    HStack {
+                        Picker("Hours", selection: $editTimeHours) {
+                            ForEach(0..<24) { hour in
+                                Text("\(hour)h").tag(hour)
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(width: 80)
+                        .onChange(of: editTimeHours) { _, _ in
+                            updateEarningsFromTime()
+                        }
+                        
+                        Picker("Minutes", selection: $editTimeMinutes) {
+                            ForEach(0..<60) { minute in
+                                Text("\(minute)m").tag(minute)
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(width: 80)
+                        .onChange(of: editTimeMinutes) { _, _ in
+                            updateEarningsFromTime()
+                        }
+                    }
+                    
+                    // Action buttons
+                    HStack(spacing: 16) {
+                        Button(action: {
+                            showEditAlert = false
+                        }) {
+                            Text("cancel")
+                                .font(.custom("Major Mono Display Regular", size: 14))
+                                .foregroundColor(.primary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color.secondary.opacity(0.2))
+                                .cornerRadius(8)
+                        }
+                        
+                        Button(action: {
+                            showConfirmation = true
+                        }) {
+                            Text("change")
+                                .font(.custom("Major Mono Display Regular", size: 14))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color.blue)
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+                .padding(24)
+                .frame(width: 300)
+                .background(
+                    themeManager.currentTheme == .liquidGlass ?
+                    AnyView(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(.ultraThinMaterial)
+                    ) :
+                    AnyView(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(UIColor.systemBackground))
+                    )
+                )
+                .transition(.scale.combined(with: .opacity))
+            }
         }
-        .ignoresSafeArea(edges: .top)
         .onAppear {
             setupMonths()
         }
@@ -409,6 +642,12 @@ struct UnifiedMonthView: View {
             if let day = selectedDay {
                 Text("are you sure you want to remove all data for \(formatDate(day).lowercased())? this will permanently delete all time entries for this day.")
             }
+        }
+        .confirmationDialog("do you really want to change the tracked time? all previous tracked data for this day will be overwritten.", isPresented: $showConfirmation, titleVisibility: .visible) {
+            Button("confirm", role: .destructive) {
+                confirmEdit()
+            }
+            Button("cancel", role: .cancel) { }
         }
     }
     
@@ -454,6 +693,65 @@ struct UnifiedMonthView: View {
         guard let day = selectedDay else { return }
         timeTracker.deleteDayData(for: day)
         selectedDay = nil
+    }
+    
+    private func openEditAlert(for date: Date) {
+        editingDay = date
+        
+        // Get current duration for the day
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
+        
+        var dayEntries = timeTracker.timeEntries.filter { entry in
+            entry.startDate >= dayStart && entry.startDate < dayEnd
+        }
+        
+        if let currentStart = timeTracker.currentSessionStart,
+           currentStart >= dayStart && currentStart < dayEnd {
+            let currentEntry = TimeEntry(startDate: currentStart, endDate: nil, isActive: true)
+            dayEntries.append(currentEntry)
+        }
+        
+        // Store previous entries before editing (only if not already manually edited)
+        if !timeTracker.isDayManuallyEdited(for: date) && !dayEntries.isEmpty {
+            previousEntries[date] = dayEntries
+        }
+        
+        let totalDuration = dayEntries.reduce(0) { total, entry in
+            if entry.isActive {
+                return total + Date().timeIntervalSince(entry.startDate)
+            } else {
+                return total + entry.duration
+            }
+        }
+        
+        // Set initial values
+        let totalSeconds = Int(totalDuration)
+        editTimeHours = totalSeconds / 3600
+        editTimeMinutes = (totalSeconds % 3600) / 60
+        editEarnings = totalDuration / 3600 * settings.hourlyRate
+        
+        showEditAlert = true
+    }
+    
+    private func updateEarningsFromTime() {
+        let totalSeconds = Double(editTimeHours * 3600 + editTimeMinutes * 60)
+        editEarnings = totalSeconds / 3600 * settings.hourlyRate
+    }
+    
+    private func confirmEdit() {
+        guard let day = editingDay else { return }
+        
+        let totalSeconds = TimeInterval(editTimeHours * 3600 + editTimeMinutes * 60)
+        timeTracker.editDayTime(for: day, newTime: totalSeconds)
+        
+        showEditAlert = false
+        showConfirmation = false
+        editingDay = nil
+        
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
     }
 }
 

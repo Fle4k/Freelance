@@ -37,17 +37,22 @@ struct CalendarView: View {
             GeometryReader { geometry in
                 let spacing: CGFloat = themeManager.currentTheme == .liquidGlass ? 12 : 8
                 let totalSpacing = spacing * 6 // 6 gaps between 7 columns
-                let cellSize = (geometry.size.width - totalSpacing) / 7
+                let cellWidth = (geometry.size.width - totalSpacing) / 7
+                
+                // Match list row height: font size 14 + vertical padding
+                let verticalPadding: CGFloat = themeManager.currentTheme == .liquidGlass ? themeManager.spacing.itemSpacing : 8
+                let cellHeight: CGFloat = 14 + (verticalPadding * 2)
                 
                 // Calendar grid - aligned to top
                 VStack(spacing: 0) {
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: 7), spacing: spacing) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(cellWidth), spacing: spacing), count: 7), spacing: spacing) {
                         ForEach(Array(getCalendarDays().enumerated()), id: \.offset) { index, day in
                             CalendarDayView(
                                 day: day,
                                 hasTimeEntry: hasTimeEntry(for: day),
                                 isToday: isToday(day),
-                                cellSize: cellSize,
+                                cellWidth: cellWidth,
+                                cellHeight: cellHeight,
                                 onTap: { selectedDay in
                                     onDaySelected?(selectedDay)
                                 },
@@ -155,7 +160,8 @@ struct CalendarDayView: View {
     let day: Int
     let hasTimeEntry: Bool
     let isToday: Bool
-    let cellSize: CGFloat
+    let cellWidth: CGFloat
+    let cellHeight: CGFloat
     let onTap: ((Date) -> Void)?
     let getDateForDay: (Int) -> Date?
     @Environment(\.colorScheme) var colorScheme
@@ -164,8 +170,8 @@ struct CalendarDayView: View {
     var body: some View {
         VStack(spacing: 0) {
             if day > 0 {
-                // Use smaller circle size to add padding
-                let circleSize = cellSize * 0.85
+                // Use the smaller dimension for circle size
+                let circleSize = min(cellWidth, cellHeight) * 0.85
                 
                 Text("\(day)")
                     .font(.custom("Major Mono Display Regular", size: 14))
@@ -197,8 +203,8 @@ struct CalendarDayView: View {
                             circleSize: circleSize
                         )
                     )
-                    .frame(width: cellSize, height: cellSize)
-                    .contentShape(Circle())
+                    .frame(width: cellWidth, height: cellHeight)
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         if let date = getDateForDay(day) {
                             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -209,7 +215,7 @@ struct CalendarDayView: View {
             } else {
                 // Empty day
                 Text("")
-                    .frame(width: cellSize, height: cellSize)
+                    .frame(width: cellWidth, height: cellHeight)
             }
         }
     }
