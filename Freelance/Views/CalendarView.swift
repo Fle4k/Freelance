@@ -174,56 +174,28 @@ struct CalendarDayView: View {
                     .background(
                         Group {
                             if isToday {
-                                if themeManager.currentTheme == .liquidGlass {
-                                    Circle()
-                                        .fill(colorScheme == .dark ? Color.white : Color.black)
-                                        .shadow(
-                                            color: (colorScheme == .dark ? Color.white : Color.black).opacity(0.3),
-                                            radius: 8,
-                                            x: 0,
-                                            y: 4
-                                        )
-                                } else {
-                                    Circle()
-                                        .fill(colorScheme == .dark ? Color.white : Color.black)
-                                }
-                            } else if hasTimeEntry && themeManager.currentTheme == .liquidGlass {
                                 Circle()
-                                    .fill(themeManager.ultraThinMaterial)
+                                    .fill(colorScheme == .dark ? Color.white : Color.black)
                                     .shadow(
-                                        color: Color.primary.opacity(0.05),
-                                        radius: 4,
+                                        color: (colorScheme == .dark ? Color.white : Color.black).opacity(0.3),
+                                        radius: 8,
                                         x: 0,
-                                        y: 2
+                                        y: 4
                                     )
+                            } else if hasTimeEntry && themeManager.currentTheme != .liquidGlass {
+                                Circle()
+                                    .stroke(Color.primary, lineWidth: 1)
                             } else {
                                 Circle()
                                     .fill(Color.clear)
                             }
                         }
                     )
-                    .overlay(
-                        Group {
-                            if hasTimeEntry && !isToday {
-                                if themeManager.currentTheme == .liquidGlass {
-                                    Circle()
-                                        .strokeBorder(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color.white.opacity(0.3),
-                                                    Color.white.opacity(0.1)
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1
-                                        )
-                                } else {
-                                    Circle()
-                                        .stroke(Color.primary, lineWidth: 1)
-                                }
-                            }
-                        }
+                    .modifier(
+                        ConditionalGlassCircle(
+                            isLiquidGlass: themeManager.currentTheme == .liquidGlass && hasTimeEntry && !isToday,
+                            circleSize: circleSize
+                        )
                     )
                     .frame(width: cellSize, height: cellSize)
                     .contentShape(Circle())
@@ -239,6 +211,22 @@ struct CalendarDayView: View {
                 Text("")
                     .frame(width: cellSize, height: cellSize)
             }
+        }
+    }
+}
+
+// MARK: - Conditional Glass Circle Modifier
+
+struct ConditionalGlassCircle: ViewModifier {
+    let isLiquidGlass: Bool
+    let circleSize: CGFloat
+    
+    func body(content: Content) -> some View {
+        if isLiquidGlass {
+            content
+                .glassEffect(.regular.tint(Color.white.opacity(0.0)))
+        } else {
+            content
         }
     }
 }

@@ -123,7 +123,7 @@ struct UnifiedMonthView: View {
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "E dd.MM"
+        formatter.dateFormat = "E dd.MM.yy"
         return formatter.string(from: date).lowercased()
     }
     
@@ -217,7 +217,8 @@ struct UnifiedMonthView: View {
                             // Earnings pill
                             HStack {
                                 Text("earnings")
-                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 :
+                                                    24))
                                     .foregroundColor(.primary)
                                 
                                 Spacer()
@@ -247,8 +248,8 @@ struct UnifiedMonthView: View {
                             .themedSectionBackground()
                         }
                         .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                        .padding(.top, 64)
-                        .padding(.bottom, themeManager.spacing.medium)
+                        .padding(.top, themeManager.spacing.contentHorizontal)
+                        .padding(.bottom, themeManager.spacing.xxLarge)
                     }
                     
                     // Month and Year - centered and closer together
@@ -263,7 +264,7 @@ struct UnifiedMonthView: View {
                                 .foregroundColor(.primary)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.bottom, 12)
+                        .padding(.bottom, themeManager.spacing.small)
                     }
                     
                     // Calendar - with peeking adjacent months
@@ -282,7 +283,7 @@ struct UnifiedMonthView: View {
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                         .frame(height: 300)
-                        .padding(.bottom, themeManager.spacing.small)
+                        .padding(.bottom, themeManager.spacing.tiny)
                     }
                     
                     // Scrollable list of tracked days - now with responsive layout
@@ -375,8 +376,8 @@ struct UnifiedMonthView: View {
                             size: 64
                         ))
                         .contentShape(Circle())
-                        .padding(.trailing, themeManager.spacing.contentHorizontal)
-                        .padding(.bottom, themeManager.spacing.safeAreaBottom)
+                        .padding(.trailing, themeManager.spacing.medium)
+                        .padding(.bottom, themeManager.spacing.medium)
                     }
                 }
             }
