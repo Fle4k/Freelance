@@ -333,16 +333,20 @@ struct UnifiedMonthView: View {
                     }
                     
                     // Scrollable list of tracked days - now with responsive layout
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: themeManager.currentTheme == .liquidGlass ? themeManager.spacing.small : 0) {
-                            ForEach(monthEntries, id: \.0) { dayEntry in
+                    ScrollViewReader { proxy in
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: themeManager.currentTheme == .liquidGlass ? themeManager.spacing.small : 0) {
+                                ForEach(monthEntries, id: \.0) { dayEntry in
                                 VStack(spacing: 0) {
                                     // Main day row
                                     HStack(spacing: 8) {
+                                        let isTodayWithActiveTimer = Calendar.current.isDateInToday(dayEntry.0) && (timeTracker.isRunning || timeTracker.currentSessionStart != nil)
+                                        let textColor: Color = isTodayWithActiveTimer ? .white : .primary
+                                        
                                         // Date column - flexible
                                         Text(formatDate(dayEntry.0))
                                             .font(.custom("Major Mono Display Regular", size: 14))
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(textColor)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.8)
                                         
@@ -351,7 +355,7 @@ struct UnifiedMonthView: View {
                                         // Time column - fixed minimum width
                                         Text(formatDayDuration(for: dayEntry.0))
                                             .font(.custom("Major Mono Display Regular", size: 14))
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(textColor)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.8)
                                             .frame(minWidth: 70, alignment: .trailing)
@@ -359,7 +363,7 @@ struct UnifiedMonthView: View {
                                         // Earnings column - fixed minimum width
                                         Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
                                             .font(.custom("Major Mono Display Regular", size: 14))
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(textColor)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.8)
                                             .frame(minWidth: 50, alignment: .trailing)
@@ -368,7 +372,9 @@ struct UnifiedMonthView: View {
                                     .padding(.horizontal, 16)
                                     .modifier(
                                         GlassListRowModifier(
-                                            isLiquidGlass: themeManager.currentTheme == .liquidGlass
+                                            isLiquidGlass: themeManager.currentTheme == .liquidGlass,
+                                            isHighlighted: Calendar.current.isDate(dayEntry.0, inSameDayAs: selectedDay ?? Date.distantPast) || 
+                                                         (Calendar.current.isDateInToday(dayEntry.0) && (timeTracker.isRunning || timeTracker.currentSessionStart != nil))
                                         )
                                     )
                                     .contentShape(Rectangle())
@@ -480,6 +486,7 @@ struct UnifiedMonthView: View {
                                         .transition(.opacity.combined(with: .move(edge: .top)))
                                     }
                                 }
+                                .id(dayEntry.0)
                             }
                             .padding(.horizontal, 16)
                             
@@ -491,6 +498,14 @@ struct UnifiedMonthView: View {
                             }
                         }
                         .padding(.bottom, 100)
+                        }
+                        .onChange(of: selectedDay) { _, newDay in
+                            if let day = newDay {
+                                withAnimation {
+                                    proxy.scrollTo(day, anchor: .top)
+                                }
+                            }
+                        }
                     }
                 }
                 .themedBackground()

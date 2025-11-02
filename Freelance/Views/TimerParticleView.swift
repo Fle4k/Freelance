@@ -94,11 +94,7 @@ final class TimerParticleSystem: ObservableObject {
             self.isPaused = false
             print("▶️ Timer resumed at \(totalElapsedSeconds)s - \(particles.count) particles wrap again")
             
-            // Restore original velocities so particles flow naturally again
-            for i in particles.indices {
-                particles[i].velocityX = particles[i].originalVelocityX
-                particles[i].velocityY = particles[i].originalVelocityY
-            }
+            // Particles continue with their current direction (no velocity reset)
         }
         
         // Add particle for each new second (only when running)
@@ -198,9 +194,10 @@ final class TimerParticleSystem: ObservableObject {
                 }
             }
             
-            // Gentle floating animation
-            particles[i].x += particles[i].velocityX * 0.0016
-            particles[i].y += particles[i].velocityY * 0.0016
+            // Gentle floating animation (35% speed when paused)
+            let speedMultiplier: Float = isPaused ? 0.00056 : 0.0016
+            particles[i].x += particles[i].velocityX * speedMultiplier
+            particles[i].y += particles[i].velocityY * speedMultiplier
             
             // Keep constant size
             particles[i].size = particles[i].baseSize

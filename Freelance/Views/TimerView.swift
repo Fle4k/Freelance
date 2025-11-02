@@ -16,8 +16,6 @@ struct ProgressCapsule: View {
         Capsule()
             .trim(from: 0, to: progress)
             .stroke(Color.primary, lineWidth: 2)
-            .rotationEffect(.degrees(-90))
-            .scaleEffect(x: -1, y: 1)
             .frame(width: width, height: height)
     }
 }
@@ -62,6 +60,7 @@ struct TimerView: View {
                 .padding(.horizontal, themeManager.spacing.xLarge)
                 .padding(.vertical, 32)
                 .themedSectionBackground()
+                .opacity(timeTracker.isRunning ? 1.0 : 0.6)
                 .overlay(
                     Group {
                         if isLongPressing && longPressProgress > 0 {

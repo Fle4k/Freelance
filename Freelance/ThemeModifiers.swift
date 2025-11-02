@@ -127,13 +127,25 @@ struct ThemedListRowModifier: ViewModifier {
 
 struct GlassListRowModifier: ViewModifier {
     let isLiquidGlass: Bool
+    let isHighlighted: Bool
+    @Environment(\.colorScheme) var colorScheme
+    
+    init(isLiquidGlass: Bool, isHighlighted: Bool = false) {
+        self.isLiquidGlass = isLiquidGlass
+        self.isHighlighted = isHighlighted
+    }
     
     func body(content: Content) -> some View {
         if isLiquidGlass {
             content
-                .glassEffect(.regular.tint(.white.opacity(0.0)))
+                .glassEffect(.regular.tint(isHighlighted ? Color.white.opacity(0.05) : .white.opacity(0.0)))
         } else {
             content
+                .background(
+                    isHighlighted ? 
+                    Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06) : 
+                    Color.clear
+                )
         }
     }
 }

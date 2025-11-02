@@ -29,9 +29,10 @@ struct CalendarView: View {
                     Text(day)
                         .font(.custom("Major Mono Display Regular", size: 14))
                         .foregroundColor(.primary)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
+            .frame(height: 20)
             
             // Calculate cell size based on available width
             GeometryReader { geometry in
@@ -166,22 +167,24 @@ struct CalendarDayView: View {
     let getDateForDay: (Int) -> Date?
     @Environment(\.colorScheme) var colorScheme
     @ObservedObject private var themeManager = ThemeManager.shared
+    @ObservedObject private var timeTracker = TimeTracker.shared
     
     var body: some View {
         VStack(spacing: 0) {
             if day > 0 {
                 // Use the smaller dimension for circle size
-                let circleSize = min(cellWidth, cellHeight) * 0.85
+                let circleSize = min(cellWidth, cellHeight) * 0.95
+                let isTodayWithActiveTimer = isToday && (timeTracker.isRunning || timeTracker.currentSessionStart != nil)
                 
                 Text("\(day)")
                     .font(.custom("Major Mono Display Regular", size: 14))
-                    .foregroundColor(isToday ? (colorScheme == .dark ? .black : .white) : .primary)
+                    .foregroundColor(isTodayWithActiveTimer ? .black : (isToday ? (colorScheme == .dark ? .black : .white) : .primary))
                     .frame(width: circleSize, height: circleSize)
                     .background(
                         Group {
                             if isToday {
                                 Circle()
-                                    .fill(colorScheme == .dark ? Color.white : Color.black)
+                                    .fill(isTodayWithActiveTimer ? Color.white : (colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.2)))
                                     .shadow(
                                         color: (colorScheme == .dark ? Color.white : Color.black).opacity(0.3),
                                         radius: 8,
