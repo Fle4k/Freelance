@@ -138,13 +138,13 @@ struct GlassListRowModifier: ViewModifier {
     func body(content: Content) -> some View {
         if isLiquidGlass {
             content
-                .glassEffect(.regular.tint(isHighlighted ? Color.white.opacity(0.05) : .white.opacity(0.0)))
+                .glassEffect(.regular.tint(isHighlighted ? .white.opacity(0.0) : Color.white.opacity(0.05)))
         } else {
             content
                 .background(
                     isHighlighted ? 
-                    Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06) : 
-                    Color.clear
+                    Color.clear : 
+                    Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06)
                 )
         }
     }

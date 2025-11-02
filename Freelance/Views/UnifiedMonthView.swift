@@ -293,7 +293,7 @@ struct UnifiedMonthView: View {
                             }
                         }
                         .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                        .padding(.top, themeManager.spacing.contentHorizontal)
+                        .padding(.top, themeManager.spacing.contentHorizontal + 40)
                         .padding(.bottom, themeManager.spacing.xxLarge)
                     }
                     Spacer()

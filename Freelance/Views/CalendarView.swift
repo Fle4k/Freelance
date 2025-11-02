@@ -178,13 +178,22 @@ struct CalendarDayView: View {
                 
                 Text("\(day)")
                     .font(.custom("Major Mono Display Regular", size: 14))
-                    .foregroundColor(isTodayWithActiveTimer ? .black : (isToday ? (colorScheme == .dark ? .black : .white) : .primary))
+                    .foregroundColor(isTodayWithActiveTimer ? .white : (isToday ? (colorScheme == .dark ? .black : .white) : .primary))
                     .frame(width: circleSize, height: circleSize)
                     .background(
                         Group {
-                            if isToday {
+                            if isTodayWithActiveTimer {
+                                // Match the active row style
+                                if themeManager.currentTheme == .liquidGlass {
+                                    Circle()
+                                        .fill(Color.clear)
+                                } else {
+                                    Circle()
+                                        .fill(Color.clear)
+                                }
+                            } else if isToday {
                                 Circle()
-                                    .fill(isTodayWithActiveTimer ? Color.white : (colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.2)))
+                                    .fill(colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.2))
                                     .shadow(
                                         color: (colorScheme == .dark ? Color.white : Color.black).opacity(0.3),
                                         radius: 8,
@@ -193,7 +202,7 @@ struct CalendarDayView: View {
                                     )
                             } else if hasTimeEntry && themeManager.currentTheme != .liquidGlass {
                                 Circle()
-                                    .stroke(Color.primary, lineWidth: 1)
+                                    .fill(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06))
                             } else {
                                 Circle()
                                     .fill(Color.clear)
@@ -203,6 +212,12 @@ struct CalendarDayView: View {
                     .modifier(
                         ConditionalGlassCircle(
                             isLiquidGlass: themeManager.currentTheme == .liquidGlass && hasTimeEntry && !isToday,
+                            circleSize: circleSize
+                        )
+                    )
+                    .modifier(
+                        ConditionalActiveGlassCircle(
+                            isLiquidGlass: themeManager.currentTheme == .liquidGlass && isTodayWithActiveTimer,
                             circleSize: circleSize
                         )
                     )
@@ -227,6 +242,22 @@ struct CalendarDayView: View {
 // MARK: - Conditional Glass Circle Modifier
 
 struct ConditionalGlassCircle: ViewModifier {
+    let isLiquidGlass: Bool
+    let circleSize: CGFloat
+    
+    func body(content: Content) -> some View {
+        if isLiquidGlass {
+            content
+                .glassEffect(.regular.tint(Color.white.opacity(0.05)))
+        } else {
+            content
+        }
+    }
+}
+
+// MARK: - Conditional Active Glass Circle Modifier (for today with active timer)
+
+struct ConditionalActiveGlassCircle: ViewModifier {
     let isLiquidGlass: Bool
     let circleSize: CGFloat
     

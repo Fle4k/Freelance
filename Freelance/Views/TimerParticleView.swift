@@ -110,8 +110,8 @@ final class TimerParticleSystem: ObservableObject {
                     print("🔄 New minute - cleared all particles")
                 }
                 
-                if currentSecond != lastSeenSecond {
-                    addParticle(forSecond: currentSecond + 1)
+                if currentSecond != lastSeenSecond && currentSecond > 0 {
+                    addParticle(forSecond: currentSecond)
                     lastSeenSecond = currentSecond
                     
                     // At 57 seconds, start fading particles individually
