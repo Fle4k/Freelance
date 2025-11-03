@@ -1,4 +1,5 @@
 //
+
 //  UnifiedMonthView.swift
 //  Freelance
 //
@@ -340,7 +341,7 @@ struct UnifiedMonthView: View {
                                 VStack(spacing: 0) {
                                     // Main day row
                                     HStack(spacing: 8) {
-                                        let isTodayWithActiveTimer = Calendar.current.isDateInToday(dayEntry.0) && (timeTracker.isRunning || timeTracker.currentSessionStart != nil)
+                                        let isTodayWithActiveTimer = Calendar.current.isDateInToday(dayEntry.0) && (timeTracker.isRunning || timeTracker.isPaused)
                                         let textColor: Color = isTodayWithActiveTimer ? .white : .primary
                                         
                                         // Date column - flexible
@@ -374,7 +375,7 @@ struct UnifiedMonthView: View {
                                         GlassListRowModifier(
                                             isLiquidGlass: themeManager.currentTheme == .liquidGlass,
                                             isHighlighted: Calendar.current.isDate(dayEntry.0, inSameDayAs: selectedDay ?? Date.distantPast) || 
-                                                         (Calendar.current.isDateInToday(dayEntry.0) && (timeTracker.isRunning || timeTracker.currentSessionStart != nil))
+                                                         (Calendar.current.isDateInToday(dayEntry.0) && (timeTracker.isRunning || timeTracker.isPaused))
                                         )
                                     )
                                     .contentShape(Rectangle())
@@ -590,28 +591,44 @@ struct UnifiedMonthView: View {
                     }
                     
                     // Action buttons
-                    HStack(spacing: 16) {
-                        Button(action: {
-                            showEditAlert = false
-                        }) {
-                            Text("cancel")
-                                .font(.custom("Major Mono Display Regular", size: 14))
-                                .foregroundColor(.primary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Color.secondary.opacity(0.2))
-                                .cornerRadius(8)
+                    VStack(spacing: 12) {
+                        HStack(spacing: 16) {
+                            Button(action: {
+                                showEditAlert = false
+                            }) {
+                                Text("cancel")
+                                    .font(.custom("Major Mono Display Regular", size: 14))
+                                    .foregroundColor(.primary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Color.secondary.opacity(0.2))
+                                    .cornerRadius(8)
+                            }
+                            
+                            Button(action: {
+                                showConfirmation = true
+                            }) {
+                                Text("change")
+                                    .font(.custom("Major Mono Display Regular", size: 14))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Color.blue)
+                                    .cornerRadius(8)
+                            }
                         }
                         
                         Button(action: {
-                            showConfirmation = true
+                            showEditAlert = false
+                            selectedDay = editingDay
+                            showingRemoveConfirmation = true
                         }) {
-                            Text("change")
+                            Text("delete")
                                 .font(.custom("Major Mono Display Regular", size: 14))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
-                                .background(Color.blue)
+                                .background(Color.red)
                                 .cornerRadius(8)
                         }
                     }

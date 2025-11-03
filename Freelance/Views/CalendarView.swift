@@ -174,7 +174,7 @@ struct CalendarDayView: View {
             if day > 0 {
                 // Use the smaller dimension for circle size
                 let circleSize = min(cellWidth, cellHeight) * 0.95
-                let isTodayWithActiveTimer = isToday && (timeTracker.isRunning || timeTracker.currentSessionStart != nil)
+                let isTodayWithActiveTimer = isToday && (timeTracker.isRunning || timeTracker.isPaused)
                 
                 Text("\(day)")
                     .font(.custom("Major Mono Display Regular", size: 14))

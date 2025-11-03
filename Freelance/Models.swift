@@ -104,6 +104,7 @@ class AppSettings: ObservableObject {
 // Time tracking manager
 class TimeTracker: ObservableObject {
     @Published var isRunning = false
+    @Published var isPaused = false
     @Published var currentSessionStart: Date?
     @Published var timeEntries: [TimeEntry] = []
     @Published var elapsedTime: TimeInterval = 0
@@ -209,6 +210,7 @@ class TimeTracker: ObservableObject {
         currentSessionStart = Date()
         elapsedTime = 0
         isRunning = true
+        isPaused = false
         saveCurrentSession()
         print("▶️ Timer started. isRunning: \(isRunning), start time: \(currentSessionStart?.description ?? "nil")")
     }
@@ -233,11 +235,12 @@ class TimeTracker: ObservableObject {
         }
         
         isRunning = false
+        isPaused = true
         currentSessionStart = nil
         elapsedTime = 0
         saveAccumulatedTime()
         clearCurrentSession()
-        print("⏸️ Timer paused. Final state: isRunning=\(isRunning)")
+        print("⏸️ Timer paused. Final state: isRunning=\(isRunning), isPaused=\(isPaused)")
     }
     
     func recordTimer() {
@@ -258,6 +261,7 @@ class TimeTracker: ObservableObject {
         // Reset without saving - discards current session and all accumulated time
         currentSessionStart = nil
         isRunning = false
+        isPaused = false
         elapsedTime = 0
         totalAccumulatedTime = 0
         saveAccumulatedTime()
@@ -756,6 +760,7 @@ class TimeTracker: ObservableObject {
         if today > lastUpdateDay {
             print("New day detected - resetting accumulated time from \(totalAccumulatedTime) to 0")
             totalAccumulatedTime = 0
+            isPaused = false
             saveAccumulatedTime()
             
             // Update the last check date
