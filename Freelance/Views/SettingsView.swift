@@ -19,23 +19,23 @@ struct SettingsView: View {
     @State private var selectedMotionThreshold = 5
     @FocusState private var isCustomMotionFocused: Bool
     
-    // Common currencies (lowercase for font compatibility)
+    // Currency structure for display name and symbol
+    struct CurrencyOption: Identifiable {
+        let id = UUID()
+        let displayName: String
+        let symbol: String
+    }
+    
+    // Reduced currency list
     private let currencies = [
-        "€",      // Euro
-        "$",      // US Dollar
-        "£",      // British Pound
-        "¥",      // Japanese Yen / Chinese Yuan
-        "fr",     // Swiss Franc
-        "kr",     // Norwegian/Swedish/Danish Krone
-        "zł",     // Polish Złoty
-        "kč",     // Czech Koruna
-        "ft",     // Hungarian Forint
-        "lei",    // Romanian Leu
-        "лв",     // Bulgarian Lev
-        "kn",     // Croatian Kuna (historical)
-        "₹",      // Indian Rupee
-        "₽",      // Russian Ruble
-        "₩"       // South Korean Won
+        CurrencyOption(displayName: "euro (€)", symbol: "€"),
+        CurrencyOption(displayName: "us dollar ($)", symbol: "$"),
+        CurrencyOption(displayName: "british pound (£)", symbol: "£"),
+        CurrencyOption(displayName: "swiss franc (fr)", symbol: "fr"),
+        CurrencyOption(displayName: "danish krone (kr)", symbol: "kr"),
+        CurrencyOption(displayName: "norwegian krone (kr)", symbol: "kr"),
+        CurrencyOption(displayName: "swedish krona (kr)", symbol: "kr"),
+        CurrencyOption(displayName: "polish złoty (zł)", symbol: "zł")
     ]
     
     private var weekdayName: String {
@@ -85,10 +85,10 @@ struct SettingsView: View {
                     Spacer()
                     
                     Menu {
-                        ForEach(currencies, id: \.self) { currency in
-                            Button(currency) {
+                        ForEach(currencies) { currency in
+                            Button(currency.displayName) {
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-                                    settings.currency = currency
+                                    settings.currency = currency.symbol
                                     settings.saveSettings()
                                 }
                             }
