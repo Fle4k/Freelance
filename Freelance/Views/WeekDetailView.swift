@@ -98,7 +98,7 @@ struct WeekDetailView: View {
                                 digitFontSize: 20
                             )
                             
-                            Text(String(format: "%.0f€", timeTracker.getEarnings(for: .thisWeek)))
+                            Text(String(format: "%.0f\(settings.currency)", timeTracker.getEarnings(for: .thisWeek)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
                                 .foregroundColor(.primary)
                         }
@@ -262,7 +262,7 @@ struct WeekDetailView: View {
         }
         
         let earnings = totalDuration / 3600 * settings.hourlyRate
-        return String(format: "%.0f€", earnings)
+        return String(format: "%.0f\(settings.currency)", earnings)
     }
     
     private func formatTimeRange(_ start: Date, _ end: Date?) -> String {

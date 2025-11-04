@@ -19,6 +19,25 @@ struct SettingsView: View {
     @State private var selectedMotionThreshold = 5
     @FocusState private var isCustomMotionFocused: Bool
     
+    // Common currencies (lowercase for font compatibility)
+    private let currencies = [
+        "€",      // Euro
+        "$",      // US Dollar
+        "£",      // British Pound
+        "¥",      // Japanese Yen / Chinese Yuan
+        "fr",     // Swiss Franc
+        "kr",     // Norwegian/Swedish/Danish Krone
+        "zł",     // Polish Złoty
+        "kč",     // Czech Koruna
+        "ft",     // Hungarian Forint
+        "lei",    // Romanian Leu
+        "лв",     // Bulgarian Lev
+        "kn",     // Croatian Kuna (historical)
+        "₹",      // Indian Rupee
+        "₽",      // Russian Ruble
+        "₩"       // South Korean Won
+    ]
+    
     private var weekdayName: String {
         switch settings.weekStartsOn {
         case 1: return "sunday"
@@ -34,12 +53,12 @@ struct SettingsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 30)
+            Spacer()
             
-            VStack(spacing: 30) {
-                // Salary Setting (first)
+            VStack(spacing: 16) {
+                // Hourly rate
                 HStack {
-                    Text("salary")
+                    Text("hourly rate")
                         .font(.custom("Major Mono Display Regular", size: 17))
                         .foregroundColor(.primary)
                     
@@ -49,19 +68,42 @@ struct SettingsView: View {
                         salaryInputValue = String(format: "%.0f", settings.hourlyRate)
                         showingSalaryInput = true
                     }) {
-                        HStack(spacing: 0) {
-                            Text(String(format: "%.0f", settings.hourlyRate))
-                                .font(.custom("Major Mono Display Regular", size: 17))
-                                .foregroundColor(.primary)
-                            
-                            Text("/€")
-                                .font(.custom("Major Mono Display Regular", size: 17))
-                                .foregroundColor(.primary)
-                        }
+                        Text(String(format: "%.0f", settings.hourlyRate))
+                            .font(.custom("Major Mono Display Regular", size: 17))
+                            .foregroundColor(.primary)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                 }
                 
-                // Motion Detection
+                // Currency
+                HStack {
+                    Text("currency")
+                        .font(.custom("Major Mono Display Regular", size: 17))
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Menu {
+                        ForEach(currencies, id: \.self) { currency in
+                            Button(currency) {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                                    settings.currency = currency
+                                    settings.saveSettings()
+                                }
+                            }
+                        }
+                    } label: {
+                        Text("\(settings.currency)")
+                            .font(.custom("Major Mono Display Regular", size: 17))
+                            .foregroundColor(.primary)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                }
+                
+                // COMMENTED OUT: Motion Detection - for future use
+                /*
                 Button(action: {
                     settings.motionDetectionEnabled.toggle()
                 }) {
@@ -114,8 +156,9 @@ struct SettingsView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .opacity(settings.motionDetectionEnabled ? 1.0 : 0.3)
+                */
                 
-                // Time format
+                // Time format with bouncy animation
                 HStack {
                     Text("time format")
                         .font(.custom("Major Mono Display Regular", size: 17))
@@ -124,15 +167,21 @@ struct SettingsView: View {
                     Spacer()
                     
                     Button(action: {
-                        settings.use24HourFormat.toggle()
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                            settings.use24HourFormat.toggle()
+                            settings.saveSettings()
+                        }
                     }) {
                         Text(settings.use24HourFormat ? "24h" : "am/pm")
                             .font(.custom("Major Mono Display Regular", size: 17))
                             .foregroundColor(.primary)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                 }
                 
-                // Theme selection - using Menu for dropdown
+                // COMMENTED OUT: Theme selection - for future use
+                /*
                 HStack {
                     Text("theme")
                         .font(.custom("Major Mono Display Regular", size: 17))
@@ -153,6 +202,7 @@ struct SettingsView: View {
                             .foregroundColor(.primary)
                     }
                 }
+                */
                 
                 // Week starts on - using Menu for dropdown
                 HStack {
@@ -174,6 +224,8 @@ struct SettingsView: View {
                         Text(weekdayName)
                             .font(.custom("Major Mono Display Regular", size: 17))
                             .foregroundColor(.primary)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                 }
             }
@@ -184,7 +236,7 @@ struct SettingsView: View {
         .themedBackground()
         .blur(radius: (showingMotionThresholdPicker || showingSalaryInput) ? 3 : 0)
         .animation(.easeInOut(duration: 0.2), value: showingMotionThresholdPicker || showingSalaryInput)
-        .presentationDetents([.height(420)])
+        .presentationDetents([.height(270)])
         .presentationDragIndicator(.hidden)
         .onDisappear {
             settings.saveSettings()
@@ -254,7 +306,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .alert("salary", isPresented: $showingSalaryInput) {
+        .alert("hourly rate", isPresented: $showingSalaryInput) {
             TextField("Hourly rate", text: $salaryInputValue)
                 .keyboardType(.numberPad)
             Button("Cancel", role: .cancel) { }

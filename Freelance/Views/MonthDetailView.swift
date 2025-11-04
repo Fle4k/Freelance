@@ -160,7 +160,7 @@ struct MonthDetailView: View {
         }
         
         let earnings = totalDuration / 3600 * settings.hourlyRate
-        return String(format: "%.0f€", earnings)
+        return String(format: "%.0f\(settings.currency)", earnings)
     }
     
     private func formatDayDuration(for date: Date) -> String {
@@ -288,7 +288,7 @@ struct MonthDetailView: View {
                                 digitFontSize: 20
                             )
                             
-                            Text(String(format: "%.0f€", months.isEmpty ? 0 : getMonthEarnings(for: months[currentMonthIndex])))
+                            Text(String(format: "%.0f\(settings.currency)", months.isEmpty ? 0 : getMonthEarnings(for: months[currentMonthIndex])))
                                 .font(.custom("Major Mono Display Regular", size: 20))
                                 .foregroundColor(.primary)
                         }
@@ -584,7 +584,7 @@ struct DayDetailView: View {
                                 digitFontSize: 20
                             )
                             
-                            Text(String(format: "%.0f€", Double(dayEarnings)))
+                            Text(String(format: "%.0f\(settings.currency)", Double(dayEarnings)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
                                 .foregroundColor(.primary)
                         }

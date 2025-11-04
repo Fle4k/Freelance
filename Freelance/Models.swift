@@ -36,6 +36,7 @@ struct TimeEntry: Identifiable, Codable, Equatable {
 // App settings
 class AppSettings: ObservableObject {
     @Published var hourlyRate: Double = 80.0
+    @Published var currency: String = "€" // Currency symbol
     @Published var motionDetectionEnabled: Bool = false
     @Published var motionThreshold: Double = 5.0
     @Published var askWhenMoving: Bool = true // true = ask when moving, false = ask when not moving
@@ -51,6 +52,7 @@ class AppSettings: ObservableObject {
     
     func saveSettings() {
         UserDefaults.standard.set(hourlyRate, forKey: "hourlyRate")
+        UserDefaults.standard.set(currency, forKey: "currency")
         UserDefaults.standard.set(motionDetectionEnabled, forKey: "motionDetectionEnabled")
         UserDefaults.standard.set(motionThreshold, forKey: "motionThreshold")
         UserDefaults.standard.set(askWhenMoving, forKey: "askWhenMoving")
@@ -78,6 +80,7 @@ class AppSettings: ObservableObject {
     
     private func loadSettings() {
         hourlyRate = UserDefaults.standard.object(forKey: "hourlyRate") as? Double ?? 0.0
+        currency = UserDefaults.standard.object(forKey: "currency") as? String ?? "€"
         motionDetectionEnabled = UserDefaults.standard.object(forKey: "motionDetectionEnabled") as? Bool ?? false
         motionThreshold = UserDefaults.standard.object(forKey: "motionThreshold") as? Double ?? 5.0
         askWhenMoving = UserDefaults.standard.object(forKey: "askWhenMoving") as? Bool ?? true

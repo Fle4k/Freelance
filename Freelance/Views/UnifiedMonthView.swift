@@ -240,7 +240,7 @@ struct UnifiedMonthView: View {
         }
         
         let time = formatTime(totalDuration)
-        let earnings = String(format: "%.0f€", totalDuration / 3600 * settings.hourlyRate)
+        let earnings = String(format: "%.0f\(settings.currency)", totalDuration / 3600 * settings.hourlyRate)
         
         return (title, time, earnings)
     }
@@ -275,7 +275,7 @@ struct UnifiedMonthView: View {
                                 
                                 Spacer()
                                 
-                                Text(String(format: "%.0f€", getMonthEarnings(for: months[currentMonthIndex])))
+                                Text(String(format: "%.0f\(settings.currency)", getMonthEarnings(for: months[currentMonthIndex])))
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
                                     .foregroundColor(.primary)
                             }
@@ -362,7 +362,7 @@ struct UnifiedMonthView: View {
                                             .frame(minWidth: 70, alignment: .trailing)
                                         
                                         // Earnings column - fixed minimum width
-                                        Text(String(format: "%.0f€", formatDayEarnings(for: dayEntry.0)))
+                                        Text(String(format: "%.0f\(settings.currency)", formatDayEarnings(for: dayEntry.0)))
                                             .font(.custom("Major Mono Display Regular", size: 14))
                                             .foregroundColor(textColor)
                                             .lineLimit(1)
@@ -437,7 +437,7 @@ struct UnifiedMonthView: View {
                                                                 .strikethrough()
                                                             
                                                             // Session earnings
-                                                            Text(String(format: "%.0f€", calculateSessionEarnings(entry)))
+                                                            Text(String(format: "%.0f\(settings.currency)", calculateSessionEarnings(entry)))
                                                                 .font(.custom("Major Mono Display Regular", size: 14))
                                                                 .foregroundColor(.secondary)
                                                                 .lineLimit(1)
@@ -470,7 +470,7 @@ struct UnifiedMonthView: View {
                                                             .minimumScaleFactor(0.8)
                                                         
                                                         // Session earnings
-                                                        Text(String(format: "%.0f€", calculateSessionEarnings(entry)))
+                                                        Text(String(format: "%.0f\(settings.currency)", calculateSessionEarnings(entry)))
                                                             .font(.custom("Major Mono Display Regular", size: 14))
                                                             .foregroundColor(.secondary)
                                                             .lineLimit(1)
@@ -561,7 +561,7 @@ struct UnifiedMonthView: View {
                 
                 VStack(spacing: 20) {
                     // Earnings display (read-only)
-                    Text(String(format: "%.0f€", editEarnings))
+                    Text(String(format: "%.0f\(settings.currency)", editEarnings))
                         .font(.custom("Major Mono Display Regular", size: 24))
                         .foregroundColor(.primary)
                     

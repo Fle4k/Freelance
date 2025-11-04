@@ -74,7 +74,7 @@ struct TodayDetailView: View {
                                 digitFontSize: 20
                             )
                             
-                            Text(String(format: "%.0f€", timeTracker.getEarnings(for: .today)))
+                            Text(String(format: "%.0f\(settings.currency)", timeTracker.getEarnings(for: .today)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
                                 .foregroundColor(.primary)
                         }
