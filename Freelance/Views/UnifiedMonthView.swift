@@ -271,12 +271,14 @@ struct UnifiedMonthView: View {
                                 Text("earnings")
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 :
                                                     24))
+                                    .textCase(nil)
                                     .foregroundColor(.primary)
                                 
                                 Spacer()
                                 
                                 Text(String(format: "%.0f\(settings.currency)", getMonthEarnings(for: months[currentMonthIndex])))
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                    .textCase(nil)
                                     .foregroundColor(.primary)
                             }
 
@@ -284,12 +286,14 @@ struct UnifiedMonthView: View {
                             HStack {
                                 Text("time")
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                    .textCase(nil)
                                     .foregroundColor(.primary)
                                 
                                 Spacer()
                                 
                                 Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
                                     .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                    .textCase(nil)
                                     .foregroundColor(.primary)
                             }
                         }
@@ -304,10 +308,12 @@ struct UnifiedMonthView: View {
                         HStack(spacing: 8) {
                             Text(getFormattedMonth(for: months[currentMonthIndex]))
                                 .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                             
                             Text(getFormattedYear(for: months[currentMonthIndex]))
                                 .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                         }
                         .frame(maxWidth: .infinity)
@@ -347,6 +353,7 @@ struct UnifiedMonthView: View {
                                         // Date column - flexible
                                         Text(formatDate(dayEntry.0))
                                             .font(.custom("Major Mono Display Regular", size: 14))
+                                            .textCase(nil)
                                             .foregroundColor(textColor)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.8)
@@ -356,6 +363,7 @@ struct UnifiedMonthView: View {
                                         // Time column - fixed minimum width
                                         Text(formatDayDuration(for: dayEntry.0))
                                             .font(.custom("Major Mono Display Regular", size: 14))
+                                            .textCase(nil)
                                             .foregroundColor(textColor)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.8)
@@ -364,6 +372,7 @@ struct UnifiedMonthView: View {
                                         // Earnings column - fixed minimum width
                                         Text(String(format: "%.0f\(settings.currency)", formatDayEarnings(for: dayEntry.0)))
                                             .font(.custom("Major Mono Display Regular", size: 14))
+                                            .textCase(nil)
                                             .foregroundColor(textColor)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.8)
@@ -409,6 +418,7 @@ struct UnifiedMonthView: View {
                                                 // Show "data changed by user" centered
                                                 Text("data changed by user")
                                                     .font(.custom("Major Mono Display Regular", size: 14))
+                                                    .textCase(nil)
                                                     .foregroundColor(.secondary)
                                                     .frame(maxWidth: .infinity, alignment: .center)
                                                     .padding(.vertical, 4)
@@ -421,6 +431,7 @@ struct UnifiedMonthView: View {
                                                             // Time range column
                                                             Text(formatTimeRange(entry))
                                                                 .font(.custom("Major Mono Display Regular", size: 14))
+                                                                .textCase(nil)
                                                                 .foregroundColor(.secondary)
                                                                 .lineLimit(1)
                                                                 .minimumScaleFactor(0.8)
@@ -431,6 +442,7 @@ struct UnifiedMonthView: View {
                                                             // Session duration
                                                             Text(formatSessionDuration(entry))
                                                                 .font(.custom("Major Mono Display Regular", size: 14))
+                                                                .textCase(nil)
                                                                 .foregroundColor(.secondary)
                                                                 .lineLimit(1)
                                                                 .minimumScaleFactor(0.8)
@@ -439,6 +451,7 @@ struct UnifiedMonthView: View {
                                                             // Session earnings
                                                             Text(String(format: "%.0f\(settings.currency)", calculateSessionEarnings(entry)))
                                                                 .font(.custom("Major Mono Display Regular", size: 14))
+                                                                .textCase(nil)
                                                                 .foregroundColor(.secondary)
                                                                 .lineLimit(1)
                                                                 .minimumScaleFactor(0.8)
@@ -453,25 +466,28 @@ struct UnifiedMonthView: View {
                                                 // Show individual time entries for normal tracked days
                                                 ForEach(dayEntry.1) { entry in
                                                     HStack(spacing: 8) {
-                                                        // Time range column
-                                                        Text(formatTimeRange(entry))
-                                                            .font(.custom("Major Mono Display Regular", size: 14))
-                                                            .foregroundColor(.secondary)
-                                                            .lineLimit(1)
-                                                            .minimumScaleFactor(0.8)
-                                                        
-                                                        Spacer()
-                                                        
-                                                        // Session duration
-                                                        Text(formatSessionDuration(entry))
-                                                            .font(.custom("Major Mono Display Regular", size: 14))
-                                                            .foregroundColor(.secondary)
+                                                                        // Time range column
+                                                                        Text(formatTimeRange(entry))
+                                                                            .font(.custom("Major Mono Display Regular", size: 14))
+                                                                            .textCase(nil)
+                                                                            .foregroundColor(.secondary)
+                                                                            .lineLimit(1)
+                                                                            .minimumScaleFactor(0.8)
+                                                                        
+                                                                        Spacer()
+                                                                        
+                                                                        // Session duration
+                                                                        Text(formatSessionDuration(entry))
+                                                                            .font(.custom("Major Mono Display Regular", size: 14))
+                                                                            .textCase(nil)
+                                                                            .foregroundColor(.secondary)
                                                             .lineLimit(1)
                                                             .minimumScaleFactor(0.8)
                                                         
                                                         // Session earnings
                                                         Text(String(format: "%.0f\(settings.currency)", calculateSessionEarnings(entry)))
                                                             .font(.custom("Major Mono Display Regular", size: 14))
+                                                            .textCase(nil)
                                                             .foregroundColor(.secondary)
                                                             .lineLimit(1)
                                                             .minimumScaleFactor(0.8)
@@ -494,6 +510,7 @@ struct UnifiedMonthView: View {
                             if monthEntries.isEmpty {
                                 Text("no time tracked this month")
                                     .font(.custom("Major Mono Display Regular", size: 12))
+                                    .textCase(nil)
                                     .foregroundColor(.secondary)
                                     .padding(.top, themeManager.spacing.large)
                             }
@@ -563,6 +580,7 @@ struct UnifiedMonthView: View {
                     // Earnings display (read-only)
                     Text(String(format: "%.0f\(settings.currency)", editEarnings))
                         .font(.custom("Major Mono Display Regular", size: 24))
+                        .textCase(nil)
                         .foregroundColor(.primary)
                     
                     // Time picker section
@@ -598,6 +616,7 @@ struct UnifiedMonthView: View {
                             }) {
                                 Text("cancel")
                                     .font(.custom("Major Mono Display Regular", size: 14))
+                                    .textCase(nil)
                                     .foregroundColor(.primary)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
@@ -610,6 +629,7 @@ struct UnifiedMonthView: View {
                             }) {
                                 Text("change")
                                     .font(.custom("Major Mono Display Regular", size: 14))
+                                    .textCase(nil)
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
@@ -625,6 +645,7 @@ struct UnifiedMonthView: View {
                         }) {
                             Text("delete")
                                 .font(.custom("Major Mono Display Regular", size: 14))
+                                .textCase(nil)
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)

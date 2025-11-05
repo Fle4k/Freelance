@@ -9,6 +9,25 @@ import Foundation
 import SwiftUI
 import UserNotifications
 
+// Project model for multiple job timers
+struct Project: Identifiable, Codable, Equatable {
+    let id: UUID
+    var name: String
+    var timeEntries: [TimeEntry]
+    var isRunning: Bool
+    var currentSessionStart: Date?
+    var totalAccumulatedTime: TimeInterval
+    
+    init(id: UUID = UUID(), name: String, timeEntries: [TimeEntry] = [], isRunning: Bool = false, currentSessionStart: Date? = nil, totalAccumulatedTime: TimeInterval = 0) {
+        self.id = id
+        self.name = name
+        self.timeEntries = timeEntries
+        self.isRunning = isRunning
+        self.currentSessionStart = currentSessionStart
+        self.totalAccumulatedTime = totalAccumulatedTime
+    }
+}
+
 // Time tracking session
 struct TimeEntry: Identifiable, Codable, Equatable {
     let id: UUID
@@ -106,20 +125,24 @@ class AppSettings: ObservableObject {
 
 // Time tracking manager
 class TimeTracker: ObservableObject {
+    // Legacy properties (kept for backward compatibility during migration)
     @Published var isRunning = false
     @Published var isPaused = false
     @Published var currentSessionStart: Date?
     @Published var timeEntries: [TimeEntry] = []
     @Published var elapsedTime: TimeInterval = 0
     @Published var totalAccumulatedTime: TimeInterval = 0 // Total time across all sessions
+    
+    // New multi-project support
+    @Published var projects: [Project] = []
+    
     static let shared = TimeTracker()
     
     private let notificationCenter = UNUserNotificationCenter.current()
     
     private init() {
-        loadTimeEntries()
-        loadCurrentSession()
-        loadAccumulatedTime()
+        loadProjects()
+        migrateOldDataIfNeeded()
         setupNotificationCategories()
         
         // Check if it's a new day and reset accumulated time
@@ -132,6 +155,157 @@ class TimeTracker: ObservableObject {
             name: UIApplication.didBecomeActiveNotification,
             object: nil
         )
+    }
+    
+    // MARK: - Project Management
+    
+    func createProject(name: String) {
+        let newProject = Project(name: name)
+        projects.append(newProject)
+        saveProjects()
+    }
+    
+    func deleteProject(_ project: Project) {
+        projects.removeAll { $0.id == project.id }
+        saveProjects()
+    }
+    
+    func updateProject(_ project: Project) {
+        if let index = projects.firstIndex(where: { $0.id == project.id }) {
+            projects[index] = project
+            saveProjects()
+        }
+    }
+    
+    // Get elapsed time for a specific project
+    func getElapsedTime(for project: Project) -> TimeInterval {
+        if let currentStart = project.currentSessionStart, project.isRunning {
+            return Date().timeIntervalSince(currentStart)
+        }
+        return 0
+    }
+    
+    // Get formatted time for a specific project
+    func formattedElapsedTime(for project: Project) -> String {
+        let totalTime = project.totalAccumulatedTime + (project.isRunning ? getElapsedTime(for: project) : 0)
+        let hours = Int(totalTime) / 3600
+        let minutes = Int(totalTime) % 3600 / 60
+        let seconds = Int(totalTime) % 60
+        
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+    
+    // Start timer for a specific project
+    func startTimer(for projectId: UUID) {
+        guard let index = projects.firstIndex(where: { $0.id == projectId }) else { return }
+        
+        // Pause all other running timers (only one can run at a time)
+        for i in 0..<projects.count {
+            if projects[i].id != projectId && projects[i].isRunning {
+                pauseTimer(for: projects[i].id)
+            }
+        }
+        
+        var project = projects[index]
+        project.currentSessionStart = Date()
+        project.isRunning = true
+        projects[index] = project
+        saveProjects()
+    }
+    
+    // Pause timer for a specific project
+    func pauseTimer(for projectId: UUID) {
+        guard let index = projects.firstIndex(where: { $0.id == projectId }) else { return }
+        var project = projects[index]
+        
+        if let startDate = project.currentSessionStart, project.isRunning {
+            // Add current session time to accumulated time
+            let sessionTime = Date().timeIntervalSince(startDate)
+            project.totalAccumulatedTime += sessionTime
+            
+            // Create a time entry for this session
+            let entry = TimeEntry(
+                startDate: startDate,
+                endDate: Date(),
+                isActive: false
+            )
+            project.timeEntries.append(entry)
+        }
+        
+        project.isRunning = false
+        project.currentSessionStart = nil
+        projects[index] = project
+        saveProjects()
+    }
+    
+    // Reset timer for a specific project
+    func resetTimer(for projectId: UUID) {
+        guard let index = projects.firstIndex(where: { $0.id == projectId }) else { return }
+        var project = projects[index]
+        
+        project.currentSessionStart = nil
+        project.isRunning = false
+        project.totalAccumulatedTime = 0
+        projects[index] = project
+        saveProjects()
+    }
+    
+    // Record and reset timer for a specific project
+    func recordTimer(for projectId: UUID) {
+        guard let index = projects.firstIndex(where: { $0.id == projectId }) else { return }
+        var project = projects[index]
+        
+        if project.isRunning {
+            pauseTimer(for: projectId)
+            project = projects[index] // Reload after pause
+        }
+        
+        // Reset accumulated time
+        project.totalAccumulatedTime = 0
+        projects[index] = project
+        saveProjects()
+        
+        // Start new timer
+        startTimer(for: projectId)
+    }
+    
+    // MARK: - Legacy Support (for backward compatibility)
+    
+    private func migrateOldDataIfNeeded() {
+        // Check if we have old data but no projects
+        if projects.isEmpty {
+            loadTimeEntries()
+            loadCurrentSession()
+            loadAccumulatedTime()
+            
+            // If we have old data, create a default project with it
+            if !timeEntries.isEmpty || isRunning || totalAccumulatedTime > 0 {
+                let defaultProject = Project(
+                    name: "",
+                    timeEntries: timeEntries,
+                    isRunning: isRunning,
+                    currentSessionStart: currentSessionStart,
+                    totalAccumulatedTime: totalAccumulatedTime
+                )
+                projects.append(defaultProject)
+                saveProjects()
+                
+                // Clear old data
+                clearLegacyData()
+            }
+        }
+        
+        // If still no projects, create a default one with no name
+        if projects.isEmpty {
+            createProject(name: "")
+        }
+    }
+    
+    private func clearLegacyData() {
+        UserDefaults.standard.removeObject(forKey: "timeEntries")
+        UserDefaults.standard.removeObject(forKey: "currentSessionStart")
+        UserDefaults.standard.removeObject(forKey: "isRunning")
+        UserDefaults.standard.removeObject(forKey: "totalAccumulatedTime")
     }
     
     @objc private func appDidBecomeActive() {
@@ -707,6 +881,19 @@ class TimeTracker: ObservableObject {
     }
     
     // MARK: - Persistence
+    
+    private func saveProjects() {
+        if let data = try? JSONEncoder().encode(projects) {
+            UserDefaults.standard.set(data, forKey: "projects")
+        }
+    }
+    
+    private func loadProjects() {
+        if let data = UserDefaults.standard.data(forKey: "projects"),
+           let loadedProjects = try? JSONDecoder().decode([Project].self, from: data) {
+            projects = loadedProjects
+        }
+    }
     
     private func saveTimeEntries() {
         if let data = try? JSONEncoder().encode(timeEntries) {

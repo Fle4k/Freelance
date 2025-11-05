@@ -46,18 +46,21 @@ struct LiquidGlassUI: View {
                 VStack(spacing: 32) {
                     Text("liquid glass showcase")
                         .font(.custom("Major Mono Display Regular", size: 24))
+                        .textCase(nil)
                         .padding(.top, 40)
                     
                     // MARK: - Default Glass Effect
                     VStack(alignment: .leading, spacing: 16) {
                         Text("default glass")
                             .font(.custom("Major Mono Display Regular", size: 14))
+                            .textCase(nil)
                             .foregroundStyle(.secondary)
                         
                         Button("tap me") {
                             print("Default glass button tapped")
                         }
                         .font(.custom("Major Mono Display Regular", size: 18))
+                        .textCase(nil)
                         .padding()
                         .glassEffect()
                     }
@@ -67,6 +70,7 @@ struct LiquidGlassUI: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("tinted glass")
                             .font(.custom("Major Mono Display Regular", size: 14))
+                            .textCase(nil)
                             .foregroundStyle(.secondary)
                         
                         HStack(spacing: 12) {
@@ -74,6 +78,7 @@ struct LiquidGlassUI: View {
                                 print("Blue button tapped")
                             }
                             .font(.custom("Major Mono Display Regular", size: 16))
+                            .textCase(nil)
                             .padding()
                             .glassEffect(.regular.tint(.blue.opacity(0.6)))
                             
@@ -81,6 +86,7 @@ struct LiquidGlassUI: View {
                                 print("Purple button tapped")
                             }
                             .font(.custom("Major Mono Display Regular", size: 16))
+                            .textCase(nil)
                             .padding()
                             .glassEffect(.regular.tint(.purple.opacity(0.6)))
                             
@@ -88,6 +94,7 @@ struct LiquidGlassUI: View {
                                 print("Pink button tapped")
                             }
                             .font(.custom("Major Mono Display Regular", size: 16))
+                            .textCase(nil)
                             .padding()
                             .glassEffect(.regular.tint(.pink.opacity(0.6)))
                         }
@@ -98,12 +105,14 @@ struct LiquidGlassUI: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("interactive glass")
                             .font(.custom("Major Mono Display Regular", size: 14))
+                            .textCase(nil)
                             .foregroundStyle(.secondary)
                         
                         Button("press me") {
                             isPressed.toggle()
                         }
                         .font(.custom("Major Mono Display Regular", size: 18))
+                        .textCase(nil)
                         .padding()
                         .glassEffect(.regular.tint(.orange.opacity(0.5)).interactive())
                     }
@@ -113,13 +122,16 @@ struct LiquidGlassUI: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("glass cards")
                             .font(.custom("Major Mono Display Regular", size: 14))
+                            .textCase(nil)
                             .foregroundStyle(.secondary)
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("time tracked")
                                 .font(.custom("Major Mono Display Regular", size: 16))
+                                .textCase(nil)
                             Text("04:37:39")
                                 .font(.custom("Major Mono Display Regular", size: 24))
+                                .textCase(nil)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
@@ -131,6 +143,7 @@ struct LiquidGlassUI: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("glass strength")
                             .font(.custom("Major Mono Display Regular", size: 14))
+                            .textCase(nil)
                             .foregroundStyle(.secondary)
                         
                         VStack(spacing: 12) {
@@ -138,6 +151,7 @@ struct LiquidGlassUI: View {
                                 print("Ultra thin tapped")
                             }
                             .font(.custom("Major Mono Display Regular", size: 16))
+                            .textCase(nil)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .glassEffect(.regular.tint(.white.opacity(0.05)))
@@ -146,6 +160,7 @@ struct LiquidGlassUI: View {
                                 print("Regular tapped")
                             }
                             .font(.custom("Major Mono Display Regular", size: 16))
+                            .textCase(nil)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .glassEffect()
@@ -154,6 +169,7 @@ struct LiquidGlassUI: View {
                                 print("Thick tapped")
                             }
                             .font(.custom("Major Mono Display Regular", size: 16))
+                            .textCase(nil)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .glassEffect(.regular.tint(.white.opacity(0.3)))

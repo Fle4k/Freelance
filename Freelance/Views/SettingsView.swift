@@ -60,6 +60,7 @@ struct SettingsView: View {
                 HStack {
                     Text("hourly rate")
                         .font(.custom("Major Mono Display Regular", size: 17))
+                        .textCase(nil)
                         .foregroundColor(.primary)
                     
                     Spacer()
@@ -70,6 +71,7 @@ struct SettingsView: View {
                     }) {
                         Text(String(format: "%.0f", settings.hourlyRate))
                             .font(.custom("Major Mono Display Regular", size: 17))
+                            .textCase(nil)
                             .foregroundColor(.primary)
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(Rectangle())
@@ -80,6 +82,7 @@ struct SettingsView: View {
                 HStack {
                     Text("currency")
                         .font(.custom("Major Mono Display Regular", size: 17))
+                        .textCase(nil)
                         .foregroundColor(.primary)
                     
                     Spacer()
@@ -96,6 +99,7 @@ struct SettingsView: View {
                     } label: {
                         Text("\(settings.currency)")
                             .font(.custom("Major Mono Display Regular", size: 17))
+                            .textCase(nil)
                             .foregroundColor(.primary)
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(Rectangle())
@@ -162,6 +166,7 @@ struct SettingsView: View {
                 HStack {
                     Text("time format")
                         .font(.custom("Major Mono Display Regular", size: 17))
+                        .textCase(nil)
                         .foregroundColor(.primary)
                     
                     Spacer()
@@ -174,6 +179,7 @@ struct SettingsView: View {
                     }) {
                         Text(settings.use24HourFormat ? "24h" : "am/pm")
                             .font(.custom("Major Mono Display Regular", size: 17))
+                            .textCase(nil)
                             .foregroundColor(.primary)
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(Rectangle())
@@ -208,6 +214,7 @@ struct SettingsView: View {
                 HStack {
                     Text("weekday starts")
                         .font(.custom("Major Mono Display Regular", size: 17))
+                        .textCase(nil)
                         .foregroundColor(.primary)
                     
                     Spacer()
@@ -223,6 +230,7 @@ struct SettingsView: View {
                     } label: {
                         Text(weekdayName)
                             .font(.custom("Major Mono Display Regular", size: 17))
+                            .textCase(nil)
                             .foregroundColor(.primary)
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(Rectangle())
@@ -246,6 +254,7 @@ struct SettingsView: View {
                 VStack(spacing: 20) {
                     Text("longer than")
                         .font(.custom("Major Mono Display Regular", size: 18))
+                        .textCase(nil)
                         .foregroundColor(.secondary)
                         .padding(.top, 20)
                     

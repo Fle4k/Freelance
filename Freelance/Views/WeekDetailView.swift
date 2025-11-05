@@ -91,6 +91,7 @@ struct WeekDetailView: View {
                         VStack(spacing: 10) {
                             Text("this week")
                                 .font(.custom("Major Mono Display Regular", size: 18))
+                                .textCase(nil)
                                 .foregroundColor(.secondary)
                             
                             ProportionalTimeDisplay(
@@ -100,6 +101,7 @@ struct WeekDetailView: View {
                             
                             Text(String(format: "%.0f\(settings.currency)", timeTracker.getEarnings(for: .thisWeek)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                         }
                     }
@@ -115,6 +117,7 @@ struct WeekDetailView: View {
                                         if hasRolloverSession(for: dayEntry.0) {
                                             Text("·")
                                                 .font(.custom("Major Mono Display Regular", size: 20))
+                                                .textCase(nil)
                                                 .foregroundColor(.white)
                                                 .frame(width: 9)
                                                 .padding(.trailing, 8)
@@ -127,6 +130,7 @@ struct WeekDetailView: View {
                                     
                                     Text(formatDateShort(dayEntry.0))
                                         .font(.custom("Major Mono Display Regular", size: 18))
+                                        .textCase(nil)
                                         .foregroundColor(.primary)
                                         .frame(minWidth: 80, alignment: .leading)
             
@@ -134,11 +138,13 @@ struct WeekDetailView: View {
                                     
                                     Text(formatDayDuration(for: dayEntry.0))
                                         .font(.custom("Major Mono Display Regular", size: 18))
+                                        .textCase(nil)
                                         .foregroundColor(.primary)
                                         .frame(minWidth: 80, alignment: .trailing)
                                     
                                     Text(formatDayEarnings(for: dayEntry.0))
                                         .font(.custom("Major Mono Display Regular", size: 18))
+                                        .textCase(nil)
                                         .foregroundColor(.primary)
                                         .frame(minWidth: 60, alignment: .trailing)
                                 }
@@ -158,6 +164,7 @@ struct WeekDetailView: View {
                             if weekEntries.isEmpty {
                                 Text("no time tracked this week")
                                     .font(.custom("Major Mono Display Regular", size: 15))
+                                    .textCase(nil)
                                     .foregroundColor(.secondary)
                                     .frame(maxWidth: .infinity)
                                     .multilineTextAlignment(.center)

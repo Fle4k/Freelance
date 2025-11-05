@@ -49,12 +49,14 @@ struct DailyStatisticsView: View {
                     
                     Text("today")
                         .font(.custom("Major Mono Display Regular", size: 18))
+                        .textCase(nil)
                         .foregroundColor(.primary)
                     
                     Spacer()
                     
                     Text(String(format: "%.1f/8", totalHours))
                         .font(.custom("Major Mono Display Regular", size: 17))
+                        .textCase(nil)
                         .foregroundColor(.primary)
                 }
                 .padding(.horizontal, 20)
@@ -72,6 +74,7 @@ struct DailyStatisticsView: View {
                         if todayEntries.isEmpty {
                             Text("no time tracked today")
                                 .font(.custom("Major Mono Display Regular", size: 17))
+                                .textCase(nil)
                                 .foregroundColor(.secondary)
                         }
                         
@@ -80,6 +83,7 @@ struct DailyStatisticsView: View {
                         // Earnings
                         Text(String(format: "%.0f. euro", totalEarnings))
                             .font(.custom("Major Mono Display Regular", size: 22))
+                            .textCase(nil)
                             .foregroundColor(.primary)
                         
                         Spacer(minLength: 40)
@@ -106,10 +110,12 @@ struct TimeSlotRow: View {
             if let endDate = entry.endDate {
                 Text("\(formatTime(entry.startDate)) – \(formatTime(endDate))")
                                                 .font(.custom("Major Mono Display Regular", size: 17))
+                                                .textCase(nil)
                     .foregroundColor(.primary)
             } else {
                 Text("\(formatTime(entry.startDate)) – active")
                                                 .font(.custom("Major Mono Display Regular", size: 17))
+                                                .textCase(nil)
                     .foregroundColor(.primary)
             }
             

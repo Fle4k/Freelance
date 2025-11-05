@@ -281,6 +281,7 @@ struct MonthDetailView: View {
                         VStack(spacing: 10) {
                             Text(months.isEmpty ? "this month" : getMonthTitle(for: months[currentMonthIndex]))
                                 .font(.custom("Major Mono Display Regular", size: 18))
+                                .textCase(nil)
                                 .foregroundColor(.secondary)
                             
                             ProportionalTimeDisplay(
@@ -290,6 +291,7 @@ struct MonthDetailView: View {
                             
                             Text(String(format: "%.0f\(settings.currency)", months.isEmpty ? 0 : getMonthEarnings(for: months[currentMonthIndex])))
                                 .font(.custom("Major Mono Display Regular", size: 20))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                         }
                     }
@@ -370,6 +372,7 @@ struct MonthDetailView: View {
                                 HStack(spacing: 12) {
                                     Text(formatDateShort(dayEntry.0))
                                         .font(.custom("Major Mono Display Regular", size: 18))
+                                        .textCase(nil)
                                         .foregroundColor(.primary)
                                         .frame(minWidth: 90, alignment: .leading)
                                     
@@ -377,11 +380,13 @@ struct MonthDetailView: View {
                                     
                                     Text(formatDayDuration(for: dayEntry.0))
                                         .font(.custom("Major Mono Display Regular", size: 18))
+                                        .textCase(nil)
                                         .foregroundColor(.primary)
                                         .frame(minWidth: 80, alignment: .trailing)
                                     
                                     Text(formatDayEarnings(for: dayEntry.0))
                                         .font(.custom("Major Mono Display Regular", size: 18))
+                                        .textCase(nil)
                                         .foregroundColor(.primary)
                                         .frame(minWidth: 60, alignment: .trailing)
                                 }
@@ -400,6 +405,7 @@ struct MonthDetailView: View {
                             if monthEntries.isEmpty {
                                 Text("no time tracked this month")
                                     .font(.custom("Major Mono Display Regular", size: 15))
+                                    .textCase(nil)
                                     .foregroundColor(.secondary)
                                 }
                             }
@@ -577,6 +583,7 @@ struct DayDetailView: View {
                         VStack(spacing: 10) {
                             Text(dayTitle)
                                 .font(.custom("Major Mono Display Regular", size: 18))
+                                .textCase(nil)
                                 .foregroundColor(.secondary)
                             
                             ProportionalTimeDisplay(
@@ -586,6 +593,7 @@ struct DayDetailView: View {
                             
                             Text(String(format: "%.0f\(settings.currency)", Double(dayEarnings)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                         }
                     }
@@ -599,12 +607,14 @@ struct DayDetailView: View {
                                 HStack {
                                     Text("changed by user")
                                         .font(.custom("Major Mono Display Regular", size: 15))
+                                        .textCase(nil)
                                         .foregroundColor(.secondary)
                                     
                                     Spacer()
                                     
                                     Text(formatDuration(from: dayTotalTime))
                                         .font(.custom("Major Mono Display Regular", size: 15))
+                                        .textCase(nil)
                                         .foregroundColor(.primary)
                                 }
                             } else {
@@ -613,10 +623,12 @@ struct DayDetailView: View {
                                         if let endDate = entry.endDate {
                                             Text("\(formatTime(entry.startDate))-\(formatTime(endDate))")
                                                 .font(.custom("Major Mono Display Regular", size: 15))
+                                                .textCase(nil)
                                                 .foregroundColor(.primary)
                                         } else {
                                             Text("\(formatTime(entry.startDate))-\(formatTime(Date()))")
                                                 .font(.custom("Major Mono Display Regular", size: 15))
+                                                .textCase(nil)
                                                 .foregroundColor(.primary)
                                         }
                                         
@@ -625,10 +637,12 @@ struct DayDetailView: View {
                                         if entry.isActive {
                                             Text(formatDuration(from: entry.startDate, to: Date()))
                                                 .font(.custom("Major Mono Display Regular", size: 15))
+                                                .textCase(nil)
                                                 .foregroundColor(.primary)
                                         } else {
                                             Text(formatDuration(from: entry.duration))
                                                 .font(.custom("Major Mono Display Regular", size: 15))
+                                                .textCase(nil)
                                                 .foregroundColor(.primary)
                                         }
                                     }
@@ -640,6 +654,7 @@ struct DayDetailView: View {
                                         
                                         Text("-")
                                             .font(.custom("Major Mono Display Regular", size: 15))
+                                            .textCase(nil)
                                             .foregroundColor(.secondary)
                                         
                                         Spacer()
@@ -658,12 +673,14 @@ struct DayDetailView: View {
                     Button(action: editDayTime) {
                         Text("edit")
                             .font(.custom("Major Mono Display Regular", size: 18))
+                            .textCase(nil)
                             .foregroundColor(.primary)
                     }
                     
                     Button(action: removeDayData) {
                         Text("remove")
                             .font(.custom("Major Mono Display Regular", size: 18))
+                            .textCase(nil)
                             .foregroundColor(.primary)
                     }
                 }
@@ -765,12 +782,14 @@ struct DayEditTimeSheet: View {
                     // Title matching overview style
                     Text(periodTitle)
                         .font(.custom("Major Mono Display Regular", size: 18))
+                        .textCase(nil)
                         .foregroundColor(.secondary)
                     
                     // Show current total time
                     VStack(spacing: 10) {
                         Text("current total")
                             .font(.custom("Major Mono Display Regular", size: 16))
+                            .textCase(nil)
                             .foregroundColor(.secondary)
                         
                         ProportionalTimeDisplay(
@@ -787,6 +806,7 @@ struct DayEditTimeSheet: View {
                         HStack {
                             Text("hours")
                                 .font(.custom("Major Mono Display Regular", size: 17))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                             
                             Spacer()
@@ -804,6 +824,7 @@ struct DayEditTimeSheet: View {
                         HStack {
                             Text("minutes")
                                 .font(.custom("Major Mono Display Regular", size: 17))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                             
                             Spacer()
@@ -824,12 +845,14 @@ struct DayEditTimeSheet: View {
                         Button(action: saveChanges) {
                             Text("save")
                                 .font(.custom("Major Mono Display Regular", size: 18))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                         }
                         
                         Button(action: cancel) {
                             Text("cancel")
                                 .font(.custom("Major Mono Display Regular", size: 18))
+                                .textCase(nil)
                                 .foregroundColor(.secondary)
                         }
                     }

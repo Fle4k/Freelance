@@ -67,6 +67,7 @@ struct TodayDetailView: View {
                         VStack(spacing: 10) {
                             Text("today")
                                 .font(.custom("Major Mono Display Regular", size: 18))
+                                .textCase(nil)
                                 .foregroundColor(.secondary)
                             
                             ProportionalTimeDisplay(
@@ -76,6 +77,7 @@ struct TodayDetailView: View {
                             
                             Text(String(format: "%.0f\(settings.currency)", timeTracker.getEarnings(for: .today)))
                                 .font(.custom("Major Mono Display Regular", size: 20))
+                                .textCase(nil)
                                 .foregroundColor(.primary)
                         }
                     }
@@ -89,12 +91,14 @@ struct TodayDetailView: View {
                                 HStack {
                                     Text("changed by user")
                                         .font(.custom("Major Mono Display Regular", size: 15))
+                                        .textCase(nil)
                                         .foregroundColor(.secondary)
                                     
                                     Spacer()
                                     
                                     Text(formatDuration(from: timeTracker.getTotalHours(for: .today) * 3600))
                                         .font(.custom("Major Mono Display Regular", size: 15))
+                                        .textCase(nil)
                                         .foregroundColor(.primary)
                                 }
                             } else {
@@ -103,6 +107,7 @@ struct TodayDetailView: View {
                                         if let endDate = entry.endDate {
                                             Text("\(formatTime(entry.startDate))-\(formatTime(endDate))")
                                                 .font(.custom("Major Mono Display Regular", size: 15))
+                                                .textCase(nil)
                                                 .foregroundColor(.primary)
                                         } else {
                                             ActiveTimerView(startDate: entry.startDate)
@@ -113,10 +118,12 @@ struct TodayDetailView: View {
                                         if entry.isActive {
                                             Text(formatDuration(from: entry.startDate, to: Date()))
                                                 .font(.custom("Major Mono Display Regular", size: 15))
+                                                .textCase(nil)
                                                 .foregroundColor(.primary)
                                         } else {
                                             Text(formatDuration(from: entry.duration))
                                                 .font(.custom("Major Mono Display Regular", size: 15))
+                                                .textCase(nil)
                                                 .foregroundColor(.primary)
                                         }
                                     }
@@ -128,6 +135,7 @@ struct TodayDetailView: View {
                                         
                                         Text("-")
                                             .font(.custom("Major Mono Display Regular", size: 15))
+                                            .textCase(nil)
                                             .foregroundColor(.secondary)
                                         
                                         Spacer()
@@ -183,6 +191,7 @@ struct ActiveTimerView: View {
     var body: some View {
         Text("\(formatTime(startDate))-\(formatTime(currentTime))")
             .font(.custom("Major Mono Display Regular", size: 15))
+            .textCase(nil)
             .foregroundColor(.primary)
             .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
                 currentTime = Date()

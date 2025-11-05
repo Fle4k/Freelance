@@ -28,6 +28,7 @@ struct CalendarView: View {
                 ForEach(getWeekdayHeaders(), id: \.self) { day in
                     Text(day)
                         .font(.custom("Major Mono Display Regular", size: 14))
+                        .textCase(nil)
                         .foregroundColor(.primary)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
@@ -178,6 +179,7 @@ struct CalendarDayView: View {
                 
                 Text("\(day)")
                     .font(.custom("Major Mono Display Regular", size: 14))
+                    .textCase(nil)
                     .foregroundColor(isTodayWithActiveTimer ? .white : (isToday ? (colorScheme == .dark ? .black : .white) : .primary))
                     .frame(width: circleSize, height: circleSize)
                     .background(
