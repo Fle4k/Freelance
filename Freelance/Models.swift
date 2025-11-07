@@ -177,6 +177,13 @@ class TimeTracker: ObservableObject {
         }
     }
     
+    func renameProject(_ project: Project, to newName: String) {
+        if let index = projects.firstIndex(where: { $0.id == project.id }) {
+            projects[index].name = newName
+            saveProjects()
+        }
+    }
+    
     // Get elapsed time for a specific project
     func getElapsedTime(for project: Project) -> TimeInterval {
         if let currentStart = project.currentSessionStart, project.isRunning {

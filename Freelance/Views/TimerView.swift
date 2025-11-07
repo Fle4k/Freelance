@@ -13,10 +13,38 @@ struct ProgressCapsule: View {
     let height: CGFloat
     
     var body: some View {
-        Capsule()
-            .trim(from: 0, to: progress)
-            .stroke(Color.primary, lineWidth: 2)
-            .frame(width: width, height: height)
+        ZStack {
+            // Base subtle grey stroke
+            Capsule()
+                .trim(from: 0, to: progress)
+                .stroke(Color.gray.opacity(0.4), lineWidth: 1)
+                .frame(width: width, height: height)
+            
+            // Shiny effect overlay with dissolve near the end
+            Capsule()
+                .trim(from: max(0, progress - 0.15), to: progress)
+                .stroke(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.white.opacity(0.0),
+                            Color.white.opacity(0.6 * shineOpacity),
+                            Color.white.opacity(0.0)
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 1
+                )
+                .frame(width: width, height: height)
+        }
+    }
+    
+    private var shineOpacity: Double {
+        // Fade out the shine when progress > 0.85
+        if progress > 0.85 {
+            return max(0, (1.0 - progress) / 0.15)
+        }
+        return 1.0
     }
 }
 

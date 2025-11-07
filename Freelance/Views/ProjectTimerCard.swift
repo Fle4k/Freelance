@@ -13,6 +13,8 @@ struct ProjectTimerCard: View {
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var showingResetAlert = false
     @State private var showingRemoveConfirmation = false
+    @State private var showingRenameAlert = false
+    @State private var newProjectName = ""
     @State private var longPressProgress: Double = 0.0
     @State private var isLongPressing = false
     @State private var longPressTimer: Timer?
@@ -38,7 +40,11 @@ struct ProjectTimerCard: View {
                 Text(project.name)
                     .font(.custom("Major Mono Display Regular", size: 17))
                     .textCase(nil)
-                    .foregroundColor(.primary)
+                    .foregroundColor(project.isRunning ? .primary : .secondary)
+                    .onTapGesture {
+                        newProjectName = project.name
+                        showingRenameAlert = true
+                    }
             }
             
             // Timer display capsule
@@ -97,7 +103,6 @@ struct ProjectTimerCard: View {
             )
         }
         .alert("reset timer", isPresented: $showingResetAlert) {
-            Button("cancel", role: .cancel) { }
             Button("store and reset") {
                 timeTracker.recordTimer(for: project.id)
             }
@@ -107,8 +112,24 @@ struct ProjectTimerCard: View {
             Button("remove", role: .destructive) {
                 showingRemoveConfirmation = true
             }
+            Button("cancel", role: .cancel) { }
         } message: {
             Text("store time and start a new session, reset without storing, or remove project?")
+        }
+        .alert("rename project", isPresented: $showingRenameAlert) {
+            TextField("project name", text: $newProjectName)
+            Button("cancel", role: .cancel) {
+                newProjectName = ""
+            }
+            Button("save") {
+                let trimmedName = newProjectName.trimmingCharacters(in: .whitespaces)
+                if !trimmedName.isEmpty {
+                    timeTracker.renameProject(project, to: trimmedName)
+                }
+                newProjectName = ""
+            }
+        } message: {
+            Text("enter a new name for the project")
         }
         .alert("remove project", isPresented: $showingRemoveConfirmation) {
             Button("cancel", role: .cancel) { }
