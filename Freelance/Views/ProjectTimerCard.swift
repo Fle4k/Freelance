@@ -34,74 +34,80 @@ struct ProjectTimerCard: View {
     }
     
     var body: some View {
-        VStack(spacing: 8) {
-            // Project title above the capsule
-            if !project.name.isEmpty {
-                Text(project.name)
-                    .font(.custom("Major Mono Display Regular", size: 17))
-                    .textCase(nil)
-                    .foregroundColor(project.isRunning ? .primary : .secondary)
-                    .onTapGesture {
-                        newProjectName = project.name
-                        showingRenameAlert = true
-                    }
-            }
-            
-            // Timer display capsule
+        GeometryReader { geometry in
             VStack(spacing: 8) {
-                Text(formattedTime)
-                    .font(.custom("Major Mono Display Regular", size: 48))
-                    .textCase(nil)
-                    .foregroundColor(project.isRunning ? .primary : .secondary)
-                    .monospacedDigit()
-                    .animation(.easeInOut(duration: 0.2), value: project.isRunning)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, themeManager.spacing.xLarge)
-            .padding(.vertical, 32)
-            .themedSectionBackground()
-            .opacity(project.isRunning ? 1.0 : 0.6)
-            .overlay(
-                Group {
-                    if isLongPressing && longPressProgress > 0 {
-                        ProgressCapsule(
-                            progress: longPressProgress,
-                            width: UIScreen.main.bounds.width - (themeManager.spacing.contentHorizontal * 2),
-                            height: 112
-                        )
+                // Project title above the capsule
+                if !project.name.isEmpty {
+                    Text(project.name)
+                        .font(.custom("Major Mono Display Regular", size: 17))
+                        .textCase(nil)
+                        .foregroundColor(project.isRunning ? .primary : .secondary)
+                        .onTapGesture {
+                            newProjectName = project.name
+                            showingRenameAlert = true
+                        }
+                }
+                
+                // Timer display capsule
+                VStack(spacing: 8) {
+                    Text(formattedTime)
+                        .font(.custom("Major Mono Display Regular", size: 36))
+                        .textCase(nil)
+                        .foregroundColor(project.isRunning ? .primary : .secondary)
+                        .monospacedDigit()
+                        .animation(.easeInOut(duration: 0.2), value: project.isRunning)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, themeManager.spacing.xLarge)
+                .padding(.vertical, 32)
+                .themedSectionBackground()
+                .clipShape(Capsule())
+                .opacity(project.isRunning ? 1.0 : 0.6)
+                .overlay(
+                    Group {
+                        if isLongPressing && longPressProgress > 0 {
+                            ProgressCapsule(
+                                progress: longPressProgress,
+                                width: geometry.size.width - (themeManager.spacing.contentHorizontal * 2),
+                                height: 112
+                            )
+                        }
+                    }
+                )
+                .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                .scaleEffect(isTapped ? 0.95 : 1.0)
+                .opacity(isTapped ? 0.8 : 1.0)
+                .animation(.easeInOut(duration: 0.1), value: isTapped)
+                .contentShape(Capsule())
+                .onTapGesture {
+                    if project.isRunning {
+                        timeTracker.pauseTimer(for: project.id)
+                    } else {
+                        timeTracker.startTimer(for: project.id)
                     }
                 }
-            )
-            .padding(.horizontal, themeManager.spacing.contentHorizontal)
-            .scaleEffect(isTapped ? 0.95 : 1.0)
-            .opacity(isTapped ? 0.8 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: isTapped)
-            .contentShape(Capsule())
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        if longPressTimer == nil {
-                            isTapped = true
-                            startLongPress()
-                        }
-                    }
-                    .onEnded { _ in
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isTapped = false
-                        }
-                        
-                        if !isLongPressing && longPressProgress < 0.1 {
-                            if project.isRunning {
-                                timeTracker.pauseTimer(for: project.id)
-                            } else {
-                                timeTracker.startTimer(for: project.id)
-                            }
-                        }
-                        
+                .onLongPressGesture(minimumDuration: longPressDuration) {
+                    // Long press completed - show reset alert
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.impactOccurred()
+                    showingResetAlert = true
+                } onPressingChanged: { pressing in
+                    isTapped = pressing
+                    if pressing {
+                        isLongPressing = true
+                        startLongPress()
+                    } else {
                         endLongPress()
+                        if longPressProgress < 1.0 {
+                            isLongPressing = false
+                            longPressProgress = 0.0
+                        }
                     }
-            )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
+        .frame(height: project.name.isEmpty ? 112 : 140)
         .alert("reset timer", isPresented: $showingResetAlert) {
             Button("store and reset") {
                 timeTracker.recordTimer(for: project.id)
@@ -174,18 +180,6 @@ struct ProjectTimerCard: View {
                 timer.invalidate()
                 self.longPressTimer = nil
                 self.longPressProgress = 1.0
-                
-                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                impactFeedback.impactOccurred()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    self.showingResetAlert = true
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        self.isLongPressing = false
-                        self.longPressProgress = 0.0
-                    }
-                }
             }
         }
     }

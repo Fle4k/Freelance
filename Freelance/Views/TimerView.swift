@@ -67,7 +67,7 @@ struct TimerView: View {
             TimerParticleView(isActive: timeTracker.projects.contains(where: { $0.isRunning }))
                 .ignoresSafeArea()
             
-            // Show centered single timer or scrollable list based on project count
+            // Show centered single timer or list with swipe actions based on project count
             if timeTracker.projects.count == 1, let project = timeTracker.projects.first {
                 // Single timer - centered like original
                 VStack {
@@ -76,15 +76,35 @@ struct TimerView: View {
                     Spacer()
                 }
             } else {
-                // Multiple timers - scrollable list
-                ScrollView {
-                    VStack(spacing: themeManager.spacing.large) {
-                        ForEach(timeTracker.projects) { project in
-                            ProjectTimerCard(project: project)
-                        }
+                // Multiple timers - List with swipe actions
+                List {
+                    ForEach(timeTracker.projects) { project in
+                        ProjectTimerCard(project: project)
+                            .listRowInsets(EdgeInsets(
+                                top: themeManager.spacing.large / 2,
+                                leading: themeManager.spacing.contentHorizontal,
+                                bottom: themeManager.spacing.large / 2,
+                                trailing: themeManager.spacing.contentHorizontal
+                            ))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    timeTracker.deleteProject(project)
+                                } label: {
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "trash")
+                                        Text("Delete")
+                                            .font(.caption)
+                                    }
+                                }
+                            }
                     }
-                    .padding(.vertical, themeManager.spacing.contentHorizontal)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .listRowSeparator(.hidden)
+                .listRowSeparatorTint(.clear)
             }
             
             // Bottom buttons
