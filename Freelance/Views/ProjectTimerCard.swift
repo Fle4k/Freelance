@@ -6,11 +6,47 @@
 //
 
 import SwiftUI
+import CoreMotion
+
+// Motion manager for gyroscope-based shadow
+class MotionManager: ObservableObject {
+    private let motionManager = CMMotionManager()
+    @Published var shadowOffset: CGSize = .zero
+    
+    init() {
+        startMonitoring()
+    }
+    
+    func startMonitoring() {
+        guard motionManager.isDeviceMotionAvailable else { return }
+        
+        motionManager.deviceMotionUpdateInterval = 1/60
+        motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
+            guard let motion = motion else { return }
+            
+            // Use attitude to create shadow offset
+            // Multiply by -50 to create more distance and dramatic 3D effect
+            let x = CGFloat(motion.attitude.roll) * -50
+            let y = CGFloat(motion.attitude.pitch) * -50
+            
+            self?.shadowOffset = CGSize(width: x, height: y)
+        }
+    }
+    
+    func stopMonitoring() {
+        motionManager.stopDeviceMotionUpdates()
+    }
+    
+    deinit {
+        stopMonitoring()
+    }
+}
 
 struct ProjectTimerCard: View {
     let project: Project
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var themeManager = ThemeManager.shared
+    @StateObject private var motionManager = MotionManager()
     @State private var showingResetAlert = false
     @State private var showingRemoveConfirmation = false
     @State private var showingRenameAlert = false
@@ -31,63 +67,74 @@ struct ProjectTimerCard: View {
     
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 8) {
-                // Project title above the capsule
+            VStack(spacing: project.name.isEmpty ? 0 : 12) {
+                // Project title inside the capsule
                 if !project.name.isEmpty {
                     Text(project.name)
                         .font(.custom("Major Mono Display Regular", size: 17))
                         .textCase(nil)
                         .foregroundColor(project.isRunning ? .primary : .secondary)
+                        .shadow(
+                            color: Color.black.opacity(0.9),
+                            radius: 15,
+                            x: motionManager.shadowOffset.width,
+                            y: motionManager.shadowOffset.height
+                        )
+                        .shadow(
+                            color: Color.black.opacity(0.6),
+                            radius: 8,
+                            x: motionManager.shadowOffset.width * 0.5,
+                            y: motionManager.shadowOffset.height * 0.5
+                        )
                         .onTapGesture {
                             newProjectName = project.name
                             showingRenameAlert = true
                         }
                 }
                 
-                // Timer display capsule
-                VStack(spacing: 8) {
-                    Text(formattedTime)
-                        .font(.custom("Major Mono Display Regular", size: 36))
-                        .textCase(nil)
-                        .foregroundColor(project.isRunning ? .primary : .secondary)
-                        .monospacedDigit()
-                        .animation(.easeInOut(duration: 0.2), value: project.isRunning)
+                // Timer display
+                Text(formattedTime)
+                    .font(.custom("Major Mono Display Regular", size: 36))
+                    .textCase(nil)
+                    .foregroundColor(project.isRunning ? .primary : .secondary)
+                    .monospacedDigit()
+                    .animation(.easeInOut(duration: 0.2), value: project.isRunning)
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .padding(.horizontal, themeManager.spacing.xLarge)
+            .padding(.top, project.name.isEmpty ? 32 : 16)
+            .padding(.bottom, project.name.isEmpty ? 32 : 16)
+            .themedSectionBackground()
+            .clipShape(Capsule())
+            .opacity(project.isRunning ? 1.0 : 0.6)
+            .padding(.horizontal, themeManager.spacing.contentHorizontal)
+            .scaleEffect(isPressed ? 0.97 : 1.0)
+            .brightness(isPressed ? 0.1 : 0.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+            .contentShape(Capsule())
+            .onTapGesture {
+                // Stronger haptic feedback for tap
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+                
+                // Toggle timer
+                if project.isRunning {
+                    timeTracker.pauseTimer(for: project.id)
+                } else {
+                    timeTracker.startTimer(for: project.id)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, themeManager.spacing.xLarge)
-                .padding(.vertical, 32)
-                .themedSectionBackground()
-                .clipShape(Capsule())
-                .opacity(project.isRunning ? 1.0 : 0.6)
-                .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                .scaleEffect(isPressed ? 0.97 : 1.0)
-                .brightness(isPressed ? 0.1 : 0.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
-                .contentShape(Capsule())
-                .onTapGesture {
-                    // Stronger haptic feedback for tap
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                    impactFeedback.impactOccurred()
-                    
-                    // Toggle timer
-                    if project.isRunning {
-                        timeTracker.pauseTimer(for: project.id)
-                    } else {
-                        timeTracker.startTimer(for: project.id)
-                    }
-                }
-                .onLongPressGesture(minimumDuration: longPressDuration) {
-                    // Warning haptic feedback for long press (reset action)
-                    let notificationFeedback = UINotificationFeedbackGenerator()
-                    notificationFeedback.notificationOccurred(.warning)
-                    showingResetAlert = true
-                } onPressingChanged: { pressing in
-                    isPressed = pressing
-                }
+            }
+            .onLongPressGesture(minimumDuration: longPressDuration) {
+                // Warning haptic feedback for long press (reset action)
+                let notificationFeedback = UINotificationFeedbackGenerator()
+                notificationFeedback.notificationOccurred(.warning)
+                showingResetAlert = true
+            } onPressingChanged: { pressing in
+                isPressed = pressing
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
-        .frame(height: project.name.isEmpty ? 112 : 140)
+        .frame(height: project.name.isEmpty ? 112 : 120)
         .alert("reset timer", isPresented: $showingResetAlert) {
             Button("store and reset") {
                 timeTracker.recordTimer(for: project.id)

@@ -123,13 +123,12 @@ struct TimerView: View {
             }
             Button("create") {
                 let trimmedName = newProjectName.trimmingCharacters(in: .whitespaces)
-                if !trimmedName.isEmpty {
-                    timeTracker.createProject(name: trimmedName)
-                }
+                // Allow creating projects with empty names
+                timeTracker.createProject(name: trimmedName)
                 newProjectName = ""
             }
         } message: {
-            Text("enter a name for your new project")
+            Text("enter a name for your new project (optional)")
         }
     }
 }
