@@ -50,25 +50,24 @@ struct ProjectTimerCard: View {
     @State private var showingResetAlert = false
     @State private var showingRemoveConfirmation = false
     @State private var showingRenameAlert = false
+    @State private var showingDetailView = false
     @State private var newProjectName = ""
     @State private var isPressed = false
-    @State private var elapsedTime: TimeInterval = 0
+    @State private var timerTick = 0
+    @State private var detailButtonAppeared = false
     
     private let longPressDuration: Double = 0.8
     
-    // Computed property to format the elapsed time display
+    // Simple timer display using TimeTracker's method
     private var formattedTime: String {
-        let totalTime = project.totalAccumulatedTime + (project.isRunning ? elapsedTime : 0)
-        let hours = Int(totalTime) / 3600
-        let minutes = Int(totalTime) % 3600 / 60
-        let seconds = Int(totalTime) % 60
-        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        _ = timerTick // Force update dependency
+        return timeTracker.formattedElapsedTime(for: project)
     }
     
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: project.name.isEmpty ? 0 : 12) {
-                // Project title inside the capsule
+            VStack(spacing: 8) {
+                // Project title above the card
                 if !project.name.isEmpty {
                     Text(project.name)
                         .font(.custom("Major Mono Display Regular", size: 17))
@@ -90,51 +89,95 @@ struct ProjectTimerCard: View {
                             newProjectName = project.name
                             showingRenameAlert = true
                         }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.horizontal, themeManager.spacing.medium)
                 }
                 
-                // Timer display
-                Text(formattedTime)
-                    .font(.custom("Major Mono Display Regular", size: 36))
-                    .textCase(nil)
-                    .foregroundColor(project.isRunning ? .primary : .secondary)
-                    .monospacedDigit()
-                    .animation(.easeInOut(duration: 0.2), value: project.isRunning)
-            }
-            .frame(maxWidth: .infinity, alignment: .top)
-            .padding(.horizontal, themeManager.spacing.xLarge)
-            .padding(.top, project.name.isEmpty ? 32 : 16)
-            .padding(.bottom, project.name.isEmpty ? 32 : 16)
-            .themedSectionBackground()
-            .clipShape(Capsule())
-            .opacity(project.isRunning ? 1.0 : 0.6)
-            .padding(.horizontal, themeManager.spacing.contentHorizontal)
-            .scaleEffect(isPressed ? 0.97 : 1.0)
-            .brightness(isPressed ? 0.1 : 0.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
-            .contentShape(Capsule())
-            .onTapGesture {
-                // Stronger haptic feedback for tap
-                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                impactFeedback.impactOccurred()
-                
-                // Toggle timer
-                if project.isRunning {
-                    timeTracker.pauseTimer(for: project.id)
-                } else {
-                    timeTracker.startTimer(for: project.id)
+                ZStack(alignment: .trailing) {
+                    // Timer display in card (tappable area)
+                    HStack {
+                        Text(formattedTime)
+                            .font(.custom("Major Mono Display Regular", size: 36))
+                            .textCase(nil)
+                            .foregroundColor(project.isRunning ? .primary : .secondary)
+                            .monospacedDigit()
+                            .animation(.easeInOut(duration: 0.2), value: project.isRunning)
+                            .frame(maxWidth: .infinity)
+                        
+                        // Spacer for button area
+                        Spacer()
+                            .frame(width: 44)
+                    }
+                    .padding(.vertical, 32)
+                    .padding(.horizontal, themeManager.spacing.medium)
+                    .themedSectionBackground()
+                    .clipShape(Capsule())
+                    .opacity(project.isRunning ? 1.0 : 0.6)
+                    .scaleEffect(isPressed ? 0.97 : 1.0)
+                    .brightness(isPressed ? 0.1 : 0.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+                    .contentShape(Capsule())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { _ in
+                                if !isPressed {
+                                    isPressed = true
+                                }
+                            }
+                            .onEnded { _ in
+                                isPressed = false
+                                // Stronger haptic feedback for tap
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                impactFeedback.impactOccurred()
+                                
+                                // Toggle timer
+                                if project.isRunning {
+                                    timeTracker.pauseTimer(for: project.id)
+                                } else {
+                                    timeTracker.startTimer(for: project.id)
+                                }
+                            }
+                    )
+                    .simultaneousGesture(
+                        LongPressGesture(minimumDuration: longPressDuration).onEnded { _ in
+                            // Warning haptic feedback for long press (reset action)
+                            let notificationFeedback = UINotificationFeedbackGenerator()
+                            notificationFeedback.notificationOccurred(.warning)
+                            showingResetAlert = true
+                        }
+                    )
+                    
+                    // Detail button with ellipsis rotated 90° with animation (separate tappable area)
+                    // Using high priority gesture to ensure it receives touches above the capsule
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundColor(detailButtonAppeared ? (project.isRunning ? .primary : .secondary) : .white)
+                        .symbolEffect(.bounce, value: detailButtonAppeared)
+                        .rotationEffect(.degrees(90))
+                        .frame(width: 44, height: 44)
+                        .opacity(detailButtonAppeared ? 0.6 : 1.0)
+                        .contentShape(Rectangle())
+                        .padding(.trailing, themeManager.spacing.medium)
+                        .zIndex(10)
+                        .highPriorityGesture(
+                            TapGesture().onEnded {
+                                showingDetailView = true
+                            }
+                        )
+                        .onAppear {
+                            // Trigger bounce and color fade
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                withAnimation(.easeInOut(duration: 0.8)) {
+                                    detailButtonAppeared = true
+                                }
+                            }
+                        }
                 }
-            }
-            .onLongPressGesture(minimumDuration: longPressDuration) {
-                // Warning haptic feedback for long press (reset action)
-                let notificationFeedback = UINotificationFeedbackGenerator()
-                notificationFeedback.notificationOccurred(.warning)
-                showingResetAlert = true
-            } onPressingChanged: { pressing in
-                isPressed = pressing
+                .padding(.horizontal, themeManager.spacing.small)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
-        .frame(height: project.name.isEmpty ? 112 : 120)
+        .frame(height: project.name.isEmpty ? 112 : 130)
         .alert("reset timer", isPresented: $showingResetAlert) {
             Button("store and reset") {
                 timeTracker.recordTimer(for: project.id)
@@ -142,12 +185,9 @@ struct ProjectTimerCard: View {
             Button("reset", role: .destructive) {
                 timeTracker.resetTimer(for: project.id)
             }
-            Button("remove", role: .destructive) {
-                showingRemoveConfirmation = true
-            }
             Button("cancel", role: .cancel) { }
         } message: {
-            Text("store time and start a new session, reset without storing, or remove project?")
+            Text("store time and start a new session or reset without storing?")
         }
         .alert("rename project", isPresented: $showingRenameAlert) {
             TextField("project name", text: $newProjectName)
@@ -172,12 +212,11 @@ struct ProjectTimerCard: View {
         } message: {
             Text("are you sure you want to remove this project? all time entries will be deleted.")
         }
+        .sheet(isPresented: $showingDetailView) {
+            ProjectDetailView(project: project)
+        }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            if project.isRunning {
-                elapsedTime = timeTracker.getElapsedTime(for: project)
-            } else {
-                elapsedTime = 0
-            }
+            timerTick += 1
         }
     }
 }

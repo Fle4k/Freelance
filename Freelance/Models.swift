@@ -194,7 +194,7 @@ class TimeTracker: ObservableObject {
     
     // Get formatted time for a specific project
     func formattedElapsedTime(for project: Project) -> String {
-        let totalTime = project.totalAccumulatedTime + (project.isRunning ? getElapsedTime(for: project) : 0)
+        let totalTime = max(0, project.totalAccumulatedTime + (project.isRunning ? getElapsedTime(for: project) : 0))
         let hours = Int(totalTime) / 3600
         let minutes = Int(totalTime) % 3600 / 60
         let seconds = Int(totalTime) % 60
@@ -249,6 +249,12 @@ class TimeTracker: ObservableObject {
     func resetTimer(for projectId: UUID) {
         guard let index = projects.firstIndex(where: { $0.id == projectId }) else { return }
         var project = projects[index]
+        
+        if project.isRunning {
+            // If running, pause first to save the current session
+            pauseTimer(for: projectId)
+            project = projects[index] // Reload after pause
+        }
         
         project.currentSessionStart = nil
         project.isRunning = false
@@ -898,7 +904,19 @@ class TimeTracker: ObservableObject {
     private func loadProjects() {
         if let data = UserDefaults.standard.data(forKey: "projects"),
            let loadedProjects = try? JSONDecoder().decode([Project].self, from: data) {
-            projects = loadedProjects
+            // Validate and clean up project data
+            projects = loadedProjects.map { project in
+                var cleaned = project
+                // Ensure totalAccumulatedTime is never negative
+                cleaned.totalAccumulatedTime = max(0, project.totalAccumulatedTime)
+                // If not running, clear session start
+                if !project.isRunning {
+                    cleaned.currentSessionStart = nil
+                }
+                return cleaned
+            }
+            // Save cleaned data
+            saveProjects()
         }
     }
     

@@ -40,10 +40,10 @@ struct TimerView: View {
                     ForEach(timeTracker.projects) { project in
                         ProjectTimerCard(project: project)
                             .listRowInsets(EdgeInsets(
-                                top: themeManager.spacing.large / 2,
-                                leading: themeManager.spacing.contentHorizontal,
-                                bottom: themeManager.spacing.large / 2,
-                                trailing: themeManager.spacing.contentHorizontal
+                                top: 8,
+                                leading: 0,
+                                bottom: 8,
+                                trailing: 0
                             ))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
@@ -62,11 +62,13 @@ struct TimerView: View {
                 .listRowSeparatorTint(.clear)
             }
             
-            // Bottom buttons
+            // Bottom button
             VStack {
                 Spacer()
                 HStack {
-                    // Add project button (bottom left)
+                    Spacer()
+                    
+                    // Add project button (bottom right)
                     Button(action: {
                         showingAddProject = true
                     }) {
@@ -75,29 +77,6 @@ struct TimerView: View {
                                 .frame(width: 64, height: 64)
                             
                             Image(systemName: "plus")
-                                .font(.system(size: 20, weight: .regular))
-                                .foregroundColor(.primary)
-                        }
-                    }
-                    .modifier(GlassButtonModifier(
-                        isLiquidGlass: themeManager.currentTheme == .liquidGlass,
-                        size: 64
-                    ))
-                    .contentShape(Circle())
-                    .padding(.leading, themeManager.spacing.medium)
-                    .padding(.bottom, themeManager.spacing.medium)
-                    
-                    Spacer()
-                    
-                    // Menu button (bottom right)
-                    Button(action: {
-                        showingStatistics = true
-                    }) {
-                        ZStack {
-                            Color.clear
-                                .frame(width: 64, height: 64)
-                            
-                            Image(systemName: "line.3.horizontal")
                                 .font(.system(size: 20, weight: .regular))
                                 .foregroundColor(.primary)
                         }

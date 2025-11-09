@@ -11,14 +11,16 @@ struct CalendarView: View {
     let period: StatisticsPeriod
     let monthDate: Date
     let onDaySelected: ((Date) -> Void)?
+    let timeEntries: [TimeEntry]?
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var themeManager = ThemeManager.shared
     
-    init(period: StatisticsPeriod, monthDate: Date = Date(), onDaySelected: ((Date) -> Void)? = nil) {
+    init(period: StatisticsPeriod, monthDate: Date = Date(), onDaySelected: ((Date) -> Void)? = nil, timeEntries: [TimeEntry]? = nil) {
         self.period = period
         self.monthDate = monthDate
         self.onDaySelected = onDaySelected
+        self.timeEntries = timeEntries
     }
     
     var body: some View {
@@ -124,7 +126,8 @@ struct CalendarView: View {
         let dayStart = calendar.startOfDay(for: dayDate)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayDate
         
-        return timeTracker.timeEntries.contains { entry in
+        let entries = timeEntries ?? timeTracker.timeEntries
+        return entries.contains { entry in
             entry.startDate >= dayStart && entry.startDate < dayEnd
         }
     }
