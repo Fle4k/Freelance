@@ -148,6 +148,9 @@ class TimeTracker: ObservableObject {
         // Check if it's a new day and reset accumulated time
         checkForNewDayReset()
         
+        // Add example data for this month if no entries exist
+        addExampleDataIfNeeded()
+        
         // Set up notification observer for when app becomes active
         NotificationCenter.default.addObserver(
             self,
@@ -155,6 +158,63 @@ class TimeTracker: ObservableObject {
             name: UIApplication.didBecomeActiveNotification,
             object: nil
         )
+    }
+    
+    // MARK: - Example Data
+    
+    private func addExampleDataIfNeeded() {
+        // Check if we already have example data for this month
+        let calendar = Calendar.current
+        let now = Date()
+        guard let monthStart = calendar.dateInterval(of: .month, for: now)?.start else { return }
+        
+        // Check if there are any entries for this month
+        let hasEntriesThisMonth = timeEntries.contains { entry in
+            entry.startDate >= monthStart
+        }
+        
+        // Only add if no entries exist for this month
+        guard !hasEntriesThisMonth else { return }
+        
+        let today = calendar.startOfDay(for: now)
+        
+        // Add example entries for several days this month
+        // Start from a few days ago and add entries for different days
+        let daysToAdd = [-5, -3, -2, -1, 0, 1, 2] // Days relative to today
+        
+        for dayOffset in daysToAdd {
+            guard let date = calendar.date(byAdding: .day, value: dayOffset, to: today) else { continue }
+            
+            // Only add if the date is within this month
+            guard date >= monthStart else { continue }
+            
+            // Create 1-2 time entries per day with different durations
+            let numberOfSessions = dayOffset == 0 ? 1 : (dayOffset % 2 == 0 ? 2 : 1)
+            
+            for sessionIndex in 0..<numberOfSessions {
+                // Start time between 9:00 and 14:00
+                let startHour = 9 + (sessionIndex * 3)
+                let startMinute = sessionIndex * 15
+                
+                guard let sessionStart = calendar.date(bySettingHour: startHour, minute: startMinute, second: 0, of: date) else { continue }
+                
+                // Duration: 2-4 hours per session
+                let durationHours = 2.0 + Double(sessionIndex) * 0.5
+                let duration = durationHours * 3600
+                let sessionEnd = sessionStart.addingTimeInterval(duration)
+                
+                let entry = TimeEntry(
+                    startDate: sessionStart,
+                    endDate: sessionEnd,
+                    isActive: false
+                )
+                timeEntries.append(entry)
+            }
+        }
+        
+        // Save the example entries
+        saveTimeEntries()
+        print("✅ Added example data for this month: \(timeEntries.count) entries")
     }
     
     // MARK: - Project Management

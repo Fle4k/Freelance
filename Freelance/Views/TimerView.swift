@@ -10,10 +10,10 @@ import SwiftUI
 struct TimerView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var themeManager = ThemeManager.shared
-    @State private var showingStatistics = false
     @State private var showingAddProject = false
     @State private var newProjectName = ""
     @State private var expandedProjectId: UUID?
+    @State private var statisticsProjectId: UUID?
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -35,12 +35,28 @@ struct TimerView: View {
                     ProjectTimerCard(
                         project: project,
                         isExpanded: expandedProjectId == project.id,
+                        isAnyCardExpanded: expandedProjectId != nil || statisticsProjectId != nil,
                         onDetailToggle: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                if expandedProjectId == project.id {
-                                    expandedProjectId = nil
-                                } else {
+                            // Allow collapsing if this card is expanded
+                            if expandedProjectId == project.id {
+                                expandedProjectId = nil
+                            } else {
+                                // Only allow expanding if no other card is expanded
+                                if expandedProjectId == nil && statisticsProjectId == nil {
                                     expandedProjectId = project.id
+                                    statisticsProjectId = nil
+                                }
+                            }
+                        },
+                        onStatisticsToggle: {
+                            // Allow collapsing if this card is expanded
+                            if statisticsProjectId == project.id {
+                                statisticsProjectId = nil
+                            } else {
+                                // Only allow expanding if no other card is expanded
+                                if expandedProjectId == nil && statisticsProjectId == nil {
+                                    statisticsProjectId = project.id
+                                    expandedProjectId = nil
                                 }
                             }
                         }
@@ -50,25 +66,62 @@ struct TimerView: View {
                     if expandedProjectId == project.id {
                         ProjectDetailView(project: project)
                             .padding(.top, 12)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                    
+                    // Statistics view when menu button is tapped (dropdown below card)
+                    if statisticsProjectId == project.id {
+                        StatisticsOverviewView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, themeManager.spacing.small)
+                            .padding(.vertical, themeManager.spacing.small)
+                            .background(
+                                RoundedRectangle(cornerRadius: themeManager.cornerRadius.large)
+                                    .fill(Color.pink)
+                            )
+                            .padding(.top, 12)
                     }
                     
                     Spacer()
                 }
             } else {
                 // Multiple timers - List with swipe actions
-                List {
-                    ForEach(timeTracker.projects) { project in
+                ScrollViewReader { proxy in
+                    List {
+                        ForEach(timeTracker.projects) { project in
                         VStack(spacing: 0) {
                             ProjectTimerCard(
                                 project: project,
                                 isExpanded: expandedProjectId == project.id,
+                                isAnyCardExpanded: expandedProjectId != nil || statisticsProjectId != nil,
                                 onDetailToggle: {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        if expandedProjectId == project.id {
-                                            expandedProjectId = nil
-                                        } else {
+                                    // Allow collapsing if this card is expanded
+                                    if expandedProjectId == project.id {
+                                        expandedProjectId = nil
+                                    } else {
+                                        // Only allow expanding if no other card is expanded
+                                        if expandedProjectId == nil && statisticsProjectId == nil {
                                             expandedProjectId = project.id
+                                            statisticsProjectId = nil
+                                            // Scroll to show the expanded card at the top
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                                proxy.scrollTo(project.id, anchor: .top)
+                                            }
+                                        }
+                                    }
+                                },
+                                onStatisticsToggle: {
+                                    // Allow collapsing if this card is expanded
+                                    if statisticsProjectId == project.id {
+                                        statisticsProjectId = nil
+                                    } else {
+                                        // Only allow expanding if no other card is expanded
+                                        if expandedProjectId == nil && statisticsProjectId == nil {
+                                            statisticsProjectId = project.id
+                                            expandedProjectId = nil
+                                            // Scroll to show the expanded card at the top
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                                proxy.scrollTo(project.id, anchor: .top)
+                                            }
                                         }
                                     }
                                 }
@@ -80,9 +133,25 @@ struct TimerView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.top, 12)
                                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+                            
+                            // Statistics view when menu button is tapped (dropdown below card)
+                            if statisticsProjectId == project.id {
+                                StatisticsOverviewView()
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 600)
+                                    .padding(.horizontal, themeManager.spacing.small)
+                                    .padding(.vertical, themeManager.spacing.small)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: themeManager.cornerRadius.large)
+                                            .fill(Color.pink)
+                                    )
+                                    .padding(.top, 12)
+                                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             }
                         }
+                        .fixedSize(horizontal: false, vertical: true)
+                        .id(project.id)
                         .listRowInsets(EdgeInsets(
                             top: 8,
                             leading: 0,
@@ -99,11 +168,12 @@ struct TimerView: View {
                             }
                         }
                     }
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .listRowSeparator(.hidden)
+                    .listRowSeparatorTint(.clear)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .listRowSeparator(.hidden)
-                .listRowSeparatorTint(.clear)
             }
             
             // Bottom button
@@ -135,9 +205,6 @@ struct TimerView: View {
                 }
             }
             .ignoresSafeArea(edges: .bottom)
-        }
-        .sheet(isPresented: $showingStatistics) {
-            StatisticsOverviewView()
         }
         .alert("new project", isPresented: $showingAddProject) {
             TextField("project name", text: $newProjectName)

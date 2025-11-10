@@ -45,7 +45,9 @@ class MotionManager: ObservableObject {
 struct ProjectTimerCard: View {
     let project: Project
     let isExpanded: Bool
+    let isAnyCardExpanded: Bool
     let onDetailToggle: () -> Void
+    let onStatisticsToggle: (() -> Void)?
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var themeManager = ThemeManager.shared
     @StateObject private var motionManager = MotionManager()
@@ -127,6 +129,10 @@ struct ProjectTimerCard: View {
                             }
                             .onEnded { _ in
                                 isPressed = false
+                
+                // Prevent timer toggle if any card is expanded
+                guard !isAnyCardExpanded else { return }
+                
                 // Stronger haptic feedback for tap
                 let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                 impactFeedback.impactOccurred()
@@ -162,7 +168,11 @@ struct ProjectTimerCard: View {
                         .zIndex(10)
                         .highPriorityGesture(
                             TapGesture().onEnded {
-                                onDetailToggle()
+                                if let onStatisticsToggle = onStatisticsToggle {
+                                    onStatisticsToggle()
+                                } else {
+                                    onDetailToggle()
+                                }
                             }
                         )
                         .onAppear {

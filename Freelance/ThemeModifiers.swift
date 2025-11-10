@@ -36,7 +36,10 @@ struct ThemedBackgroundModifier: ViewModifier {
                 )
         } else {
             content
-                .background(Color(.systemBackground))
+                .background(
+                    Color(.systemBackground)
+                        .ignoresSafeArea()
+                )
         }
     }
 }

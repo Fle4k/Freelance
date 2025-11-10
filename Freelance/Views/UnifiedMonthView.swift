@@ -259,11 +259,10 @@ struct UnifiedMonthView: View {
     
     var body: some View {
         ZStack {
-            GeometryReader { geometry in
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 10) {
                     // Top header with earnings and time - each in separate pill
                     if !months.isEmpty {
-                        Spacer()
                         VStack(spacing: 20) {
                             // Earnings
 
@@ -527,46 +526,19 @@ struct UnifiedMonthView: View {
                     }
                 }
                 .themedBackground()
-                .blur(radius: (showingSettings || showingDayEditSheet || showEditAlert) ? 3 : 0)
-                .animation(.easeInOut(duration: 0.2), value: showingSettings || showingDayEditSheet || showEditAlert)
-                .gesture(
-                    DragGesture(minimumDistance: 50)
-                        .onEnded { value in
-                            if value.translation.height > 100 && abs(value.translation.width) < 100 {
-                                dismiss()
-                            }
-                        }
-                )
-                .ignoresSafeArea(edges: .top)
             }
-            
-            // Floating settings button in bottom right corner
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        showingSettings = true
-                    }) {
-                        ZStack {
-                            Color.clear
-                                .frame(width: 64, height: 64)
-                            
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 24, weight: .regular))
-                                .foregroundColor(.primary)
+            .blur(radius: (showingSettings || showingDayEditSheet || showEditAlert) ? 3 : 0)
+            .animation(.easeInOut(duration: 0.2), value: showingSettings || showingDayEditSheet || showEditAlert)
+            .gesture(
+                DragGesture(minimumDistance: 50)
+                    .onEnded { value in
+                        if value.translation.height > 100 && abs(value.translation.width) < 100 {
+                            dismiss()
                         }
                     }
-                    .modifier(GlassButtonModifier(
-                        isLiquidGlass: themeManager.currentTheme == .liquidGlass,
-                        size: 64
-                    ))
-                    .contentShape(Circle())
-                    .padding(.trailing, themeManager.spacing.medium)
-                    .padding(.bottom, themeManager.spacing.medium)
-                }
-            }
-            .ignoresSafeArea(edges: .bottom)
+            )
+            .ignoresSafeArea(edges: .top)
+            
             
             // Custom edit alert
             if showEditAlert {

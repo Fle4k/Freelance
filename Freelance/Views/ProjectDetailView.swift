@@ -476,8 +476,10 @@ struct ProjectDetailView: View {
         .frame(maxWidth: .infinity, minHeight: 400)
         .padding(.horizontal, themeManager.spacing.small)
         .padding(.vertical, themeManager.spacing.small)
-        .background(Color.black)
-        .clipShape(RoundedRectangle(cornerRadius: 40))
+        .background(
+            RoundedRectangle(cornerRadius: themeManager.cornerRadius.large)
+                .fill(Color.teal)
+        )
         .onAppear {
             setupMonths()
         }
