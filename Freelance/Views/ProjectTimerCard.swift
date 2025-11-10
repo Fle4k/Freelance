@@ -44,13 +44,14 @@ class MotionManager: ObservableObject {
 
 struct ProjectTimerCard: View {
     let project: Project
+    let isExpanded: Bool
+    let onDetailToggle: () -> Void
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var themeManager = ThemeManager.shared
     @StateObject private var motionManager = MotionManager()
     @State private var showingResetAlert = false
     @State private var showingRemoveConfirmation = false
     @State private var showingRenameAlert = false
-    @State private var showingDetailView = false
     @State private var newProjectName = ""
     @State private var isPressed = false
     @State private var timerTick = 0
@@ -96,12 +97,12 @@ struct ProjectTimerCard: View {
                 ZStack(alignment: .trailing) {
                     // Timer display in card (tappable area)
                     HStack {
-                        Text(formattedTime)
-                            .font(.custom("Major Mono Display Regular", size: 36))
-                            .textCase(nil)
-                            .foregroundColor(project.isRunning ? .primary : .secondary)
-                            .monospacedDigit()
-                            .animation(.easeInOut(duration: 0.2), value: project.isRunning)
+                Text(formattedTime)
+                    .font(.custom("Major Mono Display Regular", size: 36))
+                    .textCase(nil)
+                    .foregroundColor(project.isRunning ? .primary : .secondary)
+                    .monospacedDigit()
+                    .animation(.easeInOut(duration: 0.2), value: project.isRunning)
                             .frame(maxWidth: .infinity)
                         
                         // Spacer for button area
@@ -110,13 +111,13 @@ struct ProjectTimerCard: View {
                     }
                     .padding(.vertical, 32)
                     .padding(.horizontal, themeManager.spacing.medium)
-                    .themedSectionBackground()
-                    .clipShape(Capsule())
-                    .opacity(project.isRunning ? 1.0 : 0.6)
-                    .scaleEffect(isPressed ? 0.97 : 1.0)
-                    .brightness(isPressed ? 0.1 : 0.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
-                    .contentShape(Capsule())
+            .themedSectionBackground()
+            .clipShape(Capsule())
+            .opacity(project.isRunning ? 1.0 : 0.6)
+            .scaleEffect(isPressed ? 0.97 : 1.0)
+            .brightness(isPressed ? 0.1 : 0.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+            .contentShape(Capsule())
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { _ in
@@ -126,24 +127,24 @@ struct ProjectTimerCard: View {
                             }
                             .onEnded { _ in
                                 isPressed = false
-                                // Stronger haptic feedback for tap
-                                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                                impactFeedback.impactOccurred()
-                                
-                                // Toggle timer
-                                if project.isRunning {
-                                    timeTracker.pauseTimer(for: project.id)
-                                } else {
-                                    timeTracker.startTimer(for: project.id)
-                                }
-                            }
+                // Stronger haptic feedback for tap
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+                
+                // Toggle timer
+                if project.isRunning {
+                    timeTracker.pauseTimer(for: project.id)
+                } else {
+                    timeTracker.startTimer(for: project.id)
+                }
+            }
                     )
                     .simultaneousGesture(
                         LongPressGesture(minimumDuration: longPressDuration).onEnded { _ in
-                            // Warning haptic feedback for long press (reset action)
-                            let notificationFeedback = UINotificationFeedbackGenerator()
-                            notificationFeedback.notificationOccurred(.warning)
-                            showingResetAlert = true
+                // Warning haptic feedback for long press (reset action)
+                let notificationFeedback = UINotificationFeedbackGenerator()
+                notificationFeedback.notificationOccurred(.warning)
+                showingResetAlert = true
                         }
                     )
                     
@@ -161,7 +162,7 @@ struct ProjectTimerCard: View {
                         .zIndex(10)
                         .highPriorityGesture(
                             TapGesture().onEnded {
-                                showingDetailView = true
+                                onDetailToggle()
                             }
                         )
                         .onAppear {
@@ -211,9 +212,6 @@ struct ProjectTimerCard: View {
             }
         } message: {
             Text("are you sure you want to remove this project? all time entries will be deleted.")
-        }
-        .sheet(isPresented: $showingDetailView) {
-            ProjectDetailView(project: project)
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             timerTick += 1

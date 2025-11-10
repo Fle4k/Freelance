@@ -13,6 +13,7 @@ struct TimerView: View {
     @State private var showingStatistics = false
     @State private var showingAddProject = false
     @State private var newProjectName = ""
+    @State private var expandedProjectId: UUID?
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -29,31 +30,74 @@ struct TimerView: View {
             // Show centered single timer or list with swipe actions based on project count
             if timeTracker.projects.count == 1, let project = timeTracker.projects.first {
                 // Single timer - centered like original
-                VStack {
+                VStack(spacing: 0) {
                     Spacer()
-                    ProjectTimerCard(project: project)
+                    ProjectTimerCard(
+                        project: project,
+                        isExpanded: expandedProjectId == project.id,
+                        onDetailToggle: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                if expandedProjectId == project.id {
+                                    expandedProjectId = nil
+                                } else {
+                                    expandedProjectId = project.id
+                                }
+                            }
+                        }
+                    )
+                    
+                    // Inline detail view when expanded
+                    if expandedProjectId == project.id {
+                        ProjectDetailView(project: project)
+                            .padding(.top, 12)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                    
                     Spacer()
                 }
             } else {
                 // Multiple timers - List with swipe actions
                 List {
                     ForEach(timeTracker.projects) { project in
-                        ProjectTimerCard(project: project)
-                            .listRowInsets(EdgeInsets(
-                                top: 8,
-                                leading: 0,
-                                bottom: 8,
-                                trailing: 0
-                            ))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    timeTracker.deleteProject(project)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                        VStack(spacing: 0) {
+                            ProjectTimerCard(
+                                project: project,
+                                isExpanded: expandedProjectId == project.id,
+                                onDetailToggle: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        if expandedProjectId == project.id {
+                                            expandedProjectId = nil
+                                        } else {
+                                            expandedProjectId = project.id
+                                        }
+                                    }
                                 }
+                            )
+                            
+                            // Inline detail view when expanded
+                            if expandedProjectId == project.id {
+                                ProjectDetailView(project: project)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top, 12)
+                                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
                             }
+                        }
+                        .listRowInsets(EdgeInsets(
+                            top: 8,
+                            leading: 0,
+                            bottom: 8,
+                            trailing: 0
+                        ))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                timeTracker.deleteProject(project)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                     }
                 }
                 .listStyle(.plain)

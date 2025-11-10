@@ -12,7 +12,6 @@ struct ProjectDetailView: View {
     @ObservedObject private var timeTracker = TimeTracker.shared
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var themeManager = ThemeManager.shared
-    @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     @State private var currentMonthIndex = 0
     @State private var months: [Date] = []
@@ -256,248 +255,229 @@ struct ProjectDetailView: View {
     }
     
     var body: some View {
-        ZStack {
-            GeometryReader { geometry in
-                VStack(spacing: 10) {
-                    // Top header with project name
-                    if !months.isEmpty {
+        VStack(spacing: 10) {
+            Spacer(minLength: 0)
+            // Top header with earnings and time (no project name, no extra spacing)
+            if !months.isEmpty {
+                VStack(spacing: 20) {
+                    // Earnings
+                    HStack {
+                        Text("earnings")
+                            .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                            .textCase(nil)
+                            .foregroundColor(project.isRunning ? .primary : .secondary)
+                        
                         Spacer()
-                        VStack(spacing: 20) {
-                            // Project name (only show if not empty)
-                            if !project.name.isEmpty {
-                                Text(project.name)
-                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
-                                    .textCase(nil)
-                                    .foregroundColor(.primary)
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .padding(.top, themeManager.spacing.contentHorizontal + 40)
-                            } else {
-                                Spacer()
-                                    .frame(height: themeManager.spacing.contentHorizontal + 40)
-                            }
-                            
-                            // Earnings
-                            HStack {
-                                Text("earnings")
-                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
-                                    .textCase(nil)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Text(String(format: "%.0f\(settings.currency)", getMonthEarnings(for: months[currentMonthIndex])))
-                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
-                                    .textCase(nil)
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            // Time
-                            HStack {
-                                Text("time")
-                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
-                                    .textCase(nil)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
-                                    .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
-                                    .textCase(nil)
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                        .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                        .padding(.bottom, themeManager.spacing.xxLarge)
-                    }
-                    Spacer()
-                    
-                    // Month and Year - centered and closer together
-                    if !months.isEmpty {
-                        HStack(spacing: 8) {
-                            Text(getFormattedMonth(for: months[currentMonthIndex]))
-                                .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
-                                .textCase(nil)
-                                .foregroundColor(.primary)
-                            
-                            Text(getFormattedYear(for: months[currentMonthIndex]))
-                                .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
-                                .textCase(nil)
-                                .foregroundColor(.primary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.bottom, themeManager.spacing.small)
+                        
+                        Text(String(format: "%.0f\(settings.currency)", getMonthEarnings(for: months[currentMonthIndex])))
+                            .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                            .textCase(nil)
+                            .foregroundColor(project.isRunning ? .primary : .secondary)
                     }
                     
-                    // Calendar - with peeking adjacent months
-                    if !months.isEmpty {
-                        TabView(selection: $currentMonthIndex) {
-                            ForEach(0..<months.count, id: \.self) { index in
-                                CalendarView(period: .thisMonth, monthDate: months[index], onDaySelected: { selectedDate in
-                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                    impactFeedback.impactOccurred()
-                                    selectedDay = selectedDate
-                                }, timeEntries: projectTimeEntries)
-                                .padding(.horizontal, themeManager.spacing.large)
-                                .padding(.vertical, themeManager.spacing.medium)
-                                .tag(index)
-                            }
-                        }
-                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                        .frame(height: 290)
-                        .padding(.bottom, themeManager.spacing.tiny)
+                    // Time
+                    HStack {
+                        Text("time")
+                            .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                            .textCase(nil)
+                            .foregroundColor(project.isRunning ? .primary : .secondary)
+                        
+                        Spacer()
+                        
+                        Text(formatTime(getMonthTime(for: months[currentMonthIndex])))
+                            .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                            .textCase(nil)
+                            .foregroundColor(project.isRunning ? .primary : .secondary)
                     }
+                }
+                .padding(.horizontal, themeManager.spacing.contentHorizontal)
+                .padding(.top, themeManager.spacing.large)
+                .padding(.bottom, themeManager.spacing.xxLarge)
+            }
+            
+            // Month and Year - centered and closer together
+            if !months.isEmpty {
+                HStack(spacing: 8) {
+                    Text(getFormattedMonth(for: months[currentMonthIndex]))
+                        .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                        .textCase(nil)
+                        .foregroundColor(.primary)
                     
-                    // Scrollable list of tracked days
-                    ScrollViewReader { proxy in
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: themeManager.currentTheme == .liquidGlass ? themeManager.spacing.small : 0) {
-                                ForEach(monthEntries, id: \.0) { dayEntry in
-                                    VStack(spacing: 0) {
-                                        // Main day row
-                                        HStack(spacing: 8) {
-                                            let isTodayWithActiveTimer = Calendar.current.isDateInToday(dayEntry.0) && project.isRunning
-                                            let textColor: Color = isTodayWithActiveTimer ? .white : .primary
-                                            
-                                            // Date column
-                                            Text(formatDate(dayEntry.0))
-                                                .font(.custom("Major Mono Display Regular", size: 14))
-                                                .textCase(nil)
-                                                .foregroundColor(textColor)
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.8)
-                                            
-                                            Spacer()
-                                            
-                                            // Time column
-                                            Text(formatDayDuration(for: dayEntry.0))
-                                                .font(.custom("Major Mono Display Regular", size: 14))
-                                                .textCase(nil)
-                                                .foregroundColor(textColor)
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.8)
-                                                .frame(minWidth: 70, alignment: .trailing)
-                                            
-                                            // Earnings column
-                                            Text(String(format: "%.0f\(settings.currency)", formatDayEarnings(for: dayEntry.0)))
-                                                .font(.custom("Major Mono Display Regular", size: 14))
-                                                .textCase(nil)
-                                                .foregroundColor(textColor)
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.8)
-                                                .frame(minWidth: 50, alignment: .trailing)
-                                        }
-                                        .padding(.vertical, themeManager.currentTheme == .liquidGlass ? themeManager.spacing.itemSpacing : 8)
-                                        .padding(.horizontal, 16)
-                                        .modifier(
-                                            GlassListRowModifier(
-                                                isLiquidGlass: themeManager.currentTheme == .liquidGlass,
-                                                isHighlighted: Calendar.current.isDate(dayEntry.0, inSameDayAs: selectedDay ?? Date.distantPast) ||
-                                                             (Calendar.current.isDateInToday(dayEntry.0) && project.isRunning)
-                                            )
-                                        )
-                                        .contentShape(Rectangle())
-                                        .simultaneousGesture(
-                                            TapGesture()
-                                                .onEnded {
-                                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                                    impactFeedback.impactOccurred()
-                                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                                        if expandedDay == dayEntry.0 {
-                                                            expandedDay = nil
-                                                        } else {
-                                                            expandedDay = dayEntry.0
-                                                        }
-                                                    }
+                    Text(getFormattedYear(for: months[currentMonthIndex]))
+                        .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
+                        .textCase(nil)
+                        .foregroundColor(.primary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, themeManager.spacing.small)
+            }
+            
+            // Calendar - with peeking adjacent months
+            if !months.isEmpty {
+                TabView(selection: $currentMonthIndex) {
+                    ForEach(0..<months.count, id: \.self) { index in
+                        CalendarView(period: .thisMonth, monthDate: months[index], onDaySelected: { selectedDate in
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                            impactFeedback.impactOccurred()
+                            selectedDay = selectedDate
+                        }, timeEntries: projectTimeEntries)
+                        .padding(.horizontal, themeManager.spacing.large)
+                        .padding(.vertical, themeManager.spacing.medium)
+                        .tag(index)
+                    }
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .scrollIndicators(.hidden)
+                .frame(height: 290)
+                .padding(.bottom, themeManager.spacing.tiny)
+            }
+            
+            // Scrollable list of tracked days
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: themeManager.currentTheme == .liquidGlass ? themeManager.spacing.small : 0) {
+                        ForEach(monthEntries, id: \.0) { dayEntry in
+                            VStack(spacing: 0) {
+                                // Main day row
+                                HStack(spacing: 8) {
+                                    let isTodayWithActiveTimer = Calendar.current.isDateInToday(dayEntry.0) && project.isRunning
+                                    let textColor: Color = isTodayWithActiveTimer ? .white : .primary
+                                    
+                                    // Date column
+                                    Text(formatDate(dayEntry.0))
+                                        .font(.custom("Major Mono Display Regular", size: 14))
+                                        .textCase(nil)
+                                        .foregroundColor(textColor)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
+                                    
+                                    Spacer()
+                                    
+                                    // Time column
+                                    Text(formatDayDuration(for: dayEntry.0))
+                                        .font(.custom("Major Mono Display Regular", size: 14))
+                                        .textCase(nil)
+                                        .foregroundColor(textColor)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
+                                        .frame(minWidth: 70, alignment: .trailing)
+                                    
+                                    // Earnings column
+                                    Text(String(format: "%.0f\(settings.currency)", formatDayEarnings(for: dayEntry.0)))
+                                        .font(.custom("Major Mono Display Regular", size: 14))
+                                        .textCase(nil)
+                                        .foregroundColor(textColor)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.8)
+                                        .frame(minWidth: 50, alignment: .trailing)
+                                }
+                                .padding(.vertical, themeManager.currentTheme == .liquidGlass ? themeManager.spacing.itemSpacing : 8)
+                                .padding(.horizontal, 16)
+                                .modifier(
+                                    GlassListRowModifier(
+                                        isLiquidGlass: themeManager.currentTheme == .liquidGlass,
+                                        isHighlighted: Calendar.current.isDate(dayEntry.0, inSameDayAs: selectedDay ?? Date.distantPast) ||
+                                                     (Calendar.current.isDateInToday(dayEntry.0) && project.isRunning)
+                                    )
+                                )
+                                .contentShape(Rectangle())
+                                .simultaneousGesture(
+                                    TapGesture()
+                                        .onEnded {
+                                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                            impactFeedback.impactOccurred()
+                                            withAnimation(.easeInOut(duration: 0.2)) {
+                                                if expandedDay == dayEntry.0 {
+                                                    expandedDay = nil
+                                                } else {
+                                                    expandedDay = dayEntry.0
                                                 }
-                                        )
-                                        
-                                        // Expanded session details
-                                        if expandedDay == dayEntry.0 {
-                                            VStack(spacing: themeManager.currentTheme == .liquidGlass ? 4 : 2) {
-                                                if isDayManuallyEdited(for: dayEntry.0) {
-                                                    Text("data changed by user")
+                                            }
+                                        }
+                                )
+                                
+                                // Expanded session details
+                                if expandedDay == dayEntry.0 {
+                                    VStack(spacing: themeManager.currentTheme == .liquidGlass ? 4 : 2) {
+                                        if isDayManuallyEdited(for: dayEntry.0) {
+                                            Text("data changed by user")
+                                                .font(.custom("Major Mono Display Regular", size: 14))
+                                                .textCase(nil)
+                                                .foregroundColor(.secondary)
+                                                .frame(maxWidth: .infinity, alignment: .center)
+                                                .padding(.vertical, 4)
+                                                .padding(.horizontal, 16)
+                                        } else {
+                                            // Show individual time entries
+                                            ForEach(dayEntry.1) { entry in
+                                                HStack(spacing: 8) {
+                                                    // Time range column
+                                                    Text(formatTimeRange(entry))
                                                         .font(.custom("Major Mono Display Regular", size: 14))
                                                         .textCase(nil)
                                                         .foregroundColor(.secondary)
-                                                        .frame(maxWidth: .infinity, alignment: .center)
-                                                        .padding(.vertical, 4)
-                                                        .padding(.horizontal, 16)
-                                                } else {
-                                                    // Show individual time entries
-                                                    ForEach(dayEntry.1) { entry in
-                                                        HStack(spacing: 8) {
-                                                            // Time range column
-                                                            Text(formatTimeRange(entry))
-                                                                .font(.custom("Major Mono Display Regular", size: 14))
-                                                                .textCase(nil)
-                                                                .foregroundColor(.secondary)
-                                                                .lineLimit(1)
-                                                                .minimumScaleFactor(0.8)
-                                                            
-                                                            Spacer()
-                                                            
-                                                            // Session duration
-                                                            Text(formatSessionDuration(entry))
-                                                                .font(.custom("Major Mono Display Regular", size: 14))
-                                                                .textCase(nil)
-                                                                .foregroundColor(.secondary)
-                                                                .lineLimit(1)
-                                                                .minimumScaleFactor(0.8)
-                                                            
-                                                            // Session earnings
-                                                            Text(String(format: "%.0f\(settings.currency)", calculateSessionEarnings(entry)))
-                                                                .font(.custom("Major Mono Display Regular", size: 14))
-                                                                .textCase(nil)
-                                                                .foregroundColor(.secondary)
-                                                                .lineLimit(1)
-                                                                .minimumScaleFactor(0.8)
-                                                                .frame(minWidth: 50, alignment: .trailing)
-                                                        }
-                                                        .padding(.vertical, 4)
-                                                        .padding(.horizontal, 16)
-                                                    }
+                                                        .lineLimit(1)
+                                                        .minimumScaleFactor(0.8)
+                                                    
+                                                    Spacer()
+                                                    
+                                                    // Session duration
+                                                    Text(formatSessionDuration(entry))
+                                                        .font(.custom("Major Mono Display Regular", size: 14))
+                                                        .textCase(nil)
+                                                        .foregroundColor(.secondary)
+                                                        .lineLimit(1)
+                                                        .minimumScaleFactor(0.8)
+                                                    
+                                                    // Session earnings
+                                                    Text(String(format: "%.0f\(settings.currency)", calculateSessionEarnings(entry)))
+                                                        .font(.custom("Major Mono Display Regular", size: 14))
+                                                        .textCase(nil)
+                                                        .foregroundColor(.secondary)
+                                                        .lineLimit(1)
+                                                        .minimumScaleFactor(0.8)
+                                                        .frame(minWidth: 50, alignment: .trailing)
                                                 }
+                                                .padding(.vertical, 4)
+                                                .padding(.horizontal, 16)
                                             }
-                                            .padding(.top, 4)
-                                            .padding(.bottom, 4)
-                                            .transition(.opacity.combined(with: .move(edge: .top)))
                                         }
                                     }
-                                    .id(dayEntry.0)
-                                }
-                                .padding(.horizontal, 16)
-                                
-                                if monthEntries.isEmpty {
-                                    Text("no time tracked this month")
-                                        .font(.custom("Major Mono Display Regular", size: 12))
-                                        .textCase(nil)
-                                        .foregroundColor(.secondary)
-                                        .padding(.top, themeManager.spacing.large)
+                                    .padding(.top, 4)
+                                    .padding(.bottom, 4)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
                                 }
                             }
-                            .padding(.bottom, 100)
+                            .id(dayEntry.0)
                         }
-                        .onChange(of: selectedDay) { _, newDay in
-                            if let day = newDay {
-                                withAnimation {
-                                    proxy.scrollTo(day, anchor: .top)
-                                }
-                            }
+                        .padding(.horizontal, 16)
+                        
+                        if monthEntries.isEmpty {
+                            Text("no time tracked this month")
+                                .font(.custom("Major Mono Display Regular", size: 12))
+                                .textCase(nil)
+                                .foregroundColor(.secondary)
+                                .padding(.top, themeManager.spacing.large)
+                        }
+                    }
+                    .padding(.bottom, 100)
+                }
+                .onChange(of: selectedDay) { _, newDay in
+                    if let day = newDay {
+                        withAnimation {
+                            proxy.scrollTo(day, anchor: .top)
                         }
                     }
                 }
-                .themedBackground()
-                .gesture(
-                    DragGesture(minimumDistance: 50)
-                        .onEnded { value in
-                            if value.translation.height > 100 && abs(value.translation.width) < 100 {
-                                dismiss()
-                            }
-                        }
-                )
-                .ignoresSafeArea(edges: .top)
             }
+            
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, minHeight: 400)
+        .padding(.horizontal, themeManager.spacing.small)
+        .padding(.vertical, themeManager.spacing.small)
+        .background(Color.black)
+        .clipShape(RoundedRectangle(cornerRadius: 40))
         .onAppear {
             setupMonths()
         }
