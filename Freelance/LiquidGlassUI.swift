@@ -24,23 +24,11 @@ struct LiquidGlassUI: View {
     var body: some View {
         ZStack {
             // Background image to showcase the glass effect
-            Image("fle4k_create_a_background_wall_for_a_towerdefence_game_in_viv_c6e19b3d-3d62-4820-a054-40f9d9086328_0")
+            Image("fle4k_a_hammer_--ar_916_--sref_78882132_--v_7_f16b589e-3a65-4151-a564-72244ef00b1a_2")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .opacity(colorScheme == .dark ? 0.4 : 0.3)
                 .ignoresSafeArea()
-            
-            // Gradient overlay to enhance the glass effect
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.blue.opacity(0.2),
-                    Color.purple.opacity(0.2),
-                    Color.pink.opacity(0.2)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: 32) {

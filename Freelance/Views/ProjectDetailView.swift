@@ -13,8 +13,8 @@ struct ProjectDetailView: View {
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.colorScheme) var colorScheme
-    @State private var currentMonthIndex = 0
-    @State private var months: [Date] = []
+    @State private var currentMonthIndex: Int
+    @State private var months: [Date]
     @State private var selectedDay: Date?
     @State private var showingEditSheet = false
     @State private var showingDayEditSheet = false
@@ -28,12 +28,122 @@ struct ProjectDetailView: View {
     @State private var showConfirmation = false
     @State private var previousEntries: [Date: [TimeEntry]] = [:]
     
+    // Cached computed values for performance
+    @State private var cachedMonthEntries: [(Date, [TimeEntry])] = []
+    @State private var cachedMonthEarnings: [Int: Double] = [:]
+    @State private var cachedMonthTime: [Int: TimeInterval] = [:]
+    @State private var cachedDayDurations: [Date: String] = [:]
+    @State private var cachedDayEarnings: [Date: Double] = [:]
+    
+    // Reusable date formatters (expensive to create)
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "E dd.MM.yy"
+        return formatter
+    }()
+    
+    private static let monthFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM"
+        return formatter
+    }()
+    
+    private static let yearFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy"
+        return formatter
+    }()
+    
+    private static let monthTitleFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter
+    }()
+    
+    init(project: Project) {
+        self.project = project
+        
+        // Initialize months immediately
+        let calendar = Calendar.current
+        let now = Date()
+        var monthsArray: [Date] = []
+        
+        for i in (1...3).reversed() {
+            if let previousMonth = calendar.date(byAdding: .month, value: -i, to: now) {
+                monthsArray.append(previousMonth)
+            }
+        }
+        
+        monthsArray.append(now)
+        
+        _months = State(initialValue: monthsArray)
+        _currentMonthIndex = State(initialValue: monthsArray.count - 1)
+        _selectedDay = State(initialValue: calendar.startOfDay(for: now))
+        
+        // Pre-calculate month entries synchronously so view renders immediately
+        let currentMonth = monthsArray[monthsArray.count - 1]
+        if let monthInterval = calendar.dateInterval(of: .month, for: currentMonth) {
+            var entries: [(Date, [TimeEntry])] = []
+            var currentDate = monthInterval.start
+            
+            while currentDate < monthInterval.end {
+                let dayStart = calendar.startOfDay(for: currentDate)
+                let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? currentDate
+                
+                let dayEntries = project.timeEntries.filter { entry in
+                    entry.startDate >= dayStart && entry.startDate < dayEnd
+                }
+                
+                // Include current session if it's running for this project
+                if let currentStart = project.currentSessionStart,
+                   project.isRunning,
+                   currentStart >= dayStart && currentStart < dayEnd {
+                    let currentEntry = TimeEntry(startDate: currentStart, endDate: nil, isActive: true)
+                    var allDayEntries = dayEntries
+                    allDayEntries.append(currentEntry)
+                    entries.append((currentDate, allDayEntries))
+                } else if !dayEntries.isEmpty {
+                    entries.append((currentDate, dayEntries))
+                }
+                
+                currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
+            }
+            
+            let sorted = entries.sorted { $0.0 > $1.0 }
+            _cachedMonthEntries = State(initialValue: sorted)
+            
+            // Pre-calculate earnings and time for current month
+            let monthIndex = monthsArray.count - 1
+            let totalTime = project.timeEntries.filter { entry in
+                entry.startDate >= monthInterval.start && entry.startDate < monthInterval.end
+            }.reduce(0) { $0 + $1.duration }
+            
+            var earningsCache: [Int: Double] = [:]
+            var timeCache: [Int: TimeInterval] = [:]
+            earningsCache[monthIndex] = totalTime / 3600 * AppSettings.shared.hourlyRate
+            timeCache[monthIndex] = totalTime
+            
+            _cachedMonthEarnings = State(initialValue: earningsCache)
+            _cachedMonthTime = State(initialValue: timeCache)
+        }
+    }
+    
     // Filter time entries for this project
     private var projectTimeEntries: [TimeEntry] {
         project.timeEntries
     }
     
     private var monthEntries: [(Date, [TimeEntry])] {
+        // Return cached value if available
+        if !cachedMonthEntries.isEmpty {
+            return cachedMonthEntries
+        }
+        
+        // Calculate if not cached
+        return calculateMonthEntries()
+    }
+    
+    private func calculateMonthEntries() -> [(Date, [TimeEntry])] {
         let calendar = Calendar.current
         
         guard !months.isEmpty && currentMonthIndex < months.count else { return [] }
@@ -69,36 +179,31 @@ struct ProjectDetailView: View {
             currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
         }
         
-        return entries.sorted { $0.0 > $1.0 }
-    }
-    
-    private func setupMonths() {
-        let calendar = Calendar.current
-        let now = Date()
-        var monthsArray: [Date] = []
-        
-        for i in (1...3).reversed() {
-            if let previousMonth = calendar.date(byAdding: .month, value: -i, to: now) {
-                monthsArray.append(previousMonth)
-            }
-        }
-        
-        monthsArray.append(now)
-        
-        months = monthsArray
-        currentMonthIndex = months.count - 1
-        
-        // Select today by default
-        selectedDay = calendar.startOfDay(for: now)
+        let sorted = entries.sorted { $0.0 > $1.0 }
+        cachedMonthEntries = sorted
+        return sorted
     }
     
     private func getMonthTitle(for month: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: month).lowercased()
+        return Self.monthTitleFormatter.string(from: month).lowercased()
     }
     
     private func getMonthEarnings(for month: Date) -> Double {
+        guard !months.isEmpty, let monthIndex = months.firstIndex(where: { Calendar.current.isDate($0, equalTo: month, toGranularity: .month) }) else {
+            return calculateMonthEarnings(for: month)
+        }
+        
+        // Check cache first
+        if let cached = cachedMonthEarnings[monthIndex] {
+            return cached
+        }
+        
+        let earnings = calculateMonthEarnings(for: month)
+        cachedMonthEarnings[monthIndex] = earnings
+        return earnings
+    }
+    
+    private func calculateMonthEarnings(for month: Date) -> Double {
         let calendar = Calendar.current
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return 0 }
         
@@ -111,6 +216,21 @@ struct ProjectDetailView: View {
     }
     
     private func getMonthTime(for month: Date) -> TimeInterval {
+        guard !months.isEmpty, let monthIndex = months.firstIndex(where: { Calendar.current.isDate($0, equalTo: month, toGranularity: .month) }) else {
+            return calculateMonthTime(for: month)
+        }
+        
+        // Check cache first
+        if let cached = cachedMonthTime[monthIndex] {
+            return cached
+        }
+        
+        let time = calculateMonthTime(for: month)
+        cachedMonthTime[monthIndex] = time
+        return time
+    }
+    
+    private func calculateMonthTime(for month: Date) -> TimeInterval {
         let calendar = Calendar.current
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return 0 }
         
@@ -136,9 +256,7 @@ struct ProjectDetailView: View {
     }
     
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "E dd.MM.yy"
-        return formatter.string(from: date).lowercased()
+        return Self.dateFormatter.string(from: date).lowercased()
     }
     
     private func formatTimeRange(_ entry: TimeEntry) -> String {
@@ -183,6 +301,11 @@ struct ProjectDetailView: View {
     }
     
     private func formatDayDuration(for date: Date) -> String {
+        // Check cache first
+        if let cached = cachedDayDurations[date] {
+            return cached
+        }
+        
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
@@ -206,10 +329,17 @@ struct ProjectDetailView: View {
             }
         }
         
-        return formatTime(totalDuration)
+        let formatted = formatTime(totalDuration)
+        cachedDayDurations[date] = formatted
+        return formatted
     }
     
     private func formatDayEarnings(for date: Date) -> Double {
+        // Check cache first
+        if let cached = cachedDayEarnings[date] {
+            return cached
+        }
+        
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
@@ -233,19 +363,17 @@ struct ProjectDetailView: View {
             }
         }
         
-        return totalDuration / 3600 * settings.hourlyRate
+        let earnings = totalDuration / 3600 * settings.hourlyRate
+        cachedDayEarnings[date] = earnings
+        return earnings
     }
     
     private func getFormattedMonth(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM"
-        return formatter.string(from: date).lowercased()
+        return Self.monthFormatter.string(from: date).lowercased()
     }
     
     private func getFormattedYear(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy"
-        return formatter.string(from: date)
+        return Self.yearFormatter.string(from: date)
     }
     
     private func isDayManuallyEdited(for date: Date) -> Bool {
@@ -255,10 +383,10 @@ struct ProjectDetailView: View {
     }
     
     var body: some View {
-        VStack(spacing: 10) {
-            Spacer(minLength: 0)
-            // Top header with earnings and time (no project name, no extra spacing)
-            if !months.isEmpty {
+        VStack(spacing: 0) {
+            // Fixed sticky header section (earnings/time, month/year, calendar)
+            VStack(spacing: 0) {
+                // Top header with earnings and time
                 VStack(spacing: 20) {
                     // Earnings
                     HStack {
@@ -291,12 +419,10 @@ struct ProjectDetailView: View {
                     }
                 }
                 .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                .padding(.top, themeManager.spacing.large)
-                .padding(.bottom, themeManager.spacing.xxLarge)
-            }
-            
-            // Month and Year - centered and closer together
-            if !months.isEmpty {
+                .padding(.top, themeManager.spacing.medium)
+                .padding(.bottom, themeManager.spacing.large)
+                
+                // Month and Year - centered and closer together
                 HStack(spacing: 8) {
                     Text(getFormattedMonth(for: months[currentMonthIndex]))
                         .font(.custom("Major Mono Display Regular", size: themeManager.currentTheme == .liquidGlass ? 20 : 24))
@@ -310,29 +436,30 @@ struct ProjectDetailView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, themeManager.spacing.small)
-            }
-            
-            // Calendar - with peeking adjacent months
-            if !months.isEmpty {
-                TabView(selection: $currentMonthIndex) {
-                    ForEach(0..<months.count, id: \.self) { index in
-                        CalendarView(period: .thisMonth, monthDate: months[index], onDaySelected: { selectedDate in
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                            impactFeedback.impactOccurred()
-                            selectedDay = selectedDate
-                        }, timeEntries: projectTimeEntries)
-                        .padding(.horizontal, themeManager.spacing.large)
-                        .padding(.vertical, themeManager.spacing.medium)
-                        .tag(index)
+                
+                // Calendar - with peeking adjacent months (sticky)
+                if !months.isEmpty {
+                    TabView(selection: $currentMonthIndex) {
+                        ForEach(0..<months.count, id: \.self) { index in
+                            CalendarView(period: .thisMonth, monthDate: months[index], onDaySelected: { selectedDate in
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
+                                selectedDay = selectedDate
+                            }, timeEntries: projectTimeEntries)
+                            .padding(.horizontal, themeManager.spacing.large)
+                            .padding(.vertical, themeManager.spacing.medium)
+                            .tag(index)
+                        }
                     }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                    .scrollIndicators(.hidden)
+                    .frame(height: 290)
+                    .padding(.bottom, themeManager.spacing.medium)
                 }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .scrollIndicators(.hidden)
-                .frame(height: 290)
-                .padding(.bottom, themeManager.spacing.tiny)
             }
+            .background(Color.clear)
             
-            // Scrollable list of tracked days
+            // Scrollable list of tracked days (only this section scrolls)
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: themeManager.currentTheme == .liquidGlass ? themeManager.spacing.small : 0) {
@@ -460,8 +587,9 @@ struct ProjectDetailView: View {
                                 .padding(.top, themeManager.spacing.large)
                         }
                     }
-                    .padding(.bottom, 100)
+                    .padding(.bottom, themeManager.spacing.medium)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 14))
                 .onChange(of: selectedDay) { _, newDay in
                     if let day = newDay {
                         withAnimation {
@@ -470,18 +598,83 @@ struct ProjectDetailView: View {
                     }
                 }
             }
-            
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, minHeight: 400)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, themeManager.spacing.small)
         .padding(.vertical, themeManager.spacing.small)
-        .background(
-            RoundedRectangle(cornerRadius: themeManager.cornerRadius.large)
-                .fill(Color.teal)
-        )
+        .background(Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipped()
+        .task {
+            // Pre-calculate immediately when view appears
+            updateCaches()
+        }
         .onAppear {
-            setupMonths()
+            // Ensure caches are updated on appear
+            if cachedMonthEntries.isEmpty {
+                updateCaches()
+            }
+        }
+        .onChange(of: currentMonthIndex) { _, _ in
+            clearCaches()
+            updateCaches()
+        }
+        .onChange(of: project.timeEntries.count) { _, _ in
+            clearCaches()
+            updateCaches()
+        }
+        .onChange(of: project.currentSessionStart) { _, _ in
+            clearCaches()
+            updateCaches()
+        }
+        .onChange(of: project.isRunning) { _, _ in
+            clearCaches()
+            updateCaches()
         }
     }
+    
+    // MARK: - Cache Management
+    
+    private func updateCaches() {
+        // Pre-calculate month entries
+        _ = calculateMonthEntries()
+        
+        // Pre-calculate month earnings and time for all months
+        for (index, month) in months.enumerated() {
+            if cachedMonthEarnings[index] == nil {
+                cachedMonthEarnings[index] = calculateMonthEarnings(for: month)
+            }
+            if cachedMonthTime[index] == nil {
+                cachedMonthTime[index] = calculateMonthTime(for: month)
+            }
+        }
+        
+        // Pre-calculate day durations and earnings for current month entries
+        for (date, _) in cachedMonthEntries {
+            if cachedDayDurations[date] == nil {
+                _ = formatDayDuration(for: date)
+            }
+            if cachedDayEarnings[date] == nil {
+                _ = formatDayEarnings(for: date)
+            }
+        }
+    }
+    
+    private func clearCaches() {
+        cachedMonthEntries = []
+        cachedMonthEarnings.removeAll()
+        cachedMonthTime.removeAll()
+        cachedDayDurations.removeAll()
+        cachedDayEarnings.removeAll()
+    }
 }
+
+#Preview {
+    ProjectDetailView(project: Project(
+        name: "Sample Project",
+        timeEntries: [],
+        isRunning: false,
+        totalAccumulatedTime: 68400
+    ))
+}
+

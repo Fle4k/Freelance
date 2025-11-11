@@ -125,25 +125,33 @@ struct ProjectTimerCard: View {
                             .onChanged { _ in
                                 if !isPressed {
                                     isPressed = true
+                                    
+                                    // Haptic feedback instantly on press for start/restart
+                                    if !project.isRunning && !isAnyCardExpanded {
+                                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                        impactFeedback.impactOccurred()
+                                    }
                                 }
                             }
                             .onEnded { _ in
                                 isPressed = false
                 
-                // Prevent timer toggle if any card is expanded
-                guard !isAnyCardExpanded else { return }
-                
-                // Stronger haptic feedback for tap
-                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                impactFeedback.impactOccurred()
-                
-                // Toggle timer
-                if project.isRunning {
-                    timeTracker.pauseTimer(for: project.id)
-                } else {
-                    timeTracker.startTimer(for: project.id)
-                }
-            }
+                                // Prevent timer toggle if any card is expanded
+                                guard !isAnyCardExpanded else { return }
+                                
+                                // Haptic feedback on release for pause
+                                if project.isRunning {
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                    impactFeedback.impactOccurred()
+                                }
+                                
+                                // Toggle timer
+                                if project.isRunning {
+                                    timeTracker.pauseTimer(for: project.id)
+                                } else {
+                                    timeTracker.startTimer(for: project.id)
+                                }
+                            }
                     )
                     .simultaneousGesture(
                         LongPressGesture(minimumDuration: longPressDuration).onEnded { _ in
@@ -227,5 +235,21 @@ struct ProjectTimerCard: View {
             timerTick += 1
         }
     }
+}
+
+#Preview {
+    ProjectTimerCard(
+        project: Project(
+            name: "sample project",
+            timeEntries: [],
+            isRunning: false,
+            totalAccumulatedTime: 3600
+        ),
+        isExpanded: false,
+        isAnyCardExpanded: false,
+        onDetailToggle: {},
+        onStatisticsToggle: {}
+    )
+    .padding()
 }
 

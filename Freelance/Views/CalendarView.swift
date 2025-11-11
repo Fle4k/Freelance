@@ -186,33 +186,8 @@ struct CalendarDayView: View {
                     .foregroundColor(isTodayWithActiveTimer ? .white : (isToday ? (colorScheme == .dark ? .black : .white) : .primary))
                     .frame(width: circleSize, height: circleSize)
                     .background(
-                        Group {
-                            if isTodayWithActiveTimer {
-                                // Match the active row style
-                                if themeManager.currentTheme == .liquidGlass {
-                                    Circle()
-                                        .fill(Color.clear)
-                                } else {
-                                    Circle()
-                                        .fill(Color.clear)
-                                }
-                            } else if isToday {
-                                Circle()
-                                    .fill(colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.2))
-                                    .shadow(
-                                        color: (colorScheme == .dark ? Color.white : Color.black).opacity(0.3),
-                                        radius: 8,
-                                        x: 0,
-                                        y: 4
-                                    )
-                            } else if hasTimeEntry && themeManager.currentTheme != .liquidGlass {
-                                Circle()
-                                    .fill(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06))
-                            } else {
-                                Circle()
-                                    .fill(Color.clear)
-                            }
-                        }
+                        Circle()
+                            .fill(Color.clear)
                     )
                     .modifier(
                         ConditionalGlassCircle(

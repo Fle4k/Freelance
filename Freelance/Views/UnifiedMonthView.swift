@@ -30,7 +30,60 @@ struct UnifiedMonthView: View {
     @State private var showConfirmation = false
     @State private var previousEntries: [Date: [TimeEntry]] = [:]
     
+    // Cached computed values for performance
+    @State private var cachedMonthEntries: [(Date, [TimeEntry])] = []
+    @State private var cachedMonthEarnings: [Int: Double] = [:]
+    @State private var cachedMonthTime: [Int: TimeInterval] = [:]
+    @State private var cachedDayDurations: [Date: String] = [:]
+    @State private var cachedDayEarnings: [Date: Double] = [:]
+    @State private var lastUpdateHash: Int = 0
+    
+    // Reusable date formatters (expensive to create)
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "E dd.MM.yy"
+        return formatter
+    }()
+    
+    private static let monthFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM"
+        return formatter
+    }()
+    
+    private static let yearFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy"
+        return formatter
+    }()
+    
+    private static let monthTitleFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter
+    }()
+    
     private var monthEntries: [(Date, [TimeEntry])] {
+        // Return cached value if available and data hasn't changed
+        let currentHash = computeDataHash()
+        if currentHash == lastUpdateHash && !cachedMonthEntries.isEmpty {
+            return cachedMonthEntries
+        }
+        
+        // Recalculate if needed
+        return calculateMonthEntries()
+    }
+    
+    private func computeDataHash() -> Int {
+        var hasher = Hasher()
+        hasher.combine(currentMonthIndex)
+        hasher.combine(timeTracker.timeEntries.count)
+        hasher.combine(timeTracker.currentSessionStart?.timeIntervalSince1970 ?? 0)
+        hasher.combine(timeTracker.isRunning)
+        return hasher.finalize()
+    }
+    
+    private func calculateMonthEntries() -> [(Date, [TimeEntry])] {
         let calendar = Calendar.current
         
         guard !months.isEmpty && currentMonthIndex < months.count else { return [] }
@@ -64,7 +117,13 @@ struct UnifiedMonthView: View {
             currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
         }
         
-        return entries.sorted { $0.0 > $1.0 }
+        let sorted = entries.sorted { $0.0 > $1.0 }
+        
+        // Cache the result
+        cachedMonthEntries = sorted
+        lastUpdateHash = computeDataHash()
+        
+        return sorted
     }
     
     private func setupMonths() {
@@ -88,12 +147,25 @@ struct UnifiedMonthView: View {
     }
     
     private func getMonthTitle(for month: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: month).lowercased()
+        return Self.monthTitleFormatter.string(from: month).lowercased()
     }
     
     private func getMonthEarnings(for month: Date) -> Double {
+        guard !months.isEmpty, let monthIndex = months.firstIndex(where: { Calendar.current.isDate($0, equalTo: month, toGranularity: .month) }) else {
+            return calculateMonthEarnings(for: month)
+        }
+        
+        // Check cache first
+        if let cached = cachedMonthEarnings[monthIndex] {
+            return cached
+        }
+        
+        let earnings = calculateMonthEarnings(for: month)
+        cachedMonthEarnings[monthIndex] = earnings
+        return earnings
+    }
+    
+    private func calculateMonthEarnings(for month: Date) -> Double {
         let calendar = Calendar.current
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return 0 }
         
@@ -106,6 +178,21 @@ struct UnifiedMonthView: View {
     }
     
     private func getMonthTime(for month: Date) -> TimeInterval {
+        guard !months.isEmpty, let monthIndex = months.firstIndex(where: { Calendar.current.isDate($0, equalTo: month, toGranularity: .month) }) else {
+            return calculateMonthTime(for: month)
+        }
+        
+        // Check cache first
+        if let cached = cachedMonthTime[monthIndex] {
+            return cached
+        }
+        
+        let time = calculateMonthTime(for: month)
+        cachedMonthTime[monthIndex] = time
+        return time
+    }
+    
+    private func calculateMonthTime(for month: Date) -> TimeInterval {
         let calendar = Calendar.current
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return 0 }
         
@@ -131,12 +218,11 @@ struct UnifiedMonthView: View {
     }
     
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "E dd.MM.yy"
-        return formatter.string(from: date).lowercased()
+        return Self.dateFormatter.string(from: date).lowercased()
     }
     
     private func formatTimeRange(_ entry: TimeEntry) -> String {
+        // Create formatter only once per format type
         let formatter = DateFormatter()
         formatter.dateFormat = settings.use24HourFormat ? "HH:mm" : "h:mm a"
         
@@ -178,6 +264,11 @@ struct UnifiedMonthView: View {
     }
     
     private func formatDayDuration(for date: Date) -> String {
+        // Check cache first
+        if let cached = cachedDayDurations[date] {
+            return cached
+        }
+        
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
@@ -200,7 +291,9 @@ struct UnifiedMonthView: View {
             }
         }
         
-        return formatTime(totalDuration)
+        let formatted = formatTime(totalDuration)
+        cachedDayDurations[date] = formatted
+        return formatted
     }
     
     private func getTodayEntry() -> Date? {
@@ -246,15 +339,11 @@ struct UnifiedMonthView: View {
     }
     
     private func getFormattedMonth(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM"
-        return formatter.string(from: date).lowercased()
+        return Self.monthFormatter.string(from: date).lowercased()
     }
     
     private func getFormattedYear(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy"
-        return formatter.string(from: date)
+        return Self.yearFormatter.string(from: date)
     }
     
     var body: some View {
@@ -297,10 +386,9 @@ struct UnifiedMonthView: View {
                             }
                         }
                         .padding(.horizontal, themeManager.spacing.contentHorizontal)
-                        .padding(.top, themeManager.spacing.contentHorizontal + 40)
-                        .padding(.bottom, themeManager.spacing.xxLarge)
+                        .padding(.top, themeManager.spacing.contentHorizontal)
+                        .padding(.bottom, themeManager.spacing.large)
                     }
-                    Spacer()
                     
                     // Month and Year - centered and closer together
                     if !months.isEmpty {
@@ -342,6 +430,7 @@ struct UnifiedMonthView: View {
                     ScrollViewReader { proxy in
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: themeManager.currentTheme == .liquidGlass ? themeManager.spacing.small : 0) {
+                                // Content will expand naturally
                                 ForEach(monthEntries, id: \.0) { dayEntry in
                                 VStack(spacing: 0) {
                                     // Main day row
@@ -514,8 +603,9 @@ struct UnifiedMonthView: View {
                                     .padding(.top, themeManager.spacing.large)
                             }
                         }
-                        .padding(.bottom, 100)
+                        .padding(.bottom, themeManager.spacing.medium)
                         }
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
                         .onChange(of: selectedDay) { _, newDay in
                             if let day = newDay {
                                 withAnimation {
@@ -525,8 +615,19 @@ struct UnifiedMonthView: View {
                         }
                     }
                 }
-                .themedBackground()
+                .background(
+                    Group {
+                        if themeManager.currentTheme == .liquidGlass {
+                            Color.clear
+                                .background(themeManager.ultraThinMaterial)
+                        } else {
+                            Color(.systemBackground)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                )
             }
+            .clipShape(RoundedRectangle(cornerRadius: 28))
             .blur(radius: (showingSettings || showingDayEditSheet || showEditAlert) ? 3 : 0)
             .animation(.easeInOut(duration: 0.2), value: showingSettings || showingDayEditSheet || showEditAlert)
             .gesture(
@@ -644,6 +745,22 @@ struct UnifiedMonthView: View {
         }
         .onAppear {
             setupMonths()
+            updateCaches()
+        }
+        .onChange(of: currentMonthIndex) { _, _ in
+            updateCaches()
+        }
+        .onChange(of: timeTracker.timeEntries.count) { _, _ in
+            clearCaches()
+            updateCaches()
+        }
+        .onChange(of: timeTracker.currentSessionStart) { _, _ in
+            clearCaches()
+            updateCaches()
+        }
+        .onChange(of: timeTracker.isRunning) { _, _ in
+            clearCaches()
+            updateCaches()
         }
         .sheet(isPresented: $showingDayEditSheet) {
             if let selectedDay = selectedDay,
@@ -678,6 +795,11 @@ struct UnifiedMonthView: View {
     }
     
     private func formatDayEarnings(for date: Date) -> Double {
+        // Check cache first
+        if let cached = cachedDayEarnings[date] {
+            return cached
+        }
+        
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? date
@@ -700,7 +822,9 @@ struct UnifiedMonthView: View {
             }
         }
         
-        return totalDuration / 3600 * settings.hourlyRate
+        let earnings = totalDuration / 3600 * settings.hourlyRate
+        cachedDayEarnings[date] = earnings
+        return earnings
     }
     
     private func editDayTime() {
@@ -719,6 +843,10 @@ struct UnifiedMonthView: View {
         guard let day = selectedDay else { return }
         timeTracker.deleteDayData(for: day)
         selectedDay = nil
+        
+        // Clear caches after removing
+        clearCaches()
+        updateCaches()
     }
     
     private func openEditAlert(for date: Date) {
@@ -776,8 +904,48 @@ struct UnifiedMonthView: View {
         showConfirmation = false
         editingDay = nil
         
+        // Clear caches after editing
+        clearCaches()
+        updateCaches()
+        
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
+    }
+    
+    // MARK: - Cache Management
+    
+    private func updateCaches() {
+        // Pre-calculate month entries
+        _ = calculateMonthEntries()
+        
+        // Pre-calculate month earnings and time for all months
+        for (index, month) in months.enumerated() {
+            if cachedMonthEarnings[index] == nil {
+                cachedMonthEarnings[index] = calculateMonthEarnings(for: month)
+            }
+            if cachedMonthTime[index] == nil {
+                cachedMonthTime[index] = calculateMonthTime(for: month)
+            }
+        }
+        
+        // Pre-calculate day durations and earnings for current month entries
+        for (date, _) in cachedMonthEntries {
+            if cachedDayDurations[date] == nil {
+                _ = formatDayDuration(for: date)
+            }
+            if cachedDayEarnings[date] == nil {
+                _ = formatDayEarnings(for: date)
+            }
+        }
+    }
+    
+    private func clearCaches() {
+        cachedMonthEntries = []
+        cachedMonthEarnings.removeAll()
+        cachedMonthTime.removeAll()
+        cachedDayDurations.removeAll()
+        cachedDayEarnings.removeAll()
+        lastUpdateHash = 0
     }
 }
 

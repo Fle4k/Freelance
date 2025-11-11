@@ -1,0 +1,21 @@
+{
+  "images" : [
+    {
+      "filename" : "fle4k_a_hammer_--ar_916_--sref_78882132_--v_7_f16b589e-3a65-4151-a564-72244ef00b1a_2.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

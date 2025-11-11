@@ -17,22 +17,11 @@ struct ThemedBackgroundModifier: ViewModifier {
         if themeManager.useMaterialBackground {
             content
                 .background(
-                    ZStack {
-                        // Anthracite to black gradient
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(red: 0.2, green: 0.2, blue: 0.2), // Anthracite
-                                Color.black
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        
-                        // Material overlay for depth
-                        Color.clear
-                            .background(themeManager.backgroundMaterial)
-                    }
-                    .ignoresSafeArea()
+                    // Background image only - no overlay
+                    Image("fle4k_a_hammer_--ar_916_--sref_78882132_--v_7_f16b589e-3a65-4151-a564-72244ef00b1a_2")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .ignoresSafeArea()
                 )
         } else {
             content
@@ -141,14 +130,10 @@ struct GlassListRowModifier: ViewModifier {
     func body(content: Content) -> some View {
         if isLiquidGlass {
             content
-                .glassEffect(.regular.tint(isHighlighted ? .white.opacity(0.0) : Color.white.opacity(0.05)))
+                .glassEffect(.regular.tint(.white.opacity(0.0)))
         } else {
             content
-                .background(
-                    isHighlighted ? 
-                    Color.clear : 
-                    Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06)
-                )
+                .background(Color.clear)
         }
     }
 }
