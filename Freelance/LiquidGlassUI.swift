@@ -24,7 +24,7 @@ struct LiquidGlassUI: View {
     var body: some View {
         ZStack {
             // Background image to showcase the glass effect
-            Image("fle4k_a_hammer_--ar_916_--sref_78882132_--v_7_f16b589e-3a65-4151-a564-72244ef00b1a_2")
+            Image("fle4k_Glassy_surfacestructure_with_light_beautifully_breaking_2967eb6a-7285-43cb-9183-3ee50fd0bc5f_2")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .opacity(colorScheme == .dark ? 0.4 : 0.3)
