@@ -1,0 +1,21 @@
+{
+  "images" : [
+    {
+      "filename" : "fle4k_red_ultra_realistic_rough_used_steel_surface_with_parti_faa2c405-5c0d-4d2c-b693-ecaf4c2cd805_0.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

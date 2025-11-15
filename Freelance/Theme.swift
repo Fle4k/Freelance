@@ -10,8 +10,8 @@ import SwiftUI
 // MARK: - App Theme Enum
 
 enum AppTheme: String, CaseIterable {
-    case `default` = "default"
     case liquidGlass = "liquid glass"
+    // Add more themes here in the future
     
     var displayName: String {
         return self.rawValue
@@ -21,7 +21,7 @@ enum AppTheme: String, CaseIterable {
 // MARK: - Theme Manager
 
 class ThemeManager: ObservableObject {
-    @Published var currentTheme: AppTheme = .default
+    @Published var currentTheme: AppTheme = .liquidGlass
     
     static let shared = ThemeManager()
     
@@ -32,7 +32,7 @@ class ThemeManager: ObservableObject {
     
     func loadTheme() {
         let themeString = AppSettings.shared.selectedTheme
-        currentTheme = AppTheme(rawValue: themeString) ?? .default
+        currentTheme = AppTheme(rawValue: themeString) ?? .liquidGlass
     }
     
     func setTheme(_ theme: AppTheme) {
@@ -51,10 +51,9 @@ class ThemeManager: ObservableObject {
     
     var cornerRadius: ThemeCornerRadius {
         switch currentTheme {
-        case .default:
-            return ThemeCornerRadius(small: 4, medium: 8, large: 12)
         case .liquidGlass:
             return ThemeCornerRadius(small: 6, medium: 10, large: 16)
+        // Add more theme cases here in the future
         }
     }
     
@@ -62,10 +61,9 @@ class ThemeManager: ObservableObject {
     
     var shadow: ThemeShadow {
         switch currentTheme {
-        case .default:
-            return ThemeShadow(radius: 0, opacity: 0)
         case .liquidGlass:
             return ThemeShadow(radius: 8, opacity: 0.1)
+        // Add more theme cases here in the future
         }
     }
     

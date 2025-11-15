@@ -18,7 +18,7 @@ struct ThemedBackgroundModifier: ViewModifier {
             content
                 .background(
                     // Background image only - no overlay
-                    Image("fle4k_Glassy_surfacestructure_with_light_beautifully_breaking_2967eb6a-7285-43cb-9183-3ee50fd0bc5f_2")
+                    Image("fle4k_red_ultra_realistic_rough_used_steel_surface_with_parti_faa2c405-5c0d-4d2c-b693-ecaf4c2cd805_0")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .ignoresSafeArea()
@@ -65,10 +65,13 @@ struct ThemedSectionBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         if themeManager.currentTheme == .liquidGlass {
             content
-                .glassEffect(.regular.tint(Color.primary.opacity(0.0)))
+                .glassEffect(.regular.tint(.white.opacity(0.05)))
         } else {
             content
                 .background(Color(.systemBackground))
+                .overlay(
+                    Color.white.opacity(0.05)
+                )
         }
     }
 }
@@ -159,6 +162,36 @@ struct GlassButtonModifier: ViewModifier {
     }
 }
 
+// MARK: - Major Mono Font Modifier (enforces lowercase)
+
+struct MajorMonoFontModifier: ViewModifier {
+    let size: CGFloat
+    
+    func body(content: Content) -> some View {
+        content
+            .font(.custom("Major Mono Display Regular", size: size))
+            .textCase(.lowercase) // Force lowercase display
+    }
+}
+
+// MARK: - Text Extension for Major Mono Font with Lowercase
+
+extension Text {
+    /// Creates a Text view with Major Mono Display Regular font, automatically lowercasing the content
+    /// This ensures the font always displays in lowercase regardless of input
+    static func majorMono(_ content: String, size: CGFloat) -> some View {
+        Text(content.lowercased())
+            .font(.custom("Major Mono Display Regular", size: size))
+            .textCase(.lowercase)
+    }
+    
+    /// Applies Major Mono Display Regular font with automatic lowercase enforcement
+    func majorMonoFont(size: CGFloat) -> some View {
+        self
+            .modifier(MajorMonoFontModifier(size: size))
+    }
+}
+
 // MARK: - SwiftUI View Extensions
 
 extension View {
@@ -180,6 +213,12 @@ extension View {
     
     func themedListRow() -> some View {
         modifier(ThemedListRowModifier())
+    }
+    
+    /// Applies Major Mono Display Regular font with automatic lowercase enforcement
+    /// Use this modifier to ensure text is always displayed in lowercase with this font
+    func majorMonoFont(size: CGFloat) -> some View {
+        modifier(MajorMonoFontModifier(size: size))
     }
 }
 

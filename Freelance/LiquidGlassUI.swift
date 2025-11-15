@@ -24,7 +24,7 @@ struct LiquidGlassUI: View {
     var body: some View {
         ZStack {
             // Background image to showcase the glass effect
-            Image("fle4k_Glassy_surfacestructure_with_light_beautifully_breaking_2967eb6a-7285-43cb-9183-3ee50fd0bc5f_2")
+            Image("fle4k_red_ultra_realistic_rough_used_steel_surface_with_parti_faa2c405-5c0d-4d2c-b693-ecaf4c2cd805_0")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .opacity(colorScheme == .dark ? 0.4 : 0.3)
@@ -113,10 +113,14 @@ struct LiquidGlassUI: View {
                             .textCase(nil)
                             .foregroundStyle(.secondary)
                         
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("time tracked")
                                 .font(.custom("Major Mono Display Regular", size: 16))
                                 .textCase(nil)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .glassEffect(.regular.tint(.white.opacity(0.1)), in: Capsule())
+                            
                             Text("04:37:39")
                                 .font(.custom("Major Mono Display Regular", size: 24))
                                 .textCase(nil)

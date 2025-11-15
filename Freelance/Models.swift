@@ -61,7 +61,7 @@ class AppSettings: ObservableObject {
     @Published var askWhenMoving: Bool = true // true = ask when moving, false = ask when not moving
     @Published var weekStartsOn: Int = 2 // 1 = Sunday, 2 = Monday, 3 = Tuesday, etc.
     @Published var use24HourFormat: Bool = true // true = 24h, false = AM/PM
-    @Published var selectedTheme: String = "default" // Theme selection
+    @Published var selectedTheme: String = "liquid glass" // Theme selection
     
     static let shared = AppSettings()
     
@@ -105,7 +105,7 @@ class AppSettings: ObservableObject {
         askWhenMoving = UserDefaults.standard.object(forKey: "askWhenMoving") as? Bool ?? true
         weekStartsOn = UserDefaults.standard.object(forKey: "weekStartsOn") as? Int ?? 2
         use24HourFormat = UserDefaults.standard.object(forKey: "use24HourFormat") as? Bool ?? true
-        selectedTheme = UserDefaults.standard.object(forKey: "selectedTheme") as? String ?? "default"
+        selectedTheme = UserDefaults.standard.object(forKey: "selectedTheme") as? String ?? "liquid glass"
     }
     
     // Helper for time formatting

@@ -187,6 +187,7 @@ struct SettingsView: View {
                 }
                 
                 // COMMENTED OUT: Theme selection - for future use
+                // When adding new themes, uncomment and update this section
                 /*
                 HStack {
                     Text("theme")
@@ -196,12 +197,10 @@ struct SettingsView: View {
                     Spacer()
                     
                     Menu {
-                        Button("default") { 
-                            themeManager.setTheme(.default)
-                        }
                         Button("liquid glass") { 
                             themeManager.setTheme(.liquidGlass)
                         }
+                        // Add more theme buttons here as you create new themes
                     } label: {
                         Text(themeManager.currentTheme.displayName)
                             .font(.custom("Major Mono Display Regular", size: 17))

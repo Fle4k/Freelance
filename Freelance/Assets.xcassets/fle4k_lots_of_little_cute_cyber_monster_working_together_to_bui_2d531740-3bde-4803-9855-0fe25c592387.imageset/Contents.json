@@ -1,0 +1,21 @@
+{
+  "images" : [
+    {
+      "filename" : "fle4k_lots_of_little_cute_cyber_monster_working_together_to_bui_2d531740-3bde-4803-9855-0fe25c592387.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

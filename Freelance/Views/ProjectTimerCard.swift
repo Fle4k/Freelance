@@ -52,6 +52,7 @@ struct ProjectTimerCard: View {
     @ObservedObject private var themeManager = ThemeManager.shared
     @StateObject private var motionManager = MotionManager()
     @State private var showingResetAlert = false
+    @State private var showingResetConfirmation = false
     @State private var showingRemoveConfirmation = false
     @State private var showingRenameAlert = false
     @State private var newProjectName = ""
@@ -72,36 +73,39 @@ struct ProjectTimerCard: View {
             VStack(spacing: 8) {
                 // Project title above the card
                 if !project.name.isEmpty {
-                    Text(project.name)
-                        .font(.custom("Major Mono Display Regular", size: 17))
-                        .textCase(nil)
-                        .foregroundColor(project.isRunning ? .primary : .secondary)
-                        .shadow(
-                            color: Color.black.opacity(0.9),
-                            radius: 15,
-                            x: motionManager.shadowOffset.width,
-                            y: motionManager.shadowOffset.height
-                        )
-                        .shadow(
-                            color: Color.black.opacity(0.6),
-                            radius: 8,
-                            x: motionManager.shadowOffset.width * 0.5,
-                            y: motionManager.shadowOffset.height * 0.5
-                        )
-                        .onTapGesture {
-                            newProjectName = project.name
-                            showingRenameAlert = true
+                    Group {
+                        if themeManager.currentTheme == .liquidGlass {
+                            Text(project.name)
+                                .majorMonoFont(size: 17)
+                                .foregroundColor(project.isRunning ? .primary : .secondary)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .glassEffect(.regular.tint(.white.opacity(0.1)), in: Capsule())
+                        } else {
+                            Text(project.name)
+                                .majorMonoFont(size: 17)
+                                .foregroundColor(project.isRunning ? .primary : .secondary)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(
+                                    Capsule()
+                                        .fill(Color(.systemBackground))
+                                )
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.horizontal, themeManager.spacing.medium)
+                    }
+                    .onTapGesture {
+                        newProjectName = project.name
+                        showingRenameAlert = true
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal, themeManager.spacing.medium)
                 }
                 
                 ZStack(alignment: .trailing) {
                     // Timer display in card (tappable area)
                     HStack {
                 Text(formattedTime)
-                    .font(.custom("Major Mono Display Regular", size: 36))
-                    .textCase(nil)
+                    .majorMonoFont(size: 36)
                     .foregroundColor(project.isRunning ? .primary : .secondary)
                     .monospacedDigit()
                     .animation(.easeInOut(duration: 0.2), value: project.isRunning)
@@ -198,15 +202,27 @@ struct ProjectTimerCard: View {
         }
         .frame(height: project.name.isEmpty ? 112 : 130)
         .alert("reset timer", isPresented: $showingResetAlert) {
+            Button(project.name.isEmpty ? "add name" : "rename") {
+                newProjectName = project.name
+                showingRenameAlert = true
+            }
             Button("store and reset") {
                 timeTracker.recordTimer(for: project.id)
             }
             Button("reset", role: .destructive) {
-                timeTracker.resetTimer(for: project.id)
+                showingResetConfirmation = true
             }
             Button("cancel", role: .cancel) { }
         } message: {
             Text("store time and start a new session or reset without storing?")
+        }
+        .alert("reset timer", isPresented: $showingResetConfirmation) {
+            Button("cancel", role: .cancel) { }
+            Button("reset", role: .destructive) {
+                timeTracker.resetTimer(for: project.id)
+            }
+        } message: {
+            Text("are you sure you want to remove all data for this timer?")
         }
         .alert("rename project", isPresented: $showingRenameAlert) {
             TextField("project name", text: $newProjectName)

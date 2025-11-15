@@ -1,0 +1,39 @@
+# Major Mono Display Font - Lowercase Rule
+
+**CRITICAL RULE**: The "Major Mono Display Regular" font must ALWAYS display text in lowercase, regardless of the input case.
+
+## Implementation Requirements:
+
+1. **NEVER use** `.font(.custom("Major Mono Display Regular", size: X))` directly on Text views
+2. **ALWAYS use** one of these methods instead:
+   - `.majorMonoFont(size: X)` modifier (preferred for existing Text views)
+   - `Text.majorMono(content, size: X)` static method (for new Text views)
+
+## Examples:
+
+❌ **WRONG**:
+```swift
+Text(project.name)
+    .font(.custom("Major Mono Display Regular", size: 17))
+    .textCase(nil)
+```
+
+✅ **CORRECT**:
+```swift
+Text(project.name)
+    .majorMonoFont(size: 17)
+```
+
+Or:
+```swift
+Text.majorMono(project.name, size: 17)
+```
+
+## Why:
+The Major Mono Display font should never display uppercase letters. The `.majorMonoFont()` modifier and `Text.majorMono()` helper automatically enforce lowercase display using `.textCase(.lowercase)`, ensuring consistent lowercase rendering regardless of user input or data source.
+
+## When reviewing or writing code:
+- If you see `.font(.custom("Major Mono Display Regular"` anywhere, replace it with `.majorMonoFont(size: X)`
+- Remove any `.textCase(nil)` that was used with this font
+- Ensure all text using this font displays in lowercase
+
